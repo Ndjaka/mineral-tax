@@ -78,9 +78,12 @@ Stripe integration was proposed but user dismissed setup (2026-01-11). To enable
 4. Update subscription status on successful payment
 
 ### Email Notifications (TODO)
-Email service needs to be configured for:
-1. J-1 trial reminder (24h before trial ends)
-2. Quarterly reminders (March, June, Sept, Dec) for subscribers
+Email service (Resend) was proposed but user dismissed setup (2026-01-11). To enable email notifications later:
+1. Set up Resend connector in Replit OR provide RESEND_API_KEY as a secret
+2. Implement email templates for:
+   - J-1 trial reminder (24h before trial ends)
+   - Quarterly reminders (March, June, Sept, Dec) for subscribers
+3. Set up scheduled job system for sending notifications
 
 ## Development Commands
 - `npm run dev` - Start development server
