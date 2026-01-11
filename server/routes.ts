@@ -622,6 +622,8 @@ async function generatePdf(
         machinesList: "Liste des machines",
         machineName: "Nom",
         machineType: "Type",
+        machineVin: "N° châssis (VIN)",
+        machineYear: "Année",
         eligible: "Éligible",
         yes: "Oui",
         no: "Non",
@@ -652,6 +654,8 @@ async function generatePdf(
         machinesList: "Maschinenliste",
         machineName: "Name",
         machineType: "Typ",
+        machineVin: "Fahrgestellnr. (VIN)",
+        machineYear: "Baujahr",
         eligible: "Berechtigt",
         yes: "Ja",
         no: "Nein",
@@ -682,6 +686,8 @@ async function generatePdf(
         machinesList: "Elenco delle macchine",
         machineName: "Nome",
         machineType: "Tipo",
+        machineVin: "N. telaio (VIN)",
+        machineYear: "Anno",
         eligible: "Idoneo",
         yes: "Sì",
         no: "No",
@@ -712,6 +718,8 @@ async function generatePdf(
         machinesList: "Machines List",
         machineName: "Name",
         machineType: "Type",
+        machineVin: "Chassis No. (VIN)",
+        machineYear: "Year",
         eligible: "Eligible",
         yes: "Yes",
         no: "No",
@@ -744,11 +752,15 @@ async function generatePdf(
       }).format(num);
     };
 
-    doc.fontSize(10).fillColor("#666666").text(t.authority, 50, 50, { align: "center" });
+    doc.fontSize(24).fillColor("#003366").font("Helvetica-Bold").text("MT", 50, 40);
+    doc.fontSize(14).fillColor("#003366").text("MineralTax Swiss", 85, 45);
+    doc.font("Helvetica");
+    
+    doc.fontSize(10).fillColor("#666666").text(t.authority, 50, 80, { align: "center" });
     doc.moveDown(0.5);
     doc.fontSize(8).text(t.form, { align: "center" });
 
-    doc.moveDown(1.5);
+    doc.moveDown(1);
     doc.fontSize(16).fillColor("#DC2626").text(t.title, { align: "center" });
 
     doc.moveDown(1.5);
@@ -790,7 +802,6 @@ async function generatePdf(
     const machineRowHeight = 14;
     const fuelRowHeight = 12;
     const headerHeight = 16;
-    const machineColWidths = [200, 120, 80];
 
     const checkPageBreak = (neededHeight: number) => {
       if (doc.y + neededHeight > pageHeight) {
@@ -799,40 +810,42 @@ async function generatePdf(
       }
     };
 
+    const drawMachineHeader = (y: number) => {
+      doc.rect(col1, y, 495, headerHeight).fill("#e5e7eb");
+      doc.fillColor("#000000").fontSize(7).font("Helvetica-Bold");
+      doc.text(t.machineName, col1 + 5, y + 4);
+      doc.text(t.machineVin, col1 + 100, y + 4);
+      doc.text(t.machineYear, col1 + 220, y + 4);
+      doc.text(t.machineType, col1 + 270, y + 4);
+      doc.text(t.eligible, col1 + 380, y + 4);
+      doc.font("Helvetica");
+    };
+
     if (machines.length > 0) {
       checkPageBreak(40);
       doc.fontSize(11).fillColor("#333333").text(t.machinesList + ` (${machines.length})`, { underline: true });
       doc.moveDown(0.3);
       
       let machineTableTop = doc.y;
-      
-      doc.rect(col1, machineTableTop, 495, headerHeight).fill("#e5e7eb");
-      doc.fillColor("#000000").fontSize(8).font("Helvetica-Bold");
-      doc.text(t.machineName, col1 + 5, machineTableTop + 4);
-      doc.text(t.machineType, col1 + machineColWidths[0] + 5, machineTableTop + 4);
-      doc.text(t.eligible, col1 + machineColWidths[0] + machineColWidths[1] + 5, machineTableTop + 4);
-      doc.font("Helvetica");
+      drawMachineHeader(machineTableTop);
 
       let machineY = machineTableTop + headerHeight;
       machines.forEach((machine, idx) => {
         if (machineY + machineRowHeight > pageHeight) {
           doc.addPage();
           machineY = 50;
-          doc.rect(col1, machineY, 495, headerHeight).fill("#e5e7eb");
-          doc.fillColor("#000000").fontSize(8).font("Helvetica-Bold");
-          doc.text(t.machineName, col1 + 5, machineY + 4);
-          doc.text(t.machineType, col1 + machineColWidths[0] + 5, machineY + 4);
-          doc.text(t.eligible, col1 + machineColWidths[0] + machineColWidths[1] + 5, machineY + 4);
-          doc.font("Helvetica");
+          drawMachineHeader(machineY);
           machineY += headerHeight;
         }
         
         const bgColor = idx % 2 === 0 ? "#ffffff" : "#f9fafb";
         doc.rect(col1, machineY, 495, machineRowHeight).fill(bgColor);
-        doc.fillColor("#000000").fontSize(8);
-        doc.text(machine.name.substring(0, 35), col1 + 5, machineY + 3);
-        doc.text(machine.type, col1 + machineColWidths[0] + 5, machineY + 3);
-        doc.text(machine.isEligible ? t.yes : t.no, col1 + machineColWidths[0] + machineColWidths[1] + 5, machineY + 3);
+        doc.fillColor("#000000").fontSize(7);
+        doc.text(machine.name.substring(0, 18), col1 + 5, machineY + 3);
+        doc.text((machine.chassisNumber || "-").substring(0, 20), col1 + 100, machineY + 3);
+        doc.text(machine.year?.toString() || "-", col1 + 220, machineY + 3);
+        doc.text(machine.type, col1 + 270, machineY + 3);
+        doc.text(machine.isEligible ? t.yes : t.no, col1 + 380, machineY + 3);
         machineY += machineRowHeight;
       });
       
@@ -884,6 +897,14 @@ async function generatePdf(
       
       doc.y = fuelY + 10;
     }
+
+    checkPageBreak(60);
+    doc.moveDown(0.5);
+    doc.rect(col1, doc.y, 495, 28).fill("#003366");
+    doc.fillColor("#ffffff").fontSize(12).font("Helvetica-Bold");
+    doc.text(`${t.amount}: CHF ${formatNumber(report.reimbursementAmount)}`, col1 + 10, doc.y + 8, { align: "center", width: 475 });
+    doc.font("Helvetica").fillColor("#000000");
+    doc.y += 35;
 
     doc.moveDown(0.5);
     doc.fontSize(9).fillColor("#333333").text(t.declaration, { underline: true });
