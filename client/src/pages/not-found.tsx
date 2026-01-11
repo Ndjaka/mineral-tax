@@ -16,7 +16,7 @@ export default function NotFound() {
             Page not found / Page introuvable / Seite nicht gefunden / Pagina non trovata
           </p>
           <Button asChild data-testid="button-go-home">
-            <Link href="/">
+            <Link href="/dashboard">
               <Home className="h-4 w-4 mr-2" />
               Home
             </Link>
