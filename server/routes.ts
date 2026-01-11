@@ -368,7 +368,7 @@ export async function registerRoutes(
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "subscription",
-        success_url: `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/settings`,
         metadata: { userId },
       });

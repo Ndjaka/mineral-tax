@@ -227,6 +227,15 @@ export const translations = {
       hint: "Posez-moi vos questions sur le remboursement de l'impôt sur les huiles minérales.",
       placeholder: "Votre message...",
     },
+    success: {
+      title: "Merci !",
+      message: "Votre abonnement MineralTax est maintenant actif.",
+      returnToDashboard: "Retour au tableau de bord",
+      verifying: "Vérification du paiement...",
+      missingSession: "Identifiant de session manquant",
+      paymentFailed: "Échec de la vérification du paiement",
+      verificationError: "Impossible de vérifier le paiement",
+    },
   },
   de: {
     common: {
@@ -451,6 +460,15 @@ export const translations = {
       welcome: "Guten Tag! Wie kann ich Ihnen helfen?",
       hint: "Fragen Sie mich zur Mineralölsteuer-Rückerstattung.",
       placeholder: "Ihre Nachricht...",
+    },
+    success: {
+      title: "Vielen Dank!",
+      message: "Ihr MineralTax-Abonnement ist jetzt aktiv.",
+      returnToDashboard: "Zurück zum Dashboard",
+      verifying: "Zahlung wird überprüft...",
+      missingSession: "Sitzungs-ID fehlt",
+      paymentFailed: "Zahlungsüberprüfung fehlgeschlagen",
+      verificationError: "Zahlung konnte nicht überprüft werden",
     },
   },
   it: {
@@ -677,6 +695,15 @@ export const translations = {
       hint: "Mi faccia domande sul rimborso dell'imposta sugli oli minerali.",
       placeholder: "Il tuo messaggio...",
     },
+    success: {
+      title: "Grazie!",
+      message: "Il tuo abbonamento MineralTax è ora attivo.",
+      returnToDashboard: "Torna alla dashboard",
+      verifying: "Verifica del pagamento...",
+      missingSession: "ID sessione mancante",
+      paymentFailed: "Verifica del pagamento fallita",
+      verificationError: "Impossibile verificare il pagamento",
+    },
   },
   en: {
     common: {
@@ -901,6 +928,15 @@ export const translations = {
       welcome: "Hello! How can I help you?",
       hint: "Ask me about mineral oil tax reimbursement.",
       placeholder: "Your message...",
+    },
+    success: {
+      title: "Thank you!",
+      message: "Your MineralTax subscription is now active.",
+      returnToDashboard: "Return to Dashboard",
+      verifying: "Verifying payment...",
+      missingSession: "Session ID missing",
+      paymentFailed: "Payment verification failed",
+      verificationError: "Unable to verify payment",
     },
   },
 } as const;
