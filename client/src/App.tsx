@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrialBanner } from "@/components/trial-banner";
 import { AppFooter } from "@/components/app-footer";
+import { ChatWidget } from "@/components/chat-widget";
 import LandingPage from "@/pages/landing";
 import DashboardPage from "@/pages/dashboard";
 import FleetPage from "@/pages/fleet";
@@ -49,6 +50,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             </div>
             <AppFooter />
           </main>
+          <ChatWidget />
         </div>
       </div>
     </SidebarProvider>

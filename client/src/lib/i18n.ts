@@ -220,6 +220,13 @@ export const translations = {
       unauthorized: "Session expirée, veuillez vous reconnecter",
       generic: "Une erreur s'est produite",
     },
+    chatWidget: {
+      title: "Assistant MineralTax",
+      subtitle: "Posez vos questions",
+      welcome: "Bonjour ! Comment puis-je vous aider ?",
+      hint: "Posez-moi vos questions sur le remboursement de l'impôt sur les huiles minérales.",
+      placeholder: "Votre message...",
+    },
   },
   de: {
     common: {
@@ -437,6 +444,13 @@ export const translations = {
       networkError: "Verbindungsfehler",
       unauthorized: "Sitzung abgelaufen, bitte erneut anmelden",
       generic: "Ein Fehler ist aufgetreten",
+    },
+    chatWidget: {
+      title: "MineralTax Assistent",
+      subtitle: "Stellen Sie Ihre Fragen",
+      welcome: "Guten Tag! Wie kann ich Ihnen helfen?",
+      hint: "Fragen Sie mich zur Mineralölsteuer-Rückerstattung.",
+      placeholder: "Ihre Nachricht...",
     },
   },
   it: {
@@ -656,6 +670,13 @@ export const translations = {
       unauthorized: "Sessione scaduta, effettuare nuovamente l'accesso",
       generic: "Si è verificato un errore",
     },
+    chatWidget: {
+      title: "Assistente MineralTax",
+      subtitle: "Fai le tue domande",
+      welcome: "Buongiorno! Come posso aiutarla?",
+      hint: "Mi faccia domande sul rimborso dell'imposta sugli oli minerali.",
+      placeholder: "Il tuo messaggio...",
+    },
   },
   en: {
     common: {
@@ -873,6 +894,13 @@ export const translations = {
       networkError: "Connection error",
       unauthorized: "Session expired, please log in again",
       generic: "An error occurred",
+    },
+    chatWidget: {
+      title: "MineralTax Assistant",
+      subtitle: "Ask your questions",
+      welcome: "Hello! How can I help you?",
+      hint: "Ask me about mineral oil tax reimbursement.",
+      placeholder: "Your message...",
     },
   },
 } as const;

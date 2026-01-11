@@ -6,6 +6,7 @@ import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, type Ma
 import { z } from "zod";
 import PDFDocument from "pdfkit";
 import { getUncachableStripeClient } from "./stripeClient";
+import { streamChatResponse } from "./chatAssistant";
 
 async function getOrCreateStripePrice(stripe: any): Promise<string> {
   const productName = "MineralTax Swiss - Abonnement Annuel";
@@ -492,6 +493,39 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error generating CSV:", error);
       res.status(500).json({ message: "Failed to generate CSV" });
+    }
+  });
+
+  app.post("/api/chat", async (req: any, res: any) => {
+    try {
+      const { message, history = [] } = req.body;
+
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      await streamChatResponse(
+        message,
+        history,
+        (chunk: string) => {
+          res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+        }
+      );
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("Chat error:", error);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Erreur de chat" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: "Erreur de chat" });
+      }
     }
   });
 
