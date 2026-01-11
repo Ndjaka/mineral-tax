@@ -17,9 +17,11 @@ import {
   Plus,
   Calculator,
   CheckCircle,
+  Download,
+  Receipt,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { Machine, FuelEntry, Report } from "@shared/schema";
+import type { Machine, FuelEntry, Report, Invoice } from "@shared/schema";
 import { REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
 
 interface DashboardStats {
@@ -85,6 +87,15 @@ export default function DashboardPage() {
   }>({
     queryKey: ["/api/subscription"],
   });
+
+  const { data: invoices } = useQuery<Invoice[]>({
+    queryKey: ["/api/invoices"],
+    enabled: subscription?.status === "active",
+  });
+
+  const downloadInvoice = (invoiceId: string) => {
+    window.open(`/api/invoices/${invoiceId}/pdf`, "_blank");
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("de-CH", {
@@ -168,9 +179,23 @@ export default function DashboardPage() {
       {subscription?.status === "active" && (
         <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800" data-testid="alert-subscription-active">
           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-          <AlertDescription className="text-green-800 dark:text-green-200">
-            <span className="font-semibold">{t.subscription.congratulations}</span>{" "}
-            {t.subscription.subscriptionActiveMessage}
+          <AlertDescription className="text-green-800 dark:text-green-200 flex items-center justify-between flex-wrap gap-2">
+            <span>
+              <span className="font-semibold">{t.subscription.congratulations}</span>{" "}
+              {t.subscription.subscriptionActiveMessage}
+            </span>
+            {invoices && invoices.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-white dark:bg-green-900 border-green-300 dark:border-green-700"
+                onClick={() => downloadInvoice(invoices[0].id)}
+                data-testid="button-download-invoice"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {t.common.downloadInvoice || "Télécharger ma facture"}
+              </Button>
+            )}
           </AlertDescription>
         </Alert>
       )}

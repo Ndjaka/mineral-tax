@@ -93,6 +93,18 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const invoices = pgTable("invoices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  amountPaid: real("amount_paid").notNull(),
+  currency: text("currency").notNull().default("CHF"),
+  promoCodeUsed: text("promo_code_used"),
+  stripeSessionId: text("stripe_session_id"),
+  stripeInvoiceId: text("stripe_invoice_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const machinesRelations = relations(machines, ({ many }) => ({
   fuelEntries: many(fuelEntries),
 }));
@@ -137,5 +149,13 @@ export type Report = typeof reports.$inferSelect;
 
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type Subscription = typeof subscriptions.$inferSelect;
+
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type Invoice = typeof invoices.$inferSelect;
 
 export const REIMBURSEMENT_RATE_CHF_PER_LITER = 0.3405;

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { isAuthenticated } from "./replit_integrations/auth";
-import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, type Machine, type FuelEntry, REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
+import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, type Machine, type FuelEntry, type Invoice, REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
 import { z } from "zod";
 import PDFDocument from "pdfkit";
 import { getUncachableStripeClient } from "./stripeClient";
@@ -52,6 +52,110 @@ async function getOrCreateStripePrice(stripe: any): Promise<string> {
 
 const SUPPORTED_LANGUAGES = ["fr", "de", "it", "en"] as const;
 type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+
+async function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    const chunks: Buffer[] = [];
+
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    const pageWidth = 545;
+    const leftMargin = 50;
+    const lineColor = "#cccccc";
+
+    const formatDate = (date: Date | string) => {
+      const d = new Date(date);
+      return d.toLocaleDateString("fr-CH");
+    };
+
+    const formatNumber = (num: number) => {
+      return new Intl.NumberFormat("fr-CH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(num);
+    };
+
+    // Header box with title
+    doc.rect(leftMargin, 40, pageWidth, 70).stroke(lineColor);
+    doc.fontSize(20).fillColor("#000000").font("Helvetica-Bold");
+    doc.text("FACTURE", leftMargin, 55, { align: "center", width: pageWidth });
+    doc.fontSize(10).fillColor("#666666").font("Helvetica");
+    doc.text("MineralTax Suisse", leftMargin, 85, { align: "center", width: pageWidth });
+
+    // Invoice info
+    doc.y = 140;
+    doc.fontSize(10).fillColor("#333333");
+    
+    // Invoice number and date box
+    doc.rect(leftMargin, 130, 250, 60).stroke(lineColor);
+    doc.font("Helvetica-Bold").text("Numéro de facture:", leftMargin + 10, 140);
+    doc.font("Helvetica").text(invoice.invoiceNumber, leftMargin + 130, 140);
+    doc.font("Helvetica-Bold").text("Date:", leftMargin + 10, 160);
+    doc.font("Helvetica").text(formatDate(invoice.createdAt || new Date()), leftMargin + 130, 160);
+
+    // Issuer info
+    doc.y = 220;
+    doc.font("Helvetica-Bold").fontSize(11).text("Émetteur:", leftMargin);
+    doc.font("Helvetica").fontSize(10);
+    doc.text("MineralTax Suisse", leftMargin, doc.y + 5);
+    doc.text("Service de gestion des remboursements", leftMargin);
+    doc.text("d'impôt sur les huiles minérales", leftMargin);
+
+    // Description table
+    doc.y = 320;
+    const tableY = doc.y;
+    const colWidths = [350, 145];
+    const rowHeight = 25;
+
+    // Header row
+    doc.rect(leftMargin, tableY, pageWidth, rowHeight).fill("#f0f0f0");
+    doc.rect(leftMargin, tableY, pageWidth, rowHeight).stroke(lineColor);
+    doc.rect(leftMargin, tableY, colWidths[0], rowHeight).stroke(lineColor);
+    
+    doc.fillColor("#000000").font("Helvetica-Bold").fontSize(10);
+    doc.text("Description", leftMargin + 10, tableY + 8);
+    doc.text("Montant", leftMargin + colWidths[0] + 10, tableY + 8, { width: colWidths[1] - 20, align: "right" });
+
+    // Content row
+    const contentY = tableY + rowHeight;
+    doc.rect(leftMargin, contentY, pageWidth, rowHeight).stroke(lineColor);
+    doc.rect(leftMargin, contentY, colWidths[0], rowHeight).stroke(lineColor);
+    
+    doc.font("Helvetica").fillColor("#000000");
+    doc.text("Abonnement annuel MineralTax - Accès illimité", leftMargin + 10, contentY + 8);
+    doc.text(`CHF ${formatNumber(invoice.amountPaid)}`, leftMargin + colWidths[0] + 10, contentY + 8, { width: colWidths[1] - 20, align: "right" });
+
+    // Promo code if used
+    if (invoice.promoCodeUsed) {
+      const promoY = contentY + rowHeight;
+      doc.rect(leftMargin, promoY, pageWidth, rowHeight).stroke(lineColor);
+      doc.rect(leftMargin, promoY, colWidths[0], rowHeight).stroke(lineColor);
+      
+      doc.fillColor("#16a34a").font("Helvetica-Oblique");
+      doc.text(`Code promo appliqué: ${invoice.promoCodeUsed}`, leftMargin + 10, promoY + 8);
+      doc.fillColor("#000000").font("Helvetica");
+    }
+
+    // Total row
+    const totalY = invoice.promoCodeUsed ? contentY + rowHeight * 2 : contentY + rowHeight;
+    doc.rect(leftMargin, totalY, pageWidth, rowHeight + 5).fill("#003366");
+    doc.rect(leftMargin, totalY, pageWidth, rowHeight + 5).stroke(lineColor);
+    
+    doc.font("Helvetica-Bold").fillColor("#ffffff").fontSize(11);
+    doc.text("TOTAL", leftMargin + 10, totalY + 9);
+    doc.text(`CHF ${formatNumber(invoice.amountPaid)}`, leftMargin + colWidths[0] + 10, totalY + 9, { width: colWidths[1] - 20, align: "right" });
+
+    // Footer
+    doc.font("Helvetica").fillColor("#666666").fontSize(8);
+    doc.text("Merci pour votre confiance.", leftMargin, 700, { align: "center", width: pageWidth });
+    doc.text(`Facture générée automatiquement le ${formatDate(new Date())}`, leftMargin, 715, { align: "center", width: pageWidth });
+
+    doc.end();
+  });
+}
 
 const languageSchema = z.enum(SUPPORTED_LANGUAGES);
 
@@ -371,6 +475,7 @@ export async function registerRoutes(
         success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/settings`,
         metadata: { userId },
+        allow_promotion_codes: true,
       });
       
       res.json({ url: session.url });
@@ -388,16 +493,49 @@ export async function registerRoutes(
       }
       
       const stripe = await getUncachableStripeClient();
-      const session = await stripe.checkout.sessions.retrieve(session_id);
+      const session = await stripe.checkout.sessions.retrieve(session_id, {
+        expand: ['total_details.breakdown']
+      });
       
       if (session.payment_status === "paid" && session.metadata?.userId) {
-        await storage.updateSubscriptionStatus(session.metadata.userId, "active");
+        const userId = session.metadata.userId;
+        await storage.updateSubscriptionStatus(userId, "active");
         
         if (session.subscription) {
-          await storage.updateStripeSubscriptionId(
-            session.metadata.userId, 
-            session.subscription as string
-          );
+          await storage.updateStripeSubscriptionId(userId, session.subscription as string);
+        }
+        
+        // Create invoice if not already created for this session
+        const existingInvoices = await storage.getInvoices(userId);
+        const alreadyCreated = existingInvoices.some(inv => inv.stripeSessionId === session_id);
+        
+        if (!alreadyCreated) {
+          const invoiceNumber = await storage.getNextInvoiceNumber();
+          const amountPaid = (session.amount_total || 25000) / 100; // Convert from cents
+          
+          // Check if promo code was used
+          let promoCodeUsed: string | undefined;
+          if (session.total_details?.breakdown?.discounts?.length) {
+            const discount = session.total_details.breakdown.discounts[0];
+            if (discount.discount?.promotion_code) {
+              try {
+                const promoCode = await stripe.promotionCodes.retrieve(discount.discount.promotion_code as string);
+                promoCodeUsed = promoCode.code;
+              } catch (e) {
+                // Ignore if can't retrieve promo code
+              }
+            }
+          }
+          
+          await storage.createInvoice({
+            userId,
+            invoiceNumber,
+            amountPaid,
+            currency: "CHF",
+            promoCodeUsed,
+            stripeSessionId: session_id,
+          });
+          console.log(`[Invoice] Created ${invoiceNumber} for user ${userId}`);
         }
       }
       
@@ -405,6 +543,38 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error verifying checkout:", error);
       res.status(500).json({ message: "Failed to verify checkout" });
+    }
+  });
+
+  // Invoice endpoints
+  app.get("/api/invoices", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const invoices = await storage.getInvoices(userId);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  app.get("/api/invoices/:id/pdf", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const invoice = await storage.getInvoice(req.params.id, userId);
+      
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      const pdfBuffer = await generateInvoicePdf(invoice);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${invoice.invoiceNumber}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating invoice PDF:", error);
+      res.status(500).json({ message: "Failed to generate invoice PDF" });
     }
   });
 

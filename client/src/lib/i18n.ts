@@ -39,6 +39,7 @@ export const translations = {
       CHF: "CHF",
       liters: "Litres",
       hours: "Heures",
+      downloadInvoice: "Télécharger ma facture",
     },
     nav: {
       dashboard: "Tableau de bord",
@@ -273,6 +274,7 @@ export const translations = {
       CHF: "CHF",
       liters: "Liter",
       hours: "Stunden",
+      downloadInvoice: "Meine Rechnung herunterladen",
     },
     nav: {
       dashboard: "Dashboard",
@@ -507,6 +509,7 @@ export const translations = {
       CHF: "CHF",
       liters: "Litri",
       hours: "Ore",
+      downloadInvoice: "Scarica la mia fattura",
     },
     nav: {
       dashboard: "Dashboard",
@@ -741,6 +744,7 @@ export const translations = {
       CHF: "CHF",
       liters: "Liters",
       hours: "Hours",
+      downloadInvoice: "Download my invoice",
     },
     nav: {
       dashboard: "Dashboard",

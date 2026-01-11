@@ -3,6 +3,7 @@ import {
   fuelEntries,
   reports,
   subscriptions,
+  invoices,
   type Machine,
   type InsertMachine,
   type FuelEntry,
@@ -11,6 +12,8 @@ import {
   type InsertReport,
   type Subscription,
   type InsertSubscription,
+  type Invoice,
+  type InsertInvoice,
   REIMBURSEMENT_RATE_CHF_PER_LITER,
 } from "@shared/schema";
 import { db } from "./db";
@@ -63,6 +66,11 @@ export interface IStorage {
     machines: Machine[];
     fuelEntries: (FuelEntry & { machine?: Machine })[];
   }>;
+
+  getInvoices(userId: string): Promise<Invoice[]>;
+  getInvoice(id: string, userId: string): Promise<Invoice | undefined>;
+  createInvoice(data: InsertInvoice): Promise<Invoice>;
+  getNextInvoiceNumber(): Promise<string>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -378,6 +386,33 @@ export class DatabaseStorage implements IStorage {
         machine: row.machines || undefined,
       })),
     };
+  }
+
+  async getInvoices(userId: string): Promise<Invoice[]> {
+    return db.select().from(invoices).where(eq(invoices.userId, userId)).orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoice(id: string, userId: string): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(and(eq(invoices.id, id), eq(invoices.userId, userId)));
+    return invoice;
+  }
+
+  async createInvoice(data: InsertInvoice): Promise<Invoice> {
+    const [invoice] = await db.insert(invoices).values(data).returning();
+    return invoice;
+  }
+
+  async getNextInvoiceNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `INV-${year}-`;
+    
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(invoices)
+      .where(sql`${invoices.invoiceNumber} LIKE ${prefix + '%'}`);
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
   }
 }
 
