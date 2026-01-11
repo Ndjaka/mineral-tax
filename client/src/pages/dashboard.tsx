@@ -1,0 +1,243 @@
+import { useQuery } from "@tanstack/react-query";
+import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Truck,
+  Fuel,
+  FileText,
+  TrendingUp,
+  Plus,
+  Calculator,
+} from "lucide-react";
+import type { Machine, FuelEntry, Report } from "@shared/schema";
+import { REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
+
+interface DashboardStats {
+  totalMachines: number;
+  totalFuelEntries: number;
+  totalVolume: number;
+  eligibleVolume: number;
+  estimatedReimbursement: number;
+  pendingReports: number;
+}
+
+export default function DashboardPage() {
+  const { t } = useI18n();
+  const { user } = useAuth();
+
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
+    queryKey: ["/api/dashboard/stats"],
+  });
+
+  const { data: recentEntries, isLoading: entriesLoading } = useQuery<(FuelEntry & { machine: Machine })[]>({
+    queryKey: ["/api/fuel-entries", { limit: 5 }],
+  });
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("de-CH", {
+      style: "currency",
+      currency: "CHF",
+    }).format(amount);
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat("de-CH").format(num);
+  };
+
+  const summaryCards = [
+    {
+      title: t.dashboard.totalReimbursement,
+      value: stats ? formatCurrency(stats.estimatedReimbursement) : "-",
+      icon: TrendingUp,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
+    {
+      title: t.dashboard.activeMachines,
+      value: stats?.totalMachines ?? "-",
+      icon: Truck,
+      color: "text-chart-2",
+      bgColor: "bg-chart-2/10",
+    },
+    {
+      title: t.reports.eligibleVolume,
+      value: stats ? `${formatNumber(stats.eligibleVolume)} L` : "-",
+      icon: Fuel,
+      color: "text-chart-3",
+      bgColor: "bg-chart-3/10",
+    },
+    {
+      title: t.dashboard.pendingClaims,
+      value: stats?.pendingReports ?? "-",
+      icon: FileText,
+      color: "text-chart-4",
+      bgColor: "bg-chart-4/10",
+    },
+  ];
+
+  const quickActions = [
+    {
+      title: t.dashboard.addMachine,
+      href: "/fleet?action=add",
+      icon: Truck,
+    },
+    {
+      title: t.dashboard.addFuelEntry,
+      href: "/fuel?action=add",
+      icon: Fuel,
+    },
+    {
+      title: t.dashboard.generateReport,
+      href: "/reports?action=generate",
+      icon: FileText,
+    },
+  ];
+
+  return (
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold" data-testid="text-dashboard-title">
+            {t.dashboard.welcome}, {user?.firstName || "User"}
+          </h1>
+          <p className="text-muted-foreground mt-1">{t.dashboard.summary}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button asChild data-testid="button-quick-fuel">
+            <Link href="/fuel?action=add">
+              <Plus className="h-4 w-4 mr-2" />
+              {t.dashboard.addFuelEntry}
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {summaryCards.map((card, index) => (
+          <Card key={index}>
+            <CardContent className="p-6">
+              {statsLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-32" />
+                </div>
+              ) : (
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">{card.title}</p>
+                    <p className="text-2xl font-bold font-mono" data-testid={`text-stat-${index}`}>
+                      {card.value}
+                    </p>
+                  </div>
+                  <div className={`p-2 rounded-lg ${card.bgColor}`}>
+                    <card.icon className={`h-5 w-5 ${card.color}`} />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
+            <CardTitle className="text-lg">{t.dashboard.recentEntries}</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/fuel">{t.common.view}</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {entriesLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : recentEntries && recentEntries.length > 0 ? (
+              <div className="space-y-3">
+                {recentEntries.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    data-testid={`fuel-entry-${entry.id}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Fuel className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{entry.machine?.name || "-"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(entry.invoiceDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono font-medium">{formatNumber(entry.volumeLiters)} L</p>
+                      <p className="text-xs text-primary font-mono">
+                        {formatCurrency(entry.volumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Fuel className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>{t.common.noData}</p>
+                <Button variant="link" asChild className="mt-2">
+                  <Link href="/fuel?action=add">{t.fuel.addEntry}</Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{t.dashboard.quickActions}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {quickActions.map((action, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                className="w-full justify-start gap-3"
+                asChild
+                data-testid={`button-quick-action-${index}`}
+              >
+                <Link href={action.href}>
+                  <action.icon className="h-4 w-4" />
+                  {action.title}
+                </Link>
+              </Button>
+            ))}
+          </CardContent>
+
+          <CardContent className="pt-0">
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Calculator className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{t.reports.rate}</p>
+                    <p className="text-xl font-bold text-primary font-mono">
+                      0.3405 CHF/L
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
