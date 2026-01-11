@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
+import { apiRequest } from "@/lib/queryClient";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Clock, AlertTriangle, CreditCard } from "lucide-react";
+import { Clock, AlertTriangle, CreditCard, Loader2 } from "lucide-react";
 
 interface SubscriptionData {
   status: string;
@@ -18,6 +19,22 @@ export function TrialBanner() {
     queryKey: ["/api/subscription"],
   });
 
+  const checkoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/checkout");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+  });
+
+  const handleSubscribe = () => {
+    checkoutMutation.mutate();
+  };
+
   if (isLoading || !subscription) {
     return null;
   }
@@ -32,9 +49,21 @@ export function TrialBanner() {
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription className="flex items-center justify-between flex-wrap gap-2">
           <span>{t.subscription.trialExpired}</span>
-          <Button size="sm" variant="outline" data-testid="button-subscribe">
-            <CreditCard className="h-4 w-4 mr-2" />
-            {t.subscription.subscribe}
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleSubscribe}
+            disabled={checkoutMutation.isPending}
+            data-testid="button-subscribe"
+          >
+            {checkoutMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <CreditCard className="h-4 w-4 mr-2" />
+                {t.subscription.subscribe}
+              </>
+            )}
           </Button>
         </AlertDescription>
       </Alert>
@@ -56,9 +85,21 @@ export function TrialBanner() {
           <span>
             {t.subscription.trialDaysRemaining.replace("{days}", String(daysRemaining))}
           </span>
-          <Button size="sm" variant={isUrgent ? "default" : "outline"} data-testid="button-subscribe">
-            <CreditCard className="h-4 w-4 mr-2" />
-            {t.subscription.subscribe}
+          <Button 
+            size="sm" 
+            variant={isUrgent ? "default" : "outline"} 
+            onClick={handleSubscribe}
+            disabled={checkoutMutation.isPending}
+            data-testid="button-subscribe"
+          >
+            {checkoutMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <CreditCard className="h-4 w-4 mr-2" />
+                {t.subscription.subscribe}
+              </>
+            )}
           </Button>
         </AlertDescription>
       </Alert>
