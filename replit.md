@@ -4,7 +4,7 @@
 Professional SaaS application for Swiss mineral oil tax (Mineralölsteuer) reimbursement claims. Designed for construction companies and fleet managers in Switzerland.
 
 ## Current State
-- **Phase**: MVP Development
+- **Phase**: Production Ready
 - **Frontend**: React with TypeScript, Vite, Tailwind CSS, Shadcn UI
 - **Backend**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
