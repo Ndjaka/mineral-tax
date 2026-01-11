@@ -64,11 +64,23 @@ server/
 - `SESSION_SECRET` - Session encryption
 - `STRIPE_SECRET_KEY` - (TODO) Stripe integration
 
+### Subscription & Trial System
+- **10-day free trial** for new users
+- **Trial countdown banner** displayed on all pages
+- **Export blocking**: PDF/CSV exports blocked after trial expires
+- **Subscription status tracking**: trial, trial_expired, active, cancelled, inactive
+
 ### Stripe Integration Note
-Stripe integration was proposed but not configured. To enable payments:
-1. Set up Stripe connector in Replit
+Stripe integration was proposed but user dismissed setup (2026-01-11). To enable payments later:
+1. Set up Stripe connector in Replit OR provide STRIPE_SECRET_KEY as a secret
 2. Configure 250 CHF annual subscription product
 3. Implement checkout and webhook endpoints
+4. Update subscription status on successful payment
+
+### Email Notifications (TODO)
+Email service needs to be configured for:
+1. J-1 trial reminder (24h before trial ends)
+2. Quarterly reminders (March, June, Sept, Dec) for subscribers
 
 ## Development Commands
 - `npm run dev` - Start development server
