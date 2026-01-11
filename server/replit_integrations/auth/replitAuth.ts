@@ -115,10 +115,18 @@ export async function setupAuth(app: Express) {
       return res.redirect(`https://${canonicalHost}/api/login`);
     }
     console.log("Starting OAuth, session ID:", req.sessionID);
-    passport.authenticate("replitauth", {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
+    
+    // Force session save before OAuth redirect
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+      }
+      console.log("Session saved, proceeding with OAuth");
+      passport.authenticate("replitauth", {
+        prompt: "login consent",
+        scope: ["openid", "email", "profile", "offline_access"],
+      })(req, res, next);
+    });
   });
 
   app.get("/api/callback", (req, res, next) => {
