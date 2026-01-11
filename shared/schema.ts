@@ -7,13 +7,19 @@ export * from "./models/auth";
 
 export const machineTypeEnum = pgEnum("machine_type", [
   "excavator",
+  "spider_excavator",
   "loader",
   "crane",
+  "drill",
+  "finisher",
+  "milling_machine",
+  "roller",
+  "dumper",
+  "forklift",
+  "crusher",
   "generator",
   "compressor",
-  "forklift",
-  "dumper",
-  "roller",
+  "concrete_pump",
   "other"
 ]);
 

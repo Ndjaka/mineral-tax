@@ -49,13 +49,19 @@ import type { Machine } from "@shared/schema";
 
 const machineTypes = [
   "excavator",
+  "spider_excavator",
   "loader",
   "crane",
+  "drill",
+  "finisher",
+  "milling_machine",
+  "roller",
+  "dumper",
+  "forklift",
+  "crusher",
   "generator",
   "compressor",
-  "forklift",
-  "dumper",
-  "roller",
+  "concrete_pump",
   "other",
 ] as const;
 
