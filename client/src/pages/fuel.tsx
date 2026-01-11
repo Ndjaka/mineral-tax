@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -65,6 +66,7 @@ type FuelEntryFormData = z.infer<typeof fuelEntryFormSchema>;
 export default function FuelPage() {
   const { t } = useI18n();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<FuelEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<FuelEntry | null>(null);
@@ -106,8 +108,13 @@ export default function FuelPage() {
       toast({ title: t.fuel.successAdd });
       handleCloseDialog();
     },
-    onError: () => {
-      toast({ title: t.common.error, variant: "destructive" });
+    onError: (error: any) => {
+      if (error?.message?.includes("403") || error?.code === "subscription_required") {
+        toast({ title: t.subscription.subscriptionRequired, variant: "destructive" });
+        setLocation("/subscription");
+      } else {
+        toast({ title: t.common.error, variant: "destructive" });
+      }
     },
   });
 

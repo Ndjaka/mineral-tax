@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -40,6 +41,7 @@ type ReportFormData = z.infer<typeof reportFormSchema>;
 export default function ReportsPage() {
   const { t, language } = useI18n();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
 
@@ -68,8 +70,13 @@ export default function ReportsPage() {
       setIsDialogOpen(false);
       form.reset();
     },
-    onError: () => {
-      toast({ title: t.common.error, variant: "destructive" });
+    onError: (error: any) => {
+      if (error?.message?.includes("403") || error?.code === "subscription_required") {
+        toast({ title: t.subscription.subscriptionRequired, variant: "destructive" });
+        setLocation("/subscription");
+      } else {
+        toast({ title: t.common.error, variant: "destructive" });
+      }
     },
   });
 

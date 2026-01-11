@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -79,6 +80,7 @@ type MachineFormData = z.infer<typeof machineFormSchema>;
 export default function FleetPage() {
   const { t } = useI18n();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
@@ -108,8 +110,13 @@ export default function FleetPage() {
       toast({ title: t.fleet.successAdd });
       handleCloseDialog();
     },
-    onError: () => {
-      toast({ title: t.common.error, variant: "destructive" });
+    onError: (error: any) => {
+      if (error?.message?.includes("403") || error?.code === "subscription_required") {
+        toast({ title: t.subscription.subscriptionRequired, variant: "destructive" });
+        setLocation("/subscription");
+      } else {
+        toast({ title: t.common.error, variant: "destructive" });
+      }
     },
   });
 

@@ -163,6 +163,24 @@ function getUserId(req: any): string {
   return req.user?.claims?.sub;
 }
 
+async function checkSubscriptionAccess(userId: string): Promise<{ allowed: boolean; reason?: string }> {
+  const subscription = await storage.getOrCreateSubscription(userId);
+  const now = new Date();
+  
+  if (subscription.status === "active") {
+    return { allowed: true };
+  }
+  
+  if (subscription.status === "trial" && subscription.trialEndsAt) {
+    const trialEnd = new Date(subscription.trialEndsAt);
+    if (now <= trialEnd) {
+      return { allowed: true };
+    }
+  }
+  
+  return { allowed: false, reason: "subscription_required" };
+}
+
 function parseDate(value: string | Date): Date {
   if (value instanceof Date) return value;
   const date = new Date(value);
@@ -216,6 +234,15 @@ export async function registerRoutes(
   app.post("/api/machines", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
+      
+      const accessCheck = await checkSubscriptionAccess(userId);
+      if (!accessCheck.allowed) {
+        return res.status(403).json({ 
+          message: "Subscription required to add machines",
+          code: accessCheck.reason 
+        });
+      }
+      
       const data = insertMachineSchema.parse({ ...req.body, userId });
       const machine = await storage.createMachine(data);
       res.status(201).json(machine);
@@ -288,6 +315,14 @@ export async function registerRoutes(
   app.post("/api/fuel-entries", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
+      
+      const accessCheck = await checkSubscriptionAccess(userId);
+      if (!accessCheck.allowed) {
+        return res.status(403).json({ 
+          message: "Subscription required to add fuel entries",
+          code: accessCheck.reason 
+        });
+      }
       
       let invoiceDate: Date;
       try {
@@ -372,6 +407,15 @@ export async function registerRoutes(
   app.post("/api/reports", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
+      
+      const accessCheck = await checkSubscriptionAccess(userId);
+      if (!accessCheck.allowed) {
+        return res.status(403).json({ 
+          message: "Subscription required to generate reports",
+          code: accessCheck.reason 
+        });
+      }
+      
       const { periodStart, periodEnd, language } = req.body;
 
       const validatedLanguage = languageSchema.safeParse(language);

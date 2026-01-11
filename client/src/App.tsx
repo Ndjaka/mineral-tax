@@ -22,6 +22,7 @@ import ReportsPage from "@/pages/reports";
 import SettingsPage from "@/pages/settings";
 import TermsPage from "@/pages/terms";
 import SuccessPage from "@/pages/success";
+import SubscriptionPage from "@/pages/subscription";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -71,6 +72,7 @@ function AuthenticatedRouter() {
         <Route path="/settings" component={SettingsPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/success" component={SuccessPage} />
+        <Route path="/subscription" component={SubscriptionPage} />
         <Route component={NotFound} />
       </Switch>
     </AuthenticatedLayout>

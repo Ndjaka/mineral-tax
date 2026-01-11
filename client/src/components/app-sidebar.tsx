@@ -23,6 +23,7 @@ import {
   LogOut,
   Calculator,
   ScrollText,
+  CreditCard,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -36,6 +37,7 @@ export function AppSidebar() {
     { title: t.nav.fuelEntry, url: "/fuel", icon: Fuel },
     { title: t.calculator.title, url: "/calculator", icon: Calculator },
     { title: t.nav.reports, url: "/reports", icon: FileText },
+    { title: t.nav.subscription, url: "/subscription", icon: CreditCard },
     { title: t.nav.settings, url: "/settings", icon: Settings },
     { title: t.nav.terms, url: "/terms", icon: ScrollText },
   ];
