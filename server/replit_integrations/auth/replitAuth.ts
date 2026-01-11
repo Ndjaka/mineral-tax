@@ -30,8 +30,8 @@ export function getSession() {
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: {
       httpOnly: true,
       secure: true,
@@ -109,9 +109,12 @@ export async function setupAuth(app: Express) {
   app.get("/api/login", (req, res, next) => {
     // Redirect to canonical domain if not already there
     const currentHost = req.get('host') || req.hostname;
+    console.log("Login request from host:", currentHost, "canonical:", canonicalHost);
     if (currentHost !== canonicalHost) {
+      console.log("Redirecting to canonical host");
       return res.redirect(`https://${canonicalHost}/api/login`);
     }
+    console.log("Starting OAuth, session ID:", req.sessionID);
     passport.authenticate("replitauth", {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
