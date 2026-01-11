@@ -70,6 +70,7 @@ const machineFormSchema = z.object({
   type: z.enum(machineTypes),
   chassisNumber: z.string().optional(),
   year: z.coerce.number().min(1900).max(2100).optional(),
+  power: z.string().optional(),
   isEligible: z.boolean().default(true),
 });
 
@@ -90,6 +91,7 @@ export default function FleetPage() {
       type: "excavator",
       chassisNumber: "",
       year: undefined,
+      power: "",
       isEligible: true,
     },
   });
@@ -145,6 +147,7 @@ export default function FleetPage() {
         type: machine.type as typeof machineTypes[number],
         chassisNumber: machine.chassisNumber || "",
         year: machine.year || undefined,
+        power: machine.power || "",
         isEligible: machine.isEligible,
       });
     } else {
@@ -154,6 +157,7 @@ export default function FleetPage() {
         type: "excavator",
         chassisNumber: "",
         year: undefined,
+        power: "",
         isEligible: true,
       });
     }
@@ -374,6 +378,24 @@ export default function FleetPage() {
                         {...field}
                         value={field.value || ""}
                         data-testid="input-year"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="power"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.fleet.power}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="e.g. 150 kW"
+                        data-testid="input-power"
                       />
                     </FormControl>
                     <FormMessage />

@@ -83,6 +83,7 @@ export const translations = {
       machineType: "Type de machine",
       chassisNumber: "N° de châssis",
       year: "Année",
+      power: "Puissance",
       eligible: "Éligible au remboursement",
       notEligible: "Non éligible",
       types: {
@@ -296,6 +297,7 @@ export const translations = {
       machineType: "Maschinentyp",
       chassisNumber: "Fahrgestellnr.",
       year: "Baujahr",
+      power: "Leistung",
       eligible: "Rückerstattungsberechtigt",
       notEligible: "Nicht berechtigt",
       types: {
@@ -509,6 +511,7 @@ export const translations = {
       machineType: "Tipo di macchina",
       chassisNumber: "N° telaio",
       year: "Anno",
+      power: "Potenza",
       eligible: "Idoneo al rimborso",
       notEligible: "Non idoneo",
       types: {
@@ -722,6 +725,7 @@ export const translations = {
       machineType: "Machine Type",
       chassisNumber: "Chassis No.",
       year: "Year",
+      power: "Power",
       eligible: "Eligible for reimbursement",
       notEligible: "Not eligible",
       types: {

@@ -44,6 +44,7 @@ export const machines = pgTable("machines", {
   type: machineTypeEnum("type").notNull(),
   chassisNumber: text("chassis_number"),
   year: integer("year"),
+  power: text("power"),
   isEligible: boolean("is_eligible").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
