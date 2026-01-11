@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrialBanner } from "@/components/trial-banner";
+import { AppFooter } from "@/components/app-footer";
 import LandingPage from "@/pages/landing";
 import DashboardPage from "@/pages/dashboard";
 import FleetPage from "@/pages/fleet";
@@ -39,11 +40,14 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
               <ThemeToggle />
             </div>
           </header>
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto flex flex-col">
             <div className="px-4 pt-4">
               <TrialBanner />
             </div>
-            {children}
+            <div className="flex-1">
+              {children}
+            </div>
+            <AppFooter />
           </main>
         </div>
       </div>
@@ -68,8 +72,26 @@ function AuthenticatedRouter() {
   );
 }
 
+function PublicTermsPage() {
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <TermsPage />
+      <div className="border-t py-4 mt-auto">
+        <div className="max-w-4xl mx-auto px-6 text-center text-sm text-muted-foreground">
+          <a href="/" className="text-primary hover:underline">&larr; Retour à l'accueil</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
   const { user, isLoading } = useAuth();
+  const [location] = useLocation();
+
+  if (location === "/terms" && !user) {
+    return <PublicTermsPage />;
+  }
 
   if (isLoading) {
     return (

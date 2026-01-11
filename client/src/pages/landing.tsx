@@ -3,7 +3,8 @@ import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Truck, Calculator, FileText, Shield, CheckCircle2 } from "lucide-react";
+import { Truck, Calculator, FileText, Shield, CheckCircle2, ScrollText } from "lucide-react";
+import { Link } from "wouter";
 
 export default function LandingPage() {
   const { t } = useI18n();
@@ -83,6 +84,13 @@ export default function LandingPage() {
                     <a href="/api/login">{t.landing.cta}</a>
                   </Button>
                 </div>
+                
+                <p className="text-sm text-muted-foreground">
+                  {t.terms.bySigningIn}{" "}
+                  <Link href="/terms" className="text-primary underline hover:no-underline" data-testid="link-terms-hero">
+                    {t.terms.termsLink}
+                  </Link>
+                </p>
 
                 <div className="flex flex-wrap gap-3">
                   {benefits.map((benefit) => (
@@ -201,6 +209,15 @@ export default function LandingPage() {
               <span>&copy; 2026 MineralTax Swiss.</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <Link 
+                href="/terms" 
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                data-testid="link-terms-footer"
+              >
+                <ScrollText className="h-4 w-4" />
+                <span>{t.nav.terms}</span>
+              </Link>
+              <span className="text-muted-foreground/50">|</span>
               <span>OFDF / BAZG / AFD / FOCBS</span>
             </div>
           </div>
