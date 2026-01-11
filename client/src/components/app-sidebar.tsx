@@ -49,8 +49,8 @@ export function AppSidebar() {
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <Link href="/">
           <div className="flex items-center gap-3 cursor-pointer" data-testid="link-logo">
-            <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">MT</span>
+            <div className="w-10 h-10 rounded-lg bg-[#003366] flex items-center justify-center">
+              <span className="text-white font-bold text-lg">MT</span>
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-sm">MineralTax</span>
