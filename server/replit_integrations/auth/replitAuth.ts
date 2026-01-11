@@ -79,24 +79,31 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  // Keep track of registered strategies
-  const registeredStrategies = new Set<string>();
+  // Use a single strategy with the current request's origin as callback
+  const getCallbackUrl = (req: any) => {
+    const protocol = req.protocol || 'https';
+    const host = req.get('host') || req.hostname;
+    return `${protocol}://${host}/api/callback`;
+  };
 
-  // Helper function to ensure strategy exists for a domain
-  const ensureStrategy = (domain: string) => {
-    const strategyName = `replitauth:${domain}`;
-    if (!registeredStrategies.has(strategyName)) {
-      const strategy = new Strategy(
+  // Single strategy that will be updated per request
+  let currentStrategy: Strategy | null = null;
+  let currentCallbackUrl: string = '';
+
+  const ensureStrategy = (req: any) => {
+    const callbackUrl = getCallbackUrl(req);
+    if (callbackUrl !== currentCallbackUrl) {
+      currentCallbackUrl = callbackUrl;
+      currentStrategy = new Strategy(
         {
-          name: strategyName,
+          name: "replitauth",
           config,
           scope: "openid email profile offline_access",
-          callbackURL: `https://${domain}/api/callback`,
+          callbackURL: callbackUrl,
         },
         verify
       );
-      passport.use(strategy);
-      registeredStrategies.add(strategyName);
+      passport.use("replitauth", currentStrategy);
     }
   };
 
@@ -104,16 +111,16 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
-    ensureStrategy(req.hostname);
-    passport.authenticate(`replitauth:${req.hostname}`, {
+    ensureStrategy(req);
+    passport.authenticate("replitauth", {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
   });
 
   app.get("/api/callback", (req, res, next) => {
-    ensureStrategy(req.hostname);
-    passport.authenticate(`replitauth:${req.hostname}`, {
+    ensureStrategy(req);
+    passport.authenticate("replitauth", {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
     })(req, res, next);
