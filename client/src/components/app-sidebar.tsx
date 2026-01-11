@@ -22,6 +22,7 @@ import {
   Settings,
   LogOut,
   Calculator,
+  ScrollText,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -36,6 +37,7 @@ export function AppSidebar() {
     { title: t.calculator.title, url: "/calculator", icon: Calculator },
     { title: t.nav.reports, url: "/reports", icon: FileText },
     { title: t.nav.settings, url: "/settings", icon: Settings },
+    { title: t.nav.terms, url: "/terms", icon: ScrollText },
   ];
 
   const userInitials = user
