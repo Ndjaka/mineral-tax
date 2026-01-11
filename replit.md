@@ -56,13 +56,17 @@ server/
 - `GET/POST /api/fuel-entries` - Fuel entry CRUD
 - `GET/POST /api/reports` - Report generation
 - `GET /api/reports/:id/pdf` - Download PDF
+- `GET /api/subscription` - Get subscription status
+- `POST /api/checkout` - Create Stripe checkout session
+- `GET /api/checkout/success` - Verify payment after redirect
+- `POST /api/stripe/webhook` - Stripe webhook handler
 
 ## Configuration
 
 ### Environment Variables
 - `DATABASE_URL` - PostgreSQL connection
 - `SESSION_SECRET` - Session encryption
-- `STRIPE_SECRET_KEY` - (TODO) Stripe integration
+- `STRIPE_WEBHOOK_SECRET` - (optional) Stripe webhook signature verification
 
 ### Subscription & Trial System
 - **10-day free trial** for new users
@@ -70,12 +74,12 @@ server/
 - **Export blocking**: PDF/CSV exports blocked after trial expires
 - **Subscription status tracking**: trial, trial_expired, active, cancelled, inactive
 
-### Stripe Integration Note
-Stripe integration was proposed but user dismissed setup (2026-01-11). To enable payments later:
-1. Set up Stripe connector in Replit OR provide STRIPE_SECRET_KEY as a secret
-2. Configure 250 CHF annual subscription product
-3. Implement checkout and webhook endpoints
-4. Update subscription status on successful payment
+### Stripe Integration (Implemented)
+- Uses Replit Stripe connector for API keys
+- Price ID: price_1SoTncAQocW3bCNRDohSEX7u (250 CHF annual subscription)
+- Checkout flow: /api/checkout creates session, redirects to /dashboard?session_id=...
+- Webhook route registered before express.json() to receive raw Buffer
+- Success callback verifies payment and activates subscription
 
 ### Email Notifications (TODO)
 Email service (Resend) was proposed but user dismissed setup (2026-01-11). To enable email notifications later:

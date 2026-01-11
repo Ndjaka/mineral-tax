@@ -41,6 +41,8 @@ export interface IStorage {
   getTrialExpiringTomorrow(): Promise<Subscription[]>;
   getActiveSubscriptionsForQuarterlyReminder(): Promise<Subscription[]>;
   markQuarterlyReminderSent(userId: string): Promise<void>;
+  updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void>;
+  updateStripeSubscriptionId(userId: string, stripeSubscriptionId: string): Promise<void>;
 
   getDashboardStats(userId: string): Promise<{
     totalMachines: number;
@@ -239,6 +241,20 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(subscriptions)
       .set({ quarterlyReminderLastSent: new Date(), updatedAt: new Date() })
+      .where(eq(subscriptions.userId, userId));
+  }
+
+  async updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void> {
+    await db
+      .update(subscriptions)
+      .set({ stripeCustomerId, updatedAt: new Date() })
+      .where(eq(subscriptions.userId, userId));
+  }
+
+  async updateStripeSubscriptionId(userId: string, stripeSubscriptionId: string): Promise<void> {
+    await db
+      .update(subscriptions)
+      .set({ stripeSubscriptionId, updatedAt: new Date() })
       .where(eq(subscriptions.userId, userId));
   }
 

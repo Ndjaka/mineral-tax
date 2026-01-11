@@ -5,6 +5,9 @@ import { isAuthenticated } from "./replit_integrations/auth";
 import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, type Machine, type FuelEntry, REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
 import { z } from "zod";
 import PDFDocument from "pdfkit";
+import { getUncachableStripeClient } from "./stripeClient";
+
+const STRIPE_PRICE_ID = "price_1SoTncAQocW3bCNRDohSEX7u";
 
 const SUPPORTED_LANGUAGES = ["fr", "de", "it", "en"] as const;
 type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
@@ -292,6 +295,73 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching subscription:", error);
       res.status(500).json({ message: "Failed to fetch subscription" });
+    }
+  });
+
+  app.post("/api/checkout", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const user = (req as any).user;
+      const email = user?.claims?.email || `user-${userId}@mineraltax.ch`;
+      
+      const stripe = await getUncachableStripeClient();
+      const subscription = await storage.getOrCreateSubscription(userId);
+      
+      let customerId = subscription.stripeCustomerId;
+      
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email,
+          metadata: { userId },
+        });
+        customerId = customer.id;
+        await storage.updateStripeCustomerId(userId, customerId);
+      }
+      
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+        mode: "subscription",
+        success_url: `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/settings`,
+        metadata: { userId },
+      });
+      
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  app.get("/api/checkout/success", isAuthenticated, async (req, res) => {
+    try {
+      const { session_id } = req.query;
+      if (!session_id || typeof session_id !== "string") {
+        return res.status(400).json({ message: "Missing session_id" });
+      }
+      
+      const stripe = await getUncachableStripeClient();
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      
+      if (session.payment_status === "paid" && session.metadata?.userId) {
+        await storage.updateSubscriptionStatus(session.metadata.userId, "active");
+        
+        if (session.subscription) {
+          await storage.updateStripeSubscriptionId(
+            session.metadata.userId, 
+            session.subscription as string
+          );
+        }
+      }
+      
+      res.json({ success: true, status: session.payment_status });
+    } catch (error) {
+      console.error("Error verifying checkout:", error);
+      res.status(500).json({ message: "Failed to verify checkout" });
     }
   });
 

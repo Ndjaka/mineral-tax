@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { getStripeClient } from "./stripeClient";
+import { storage } from "./storage";
 
 const app = express();
 const httpServer = createServer(app);
@@ -12,6 +14,53 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+app.post(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const signature = req.headers["stripe-signature"];
+    if (!signature) {
+      return res.status(400).json({ error: "Missing stripe-signature" });
+    }
+
+    try {
+      const stripe = await getStripeClient();
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        console.log("STRIPE_WEBHOOK_SECRET not set, skipping webhook verification");
+        return res.status(200).json({ received: true });
+      }
+
+      const sig = Array.isArray(signature) ? signature[0] : signature;
+      const event = stripe.webhooks.constructEvent(req.body as Buffer, sig, webhookSecret);
+      
+      console.log(`Stripe webhook received: ${event.type}`);
+      
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object as any;
+        const userId = session.metadata?.userId;
+        
+        if (userId) {
+          console.log(`Activating subscription for user ${userId}`);
+          await storage.updateSubscriptionStatus(userId, "active");
+          if (session.customer) {
+            await storage.updateStripeCustomerId(userId, session.customer);
+          }
+          if (session.subscription) {
+            await storage.updateStripeSubscriptionId(userId, session.subscription);
+          }
+        }
+      }
+      
+      res.status(200).json({ received: true });
+    } catch (error: any) {
+      console.error("Webhook error:", error.message);
+      res.status(400).json({ error: "Webhook processing error" });
+    }
+  }
+);
 
 app.use(
   express.json({

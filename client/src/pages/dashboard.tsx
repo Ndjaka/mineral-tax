@@ -1,10 +1,14 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
   Truck,
   Fuel,
@@ -28,6 +32,31 @@ interface DashboardStats {
 export default function DashboardPage() {
   const { t } = useI18n();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    
+    if (sessionId) {
+      fetch(`/api/checkout/success?session_id=${sessionId}`, { credentials: "include" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.status === "paid") {
+            toast({
+              title: t.common.success,
+              description: t.settings.subscriptionStatus + ": " + t.settings.active,
+            });
+            queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
+          }
+        })
+        .catch(console.error)
+        .finally(() => {
+          window.history.replaceState({}, "", "/dashboard");
+        });
+    }
+  }, []);
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -190,7 +219,7 @@ export default function DashboardPage() {
               <div className="text-center py-8 text-muted-foreground">
                 <Fuel className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>{t.common.noData}</p>
-                <Button variant="link" asChild className="mt-2">
+                <Button variant="ghost" asChild className="mt-2">
                   <Link href="/fuel?action=add">{t.fuel.addEntry}</Link>
                 </Button>
               </div>

@@ -1,5 +1,8 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useI18n, languageNames, type Language } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { User, Globe, CreditCard, Shield, ExternalLink } from "lucide-react";
+import { User, Globe, CreditCard, Shield, ExternalLink, Loader2 } from "lucide-react";
 
 export default function SettingsPage() {
   const { t, language, setLanguage } = useI18n();
@@ -20,9 +23,48 @@ export default function SettingsPage() {
 
   const languages: Language[] = ["fr", "de", "it", "en"];
 
+  const { data: subscription } = useQuery<{
+    status: string;
+    trialDaysRemaining: number;
+    canExport: boolean;
+  }>({
+    queryKey: ["/api/subscription"],
+  });
+
+  const checkoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/checkout");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+  });
+
+  const handleSubscribe = () => {
+    checkoutMutation.mutate();
+  };
+
   const userInitials = user
     ? `${user.firstName?.charAt(0) || ""}${user.lastName?.charAt(0) || ""}`.toUpperCase() || "U"
     : "U";
+  
+  const getStatusBadge = () => {
+    if (!subscription) return <Badge variant="secondary">{t.settings.inactive}</Badge>;
+    
+    switch (subscription.status) {
+      case "active":
+        return <Badge className="bg-green-500 hover:bg-green-600">{t.settings.active}</Badge>;
+      case "trial":
+        return <Badge variant="secondary">{t.settings.trial} ({subscription.trialDaysRemaining}j)</Badge>;
+      case "trial_expired":
+        return <Badge variant="destructive">{t.settings.trialExpired}</Badge>;
+      default:
+        return <Badge variant="secondary">{t.settings.inactive}</Badge>;
+    }
+  };
 
   return (
     <div className="p-6 space-y-6 max-w-3xl mx-auto">
@@ -102,21 +144,33 @@ export default function SettingsPage() {
                 {t.landing.annualSubscription}
               </p>
             </div>
-            <Badge variant="secondary">{t.settings.inactive}</Badge>
+            {getStatusBadge()}
           </div>
 
-          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-lg">250 CHF</p>
-                <p className="text-sm text-muted-foreground">{t.landing.perYear}</p>
+          {subscription?.status !== "active" && (
+            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-lg">250 CHF</p>
+                  <p className="text-sm text-muted-foreground">{t.landing.perYear}</p>
+                </div>
+                <Button 
+                  onClick={handleSubscribe}
+                  disabled={checkoutMutation.isPending}
+                  data-testid="button-subscribe"
+                >
+                  {checkoutMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      {t.settings.subscribe}
+                      <ExternalLink className="h-4 w-4 ml-2" />
+                    </>
+                  )}
+                </Button>
               </div>
-              <Button data-testid="button-subscribe">
-                {t.settings.subscribe}
-                <ExternalLink className="h-4 w-4 ml-2" />
-              </Button>
             </div>
-          </div>
+          )}
 
           <p className="text-xs text-muted-foreground">
             {t.reports.taxasInfo}
