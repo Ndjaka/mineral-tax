@@ -3,6 +3,16 @@ import Stripe from 'stripe';
 let connectionSettings: any;
 
 async function getCredentials() {
+  // Priority: Use user's own Stripe keys from environment variables
+  if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLIC_KEY) {
+    console.log('[Stripe] Using Live keys from environment variables');
+    return {
+      publishableKey: process.env.STRIPE_PUBLIC_KEY,
+      secretKey: process.env.STRIPE_SECRET_KEY,
+    };
+  }
+
+  // Fallback: Use Replit connector
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
@@ -11,7 +21,7 @@ async function getCredentials() {
       : null;
 
   if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+    throw new Error('Stripe keys not configured. Please set STRIPE_SECRET_KEY and STRIPE_PUBLIC_KEY.');
   }
 
   const connectorName = 'stripe';
