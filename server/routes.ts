@@ -7,7 +7,47 @@ import { z } from "zod";
 import PDFDocument from "pdfkit";
 import { getUncachableStripeClient } from "./stripeClient";
 
-const STRIPE_PRICE_ID = "price_1SoTncAQocW3bCNRDohSEX7u";
+async function getOrCreateStripePrice(stripe: any): Promise<string> {
+  const productName = "MineralTax Swiss - Abonnement Annuel";
+  
+  const existingProducts = await stripe.products.search({
+    query: `name:'${productName}'`,
+  });
+  
+  let productId: string;
+  
+  if (existingProducts.data.length > 0) {
+    productId = existingProducts.data[0].id;
+  } else {
+    const product = await stripe.products.create({
+      name: productName,
+      description: "Abonnement annuel MineralTax Swiss - Gestion des remboursements de l'impôt sur les huiles minérales",
+    });
+    productId = product.id;
+  }
+  
+  const existingPrices = await stripe.prices.list({
+    product: productId,
+    active: true,
+  });
+  
+  const matchingPrice = existingPrices.data.find(
+    (p: any) => p.unit_amount === 25000 && p.currency === "chf" && p.recurring?.interval === "year"
+  );
+  
+  if (matchingPrice) {
+    return matchingPrice.id;
+  }
+  
+  const price = await stripe.prices.create({
+    product: productId,
+    unit_amount: 25000,
+    currency: "chf",
+    recurring: { interval: "year" },
+  });
+  
+  return price.id;
+}
 
 const SUPPORTED_LANGUAGES = ["fr", "de", "it", "en"] as const;
 type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
@@ -320,10 +360,12 @@ export async function registerRoutes(
       
       const baseUrl = `${req.protocol}://${req.get("host")}`;
       
+      const priceId = await getOrCreateStripePrice(stripe);
+      
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ["card"],
-        line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+        line_items: [{ price: priceId, quantity: 1 }],
         mode: "subscription",
         success_url: `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/settings`,
