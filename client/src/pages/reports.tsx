@@ -26,8 +26,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, FileText, Download, Calendar, Loader2 } from "lucide-react";
+import { Plus, FileText, Download, Calendar, Loader2, HelpCircle, FileSpreadsheet, ExternalLink, Key, Building, AppWindow } from "lucide-react";
 import type { Report } from "@shared/schema";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const reportFormSchema = z.object({
   periodStart: z.string().min(1),
@@ -40,6 +41,7 @@ export default function ReportsPage() {
   const { t, language } = useI18n();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
 
   const form = useForm<ReportFormData>({
     resolver: zodResolver(reportFormSchema),
@@ -92,6 +94,27 @@ export default function ReportsPage() {
     },
   });
 
+  const exportCsvMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      const response = await fetch(`/api/reports/${reportId}/csv`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to export");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mineraltax-data-${reportId}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    },
+    onError: () => {
+      toast({ title: t.common.error, variant: "destructive" });
+    },
+  });
+
   const onSubmit = (data: ReportFormData) => {
     generateMutation.mutate(data);
   };
@@ -132,11 +155,24 @@ export default function ReportsPage() {
             {t.reports.formReference}
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} data-testid="button-generate-report">
-          <Plus className="h-4 w-4 mr-2" />
-          {t.reports.generate}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsHelpDialogOpen(true)} data-testid="button-admin-help">
+            <HelpCircle className="h-4 w-4 mr-2" />
+            {t.reports.adminHelp}
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)} data-testid="button-generate-report">
+            <Plus className="h-4 w-4 mr-2" />
+            {t.reports.generate}
+          </Button>
+        </div>
       </div>
+
+      <Alert>
+        <FileText className="h-4 w-4" />
+        <AlertDescription>
+          {t.reports.form4535Notice}
+        </AlertDescription>
+      </Alert>
 
       {isLoading ? (
         <div className="space-y-4">
@@ -191,21 +227,39 @@ export default function ReportsPage() {
                       </p>
                     </div>
 
-                    <Button
-                      variant="outline"
-                      onClick={() => downloadMutation.mutate(report.id)}
-                      disabled={downloadMutation.isPending}
-                      data-testid={`button-download-${report.id}`}
-                    >
-                      {downloadMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Download className="h-4 w-4 mr-2" />
-                          PDF
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => exportCsvMutation.mutate(report.id)}
+                        disabled={exportCsvMutation.isPending}
+                        data-testid={`button-export-csv-${report.id}`}
+                        title={t.reports.exportTaxasDesc}
+                      >
+                        {exportCsvMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <FileSpreadsheet className="h-4 w-4 mr-2" />
+                            Taxas
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => downloadMutation.mutate(report.id)}
+                        disabled={downloadMutation.isPending}
+                        data-testid={`button-download-${report.id}`}
+                      >
+                        {downloadMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-2" />
+                            PDF
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -293,6 +347,65 @@ export default function ReportsPage() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t.reports.adminHelpTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="flex gap-4">
+              <div className="p-3 rounded-lg bg-primary/10 h-fit">
+                <Key className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-semibold">{t.reports.adminHelpLoginCH}</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t.reports.adminHelpLoginCHDesc}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <div className="p-3 rounded-lg bg-primary/10 h-fit">
+                <Building className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-semibold">{t.reports.adminHelpPartner}</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t.reports.adminHelpPartnerDesc}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <div className="p-3 rounded-lg bg-primary/10 h-fit">
+                <AppWindow className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-semibold">{t.reports.adminHelpTaxas}</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t.reports.adminHelpTaxasDesc}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={() => window.open("https://www.bazg.admin.ch/", "_blank")}
+              data-testid="button-ofdf-portal"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              {t.reports.adminHelpLink}
+            </Button>
+            <Button onClick={() => setIsHelpDialogOpen(false)}>
+              {t.common.close}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

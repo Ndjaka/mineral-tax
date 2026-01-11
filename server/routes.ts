@@ -290,7 +290,94 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/reports/:id/csv", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const report = await storage.getReport(req.params.id, userId);
+      
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      const details = await storage.getReportDetails(
+        userId, 
+        new Date(report.periodStart), 
+        new Date(report.periodEnd)
+      );
+
+      const csvContent = generateTaxasCsv(report, details.machines, details.fuelEntries);
+      
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="mineraltax-data-${report.id}.csv"`);
+      res.send(csvContent);
+    } catch (error) {
+      console.error("Error generating CSV:", error);
+      res.status(500).json({ message: "Failed to generate CSV" });
+    }
+  });
+
   return httpServer;
+}
+
+const OFDF_MACHINE_TYPES: Record<string, string> = {
+  excavator: "Bagger / Excavatrice",
+  loader: "Lader / Chargeuse",
+  crane: "Kran / Grue",
+  generator: "Stromaggregat / Groupe électrogène",
+  compressor: "Kompressor / Compresseur",
+  forklift: "Gabelstapler / Chariot élévateur",
+  dumper: "Dumper / Tombereau",
+  roller: "Walze / Rouleau",
+  other: "Andere / Autre",
+};
+
+function generateTaxasCsv(
+  report: any,
+  machines: Machine[],
+  fuelEntries: (FuelEntry & { machine?: Machine })[]
+): string {
+  const lines: string[] = [];
+  
+  lines.push("Date;Invoice_Number;Machine_Name;Machine_Type;Volume_Liters;Fuel_Type;Eligible;Rate_CHF;Amount_CHF");
+  
+  for (const entry of fuelEntries) {
+    const machine = entry.machine || machines.find(m => m.id === entry.machineId);
+    const isEligible = machine?.isEligible ?? true;
+    const volumeLiters = parseFloat(entry.volumeLiters.toString());
+    const rate = REIMBURSEMENT_RATE_CHF_PER_LITER;
+    const amount = isEligible ? volumeLiters * rate : 0;
+    
+    const invoiceDate = entry.invoiceDate ? new Date(entry.invoiceDate) : null;
+    const dateStr = invoiceDate && !isNaN(invoiceDate.getTime()) 
+      ? invoiceDate.toISOString().split('T')[0] 
+      : "";
+    
+    const machineType = machine?.type 
+      ? (OFDF_MACHINE_TYPES[machine.type] || OFDF_MACHINE_TYPES.other) 
+      : OFDF_MACHINE_TYPES.other;
+    
+    lines.push([
+      dateStr,
+      entry.invoiceNumber || "",
+      machine?.name || "",
+      machineType,
+      volumeLiters.toFixed(2),
+      entry.fuelType || "diesel",
+      isEligible ? "1" : "0",
+      rate.toFixed(4),
+      amount.toFixed(2)
+    ].join(";"));
+  }
+  
+  lines.push("");
+  lines.push("Total_Volume_Liters;Eligible_Volume_Liters;Reimbursement_Amount_CHF");
+  lines.push([
+    parseFloat(report.totalVolumeLiters).toFixed(2),
+    parseFloat(report.eligibleVolumeLiters).toFixed(2),
+    parseFloat(report.reimbursementAmount).toFixed(2)
+  ].join(";"));
+  
+  return lines.join("\n");
 }
 
 async function generatePdf(
@@ -315,7 +402,7 @@ async function generatePdf(
         rate: "Taux de remboursement OFDF",
         amount: "Montant du remboursement demandé",
         generated: "Document généré le",
-        footer: "Ce document a été généré par MineralTax Swiss pour être joint aux demandes de remboursement officielles.",
+        footer: "Ce document a été généré par MineralTax Swiss et sert de justificatif pour le formulaire officiel 45.35 de l'administration fédérale suisse.",
         taxas: "Compatible avec l'application Taxas",
         declaration: "Déclaration de conformité",
         declarationText: "Je certifie que les données ci-dessus sont exactes et que le carburant déclaré a été utilisé exclusivement pour des machines hors route éligibles au remboursement de l'impôt sur les huiles minérales conformément à la législation suisse en vigueur.",
@@ -345,7 +432,7 @@ async function generatePdf(
         rate: "BAZG-Rückerstattungssatz",
         amount: "Beantragter Rückerstattungsbetrag",
         generated: "Dokument erstellt am",
-        footer: "Dieses Dokument wurde von MineralTax Swiss erstellt, um offiziellen Rückerstattungsanträgen beigefügt zu werden.",
+        footer: "Dieses Dokument wurde von MineralTax Swiss erstellt und dient als Nachweis für das offizielle Formular 45.35 der schweizerischen Bundesverwaltung.",
         taxas: "Kompatibel mit der Taxas-Anwendung",
         declaration: "Konformitätserklärung",
         declarationText: "Ich bestätige, dass die oben genannten Angaben korrekt sind und der deklarierte Treibstoff ausschliesslich für Offroad-Maschinen verwendet wurde, die gemäss der geltenden schweizerischen Gesetzgebung zur Rückerstattung der Mineralölsteuer berechtigt sind.",
@@ -375,7 +462,7 @@ async function generatePdf(
         rate: "Tasso di rimborso AFD",
         amount: "Importo del rimborso richiesto",
         generated: "Documento generato il",
-        footer: "Questo documento è stato generato da MineralTax Swiss per essere allegato alle richieste di rimborso ufficiali.",
+        footer: "Questo documento è stato generato da MineralTax Swiss e serve come giustificativo per il modulo ufficiale 45.35 dell'amministrazione federale svizzera.",
         taxas: "Compatibile con l'applicazione Taxas",
         declaration: "Dichiarazione di conformità",
         declarationText: "Certifico che i dati sopra riportati sono esatti e che il carburante dichiarato è stato utilizzato esclusivamente per macchine fuoristrada idonee al rimborso dell'imposta sugli oli minerali ai sensi della legislazione svizzera vigente.",
@@ -405,7 +492,7 @@ async function generatePdf(
         rate: "FOCBS Reimbursement Rate",
         amount: "Requested Reimbursement Amount",
         generated: "Document generated on",
-        footer: "This document was generated by MineralTax Swiss to be attached to official reimbursement requests.",
+        footer: "This document was generated by MineralTax Swiss and serves as supporting documentation for the official Form 45.35 of the Swiss federal administration.",
         taxas: "Compatible with Taxas application",
         declaration: "Declaration of Compliance",
         declarationText: "I certify that the above data is accurate and that the declared fuel was used exclusively for off-road machines eligible for mineral oil tax reimbursement in accordance with current Swiss legislation.",
