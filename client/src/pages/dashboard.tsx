@@ -16,7 +16,9 @@ import {
   TrendingUp,
   Plus,
   Calculator,
+  CheckCircle,
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Machine, FuelEntry, Report } from "@shared/schema";
 import { REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
 
@@ -41,17 +43,28 @@ export default function DashboardPage() {
     
     if (sessionId) {
       fetch(`/api/checkout/success?session_id=${sessionId}`, { credentials: "include" })
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error("Verification failed");
+          return res.json();
+        })
         .then(data => {
           if (data.success && data.status === "paid") {
             toast({
-              title: t.common.success,
-              description: t.settings.subscriptionStatus + ": " + t.settings.active,
+              title: t.subscription.congratulations,
+              description: t.subscription.subscriptionActiveMessage,
+              duration: 10000,
             });
             queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
           }
         })
-        .catch(console.error)
+        .catch((err) => {
+          console.error("Payment verification error:", err);
+          toast({
+            title: t.common.error,
+            description: "Erreur de vérification du paiement",
+            variant: "destructive",
+          });
+        })
         .finally(() => {
           window.history.replaceState({}, "", "/dashboard");
         });
@@ -64,6 +77,13 @@ export default function DashboardPage() {
 
   const { data: recentEntries, isLoading: entriesLoading } = useQuery<(FuelEntry & { machine: Machine })[]>({
     queryKey: ["/api/fuel-entries", { limit: 5 }],
+  });
+
+  const { data: subscription } = useQuery<{
+    status: string;
+    trialDaysRemaining: number;
+  }>({
+    queryKey: ["/api/subscription"],
   });
 
   const formatCurrency = (amount: number) => {
@@ -144,6 +164,16 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {subscription?.status === "active" && (
+        <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800" data-testid="alert-subscription-active">
+          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="text-green-800 dark:text-green-200">
+            <span className="font-semibold">{t.subscription.congratulations}</span>{" "}
+            {t.subscription.subscriptionActiveMessage}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {summaryCards.map((card, index) => (

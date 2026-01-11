@@ -168,6 +168,8 @@ export const translations = {
       subscribe: "S'abonner maintenant",
       subscriptionRequired: "Abonnement requis pour exporter les rapports",
       quarterlyReminder: "Rappel trimestriel: Finalisez vos saisies et générez vos rapports OFDF",
+      congratulations: "Félicitations !",
+      subscriptionActiveMessage: "Votre abonnement MineralTax est actif. Vous pouvez maintenant exporter vos rapports OFDF.",
     },
     terms: {
       title: "Conditions Générales de Vente et d'Utilisation",
@@ -384,6 +386,8 @@ export const translations = {
       subscribe: "Jetzt abonnieren",
       subscriptionRequired: "Abonnement erforderlich zum Exportieren von Berichten",
       quarterlyReminder: "Quartalsende-Erinnerung: Finalisieren Sie Ihre Einträge und erstellen Sie Ihre BAZG-Berichte",
+      congratulations: "Herzlichen Glückwunsch!",
+      subscriptionActiveMessage: "Ihr MineralTax-Abonnement ist aktiv. Sie können jetzt Ihre BAZG-Berichte exportieren.",
     },
     terms: {
       title: "Allgemeine Verkaufs- und Nutzungsbedingungen",
@@ -600,6 +604,8 @@ export const translations = {
       subscribe: "Abbonati ora",
       subscriptionRequired: "Abbonamento richiesto per esportare i rapporti",
       quarterlyReminder: "Promemoria trimestrale: Finalizza le tue voci e genera i rapporti AFD",
+      congratulations: "Congratulazioni!",
+      subscriptionActiveMessage: "Il tuo abbonamento MineralTax è attivo. Ora puoi esportare i tuoi rapporti AFD.",
     },
     terms: {
       title: "Condizioni Generali di Vendita e Utilizzo",
@@ -816,6 +822,8 @@ export const translations = {
       subscribe: "Subscribe now",
       subscriptionRequired: "Subscription required to export reports",
       quarterlyReminder: "Quarterly reminder: Finalize your entries and generate your FOCBS reports",
+      congratulations: "Congratulations!",
+      subscriptionActiveMessage: "Your MineralTax subscription is active. You can now export your FOCBS reports.",
     },
     terms: {
       title: "General Terms of Sale and Use",
