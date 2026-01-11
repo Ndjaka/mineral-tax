@@ -10,6 +10,7 @@ import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TrialBanner } from "@/components/trial-banner";
 import LandingPage from "@/pages/landing";
 import DashboardPage from "@/pages/dashboard";
 import FleetPage from "@/pages/fleet";
@@ -38,6 +39,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           <main className="flex-1 overflow-auto">
+            <div className="px-4 pt-4">
+              <TrialBanner />
+            </div>
             {children}
           </main>
         </div>

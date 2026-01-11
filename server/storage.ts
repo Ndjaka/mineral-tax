@@ -34,7 +34,13 @@ export interface IStorage {
   createReport(data: InsertReport): Promise<Report>;
 
   getSubscription(userId: string): Promise<Subscription | undefined>;
+  getOrCreateSubscription(userId: string): Promise<Subscription>;
   createOrUpdateSubscription(data: InsertSubscription): Promise<Subscription>;
+  updateSubscriptionStatus(userId: string, status: string): Promise<Subscription | undefined>;
+  markTrialReminderSent(userId: string): Promise<void>;
+  getTrialExpiringTomorrow(): Promise<Subscription[]>;
+  getActiveSubscriptionsForQuarterlyReminder(): Promise<Subscription[]>;
+  markQuarterlyReminderSent(userId: string): Promise<void>;
 
   getDashboardStats(userId: string): Promise<{
     totalMachines: number;
@@ -143,6 +149,24 @@ export class DatabaseStorage implements IStorage {
     return subscription;
   }
 
+  async getOrCreateSubscription(userId: string): Promise<Subscription> {
+    let subscription = await this.getSubscription(userId);
+    if (!subscription) {
+      const now = new Date();
+      const trialEnds = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+      [subscription] = await db
+        .insert(subscriptions)
+        .values({
+          userId,
+          status: "trial",
+          trialStartAt: now,
+          trialEndsAt: trialEnds,
+        })
+        .returning();
+    }
+    return subscription;
+  }
+
   async createOrUpdateSubscription(data: InsertSubscription): Promise<Subscription> {
     const [subscription] = await db
       .insert(subscriptions)
@@ -153,6 +177,69 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return subscription;
+  }
+
+  async updateSubscriptionStatus(userId: string, status: string): Promise<Subscription | undefined> {
+    const [subscription] = await db
+      .update(subscriptions)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(subscriptions.userId, userId))
+      .returning();
+    return subscription;
+  }
+
+  async markTrialReminderSent(userId: string): Promise<void> {
+    await db
+      .update(subscriptions)
+      .set({ trialReminderSent: true, updatedAt: new Date() })
+      .where(eq(subscriptions.userId, userId));
+  }
+
+  async getTrialExpiringTomorrow(): Promise<Subscription[]> {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const dayAfter = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    
+    return db
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.status, "trial"),
+          eq(subscriptions.trialReminderSent, false),
+          gte(subscriptions.trialEndsAt, tomorrow),
+          lte(subscriptions.trialEndsAt, dayAfter)
+        )
+      );
+  }
+
+  async getActiveSubscriptionsForQuarterlyReminder(): Promise<Subscription[]> {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const quarterEndMonths = [2, 5, 8, 11];
+    
+    if (!quarterEndMonths.includes(currentMonth)) {
+      return [];
+    }
+    
+    const quarterStart = new Date(now.getFullYear(), currentMonth, 1);
+    
+    return db
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.status, "active"),
+          sql`(${subscriptions.quarterlyReminderLastSent} IS NULL OR ${subscriptions.quarterlyReminderLastSent} < ${quarterStart})`
+        )
+      );
+  }
+
+  async markQuarterlyReminderSent(userId: string): Promise<void> {
+    await db
+      .update(subscriptions)
+      .set({ quarterlyReminderLastSent: new Date(), updatedAt: new Date() })
+      .where(eq(subscriptions.userId, userId));
   }
 
   async getDashboardStats(userId: string): Promise<{

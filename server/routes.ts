@@ -264,9 +264,67 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/subscription", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const subscription = await storage.getOrCreateSubscription(userId);
+      
+      const now = new Date();
+      let effectiveStatus = subscription.status;
+      let trialDaysRemaining = 0;
+      
+      if (subscription.status === "trial" && subscription.trialEndsAt) {
+        const trialEnd = new Date(subscription.trialEndsAt);
+        if (now > trialEnd) {
+          effectiveStatus = "trial_expired";
+          await storage.updateSubscriptionStatus(userId, "trial_expired");
+        } else {
+          trialDaysRemaining = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
+        }
+      }
+      
+      res.json({
+        ...subscription,
+        status: effectiveStatus,
+        trialDaysRemaining,
+        canExport: effectiveStatus === "trial" || effectiveStatus === "active",
+      });
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      res.status(500).json({ message: "Failed to fetch subscription" });
+    }
+  });
+
+  async function checkExportAllowed(userId: string): Promise<{ allowed: boolean; reason?: string }> {
+    const subscription = await storage.getOrCreateSubscription(userId);
+    const now = new Date();
+    
+    if (subscription.status === "active") {
+      return { allowed: true };
+    }
+    
+    if (subscription.status === "trial" && subscription.trialEndsAt) {
+      const trialEnd = new Date(subscription.trialEndsAt);
+      if (now <= trialEnd) {
+        return { allowed: true };
+      }
+    }
+    
+    return { allowed: false, reason: "subscription_required" };
+  }
+
   app.get("/api/reports/:id/pdf", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
+      
+      const exportCheck = await checkExportAllowed(userId);
+      if (!exportCheck.allowed) {
+        return res.status(403).json({ 
+          message: "Subscription required to export reports",
+          code: exportCheck.reason 
+        });
+      }
+      
       const report = await storage.getReport(req.params.id, userId);
       
       if (!report) {
@@ -293,6 +351,15 @@ export async function registerRoutes(
   app.get("/api/reports/:id/csv", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
+      
+      const exportCheck = await checkExportAllowed(userId);
+      if (!exportCheck.allowed) {
+        return res.status(403).json({ 
+          message: "Subscription required to export reports",
+          code: exportCheck.reason 
+        });
+      }
+      
       const report = await storage.getReport(req.params.id, userId);
       
       if (!report) {

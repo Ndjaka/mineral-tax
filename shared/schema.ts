@@ -23,6 +23,14 @@ export const fuelTypeEnum = pgEnum("fuel_type", [
   "biodiesel"
 ]);
 
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  "trial",
+  "trial_expired",
+  "active",
+  "cancelled",
+  "inactive"
+]);
+
 export const machines = pgTable("machines", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
@@ -64,9 +72,13 @@ export const reports = pgTable("reports", {
 export const subscriptions = pgTable("subscriptions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().unique(),
-  status: text("status").notNull().default("inactive"),
+  status: subscriptionStatusEnum("status").notNull().default("trial"),
+  trialStartAt: timestamp("trial_start_at").defaultNow(),
+  trialEndsAt: timestamp("trial_ends_at"),
+  trialReminderSent: boolean("trial_reminder_sent").default(false),
   currentPeriodStart: timestamp("current_period_start"),
   currentPeriodEnd: timestamp("current_period_end"),
+  quarterlyReminderLastSent: timestamp("quarterly_reminder_last_sent"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at").defaultNow(),

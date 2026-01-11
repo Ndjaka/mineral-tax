@@ -154,6 +154,13 @@ export const translations = {
       adminHelpLink: "Accéder au portail OFDF",
       form4535Notice: "Ce document sert de justificatif pour le formulaire officiel 45.35 de l'administration fédérale suisse",
     },
+    subscription: {
+      trialDaysRemaining: "{days} jours restants dans votre période d'essai",
+      trialExpired: "Votre période d'essai a expiré. Abonnez-vous pour continuer à exporter vos rapports.",
+      subscribe: "S'abonner maintenant",
+      subscriptionRequired: "Abonnement requis pour exporter les rapports",
+      quarterlyReminder: "Rappel trimestriel: Finalisez vos saisies et générez vos rapports OFDF",
+    },
     settings: {
       title: "Paramètres",
       language: "Langue",
@@ -333,6 +340,13 @@ export const translations = {
       adminHelpTaxasDesc: "Anträge müssen über die Taxas-Anwendung eingereicht werden, die über das BAZG-Portal zugänglich ist.",
       adminHelpLink: "BAZG-Portal aufrufen",
       form4535Notice: "Dieses Dokument dient als Nachweis für das offizielle Formular 45.35 der schweizerischen Bundesverwaltung",
+    },
+    subscription: {
+      trialDaysRemaining: "{days} Tage verbleibend in Ihrer Testphase",
+      trialExpired: "Ihre Testphase ist abgelaufen. Abonnieren Sie, um weiterhin Berichte zu exportieren.",
+      subscribe: "Jetzt abonnieren",
+      subscriptionRequired: "Abonnement erforderlich zum Exportieren von Berichten",
+      quarterlyReminder: "Quartalsende-Erinnerung: Finalisieren Sie Ihre Einträge und erstellen Sie Ihre BAZG-Berichte",
     },
     settings: {
       title: "Einstellungen",
@@ -514,6 +528,13 @@ export const translations = {
       adminHelpLink: "Accedi al portale AFD",
       form4535Notice: "Questo documento serve come giustificativo per il modulo ufficiale 45.35 dell'amministrazione federale svizzera",
     },
+    subscription: {
+      trialDaysRemaining: "{days} giorni rimanenti nel periodo di prova",
+      trialExpired: "Il periodo di prova è scaduto. Abbonati per continuare a esportare i rapporti.",
+      subscribe: "Abbonati ora",
+      subscriptionRequired: "Abbonamento richiesto per esportare i rapporti",
+      quarterlyReminder: "Promemoria trimestrale: Finalizza le tue voci e genera i rapporti AFD",
+    },
     settings: {
       title: "Impostazioni",
       language: "Lingua",
@@ -693,6 +714,13 @@ export const translations = {
       adminHelpTaxasDesc: "Claims must be submitted via the Taxas application, accessible from the FOCBS portal.",
       adminHelpLink: "Access FOCBS Portal",
       form4535Notice: "This document serves as supporting documentation for the official Form 45.35 of the Swiss federal administration",
+    },
+    subscription: {
+      trialDaysRemaining: "{days} days remaining in your trial period",
+      trialExpired: "Your trial period has expired. Subscribe to continue exporting reports.",
+      subscribe: "Subscribe now",
+      subscriptionRequired: "Subscription required to export reports",
+      quarterlyReminder: "Quarterly reminder: Finalize your entries and generate your FOCBS reports",
     },
     settings: {
       title: "Settings",
