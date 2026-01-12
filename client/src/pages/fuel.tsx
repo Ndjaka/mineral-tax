@@ -45,9 +45,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator } from "lucide-react";
+import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import type { Machine, FuelEntry } from "@shared/schema";
 import { REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
+import { extractTextFromImage } from "@/lib/ocr";
 
 const fuelTypes = ["diesel", "gasoline", "biodiesel"] as const;
 
@@ -70,6 +72,8 @@ export default function FuelPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<FuelEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<FuelEntry | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
 
   const form = useForm<FuelEntryFormData>({
     resolver: zodResolver(fuelEntryFormSchema),
@@ -205,6 +209,50 @@ export default function FuelPage() {
 
   const eligibleMachines = machines?.filter((m) => m.isEligible) || [];
 
+  const handleScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    setScanProgress(0);
+
+    try {
+      const result = await extractTextFromImage(file, (progress) => {
+        setScanProgress(progress);
+      });
+
+      handleOpenDialog();
+
+      if (result.extractedData.volume) {
+        form.setValue("volumeLiters", result.extractedData.volume);
+      }
+      if (result.extractedData.date) {
+        form.setValue("invoiceDate", result.extractedData.date);
+      }
+      if (result.extractedData.invoiceNumber) {
+        form.setValue("invoiceNumber", result.extractedData.invoiceNumber);
+      }
+
+      toast({
+        title: t.fuel.scanComplete || "Scan terminé",
+        description: result.extractedData.volume 
+          ? `${result.extractedData.volume} L détecté` 
+          : "Vérifiez les données extraites",
+      });
+    } catch (error) {
+      console.error("OCR error:", error);
+      toast({
+        title: t.common.error,
+        description: "Impossible de lire le ticket",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScanning(false);
+      setScanProgress(0);
+      event.target.value = "";
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -216,11 +264,55 @@ export default function FuelPage() {
             {entries?.length || 0} {t.dashboard.recentEntries.toLowerCase()}
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()} data-testid="button-add-fuel-entry">
-          <Plus className="h-4 w-4 mr-2" />
-          {t.fuel.addEntry}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            disabled={isScanning}
+            className="relative"
+            data-testid="button-scan-ticket"
+          >
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleScan}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              disabled={isScanning}
+            />
+            {isScanning ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {scanProgress}%
+              </>
+            ) : (
+              <>
+                <Camera className="h-4 w-4 mr-2" />
+                {t.fuel.scanTicket || "Scanner"}
+              </>
+            )}
+          </Button>
+          <Button onClick={() => handleOpenDialog()} data-testid="button-add-fuel-entry">
+            <Plus className="h-4 w-4 mr-2" />
+            {t.fuel.addEntry}
+          </Button>
+        </div>
       </div>
+
+      {isScanning && (
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div className="flex-1">
+                <p className="text-sm font-medium mb-2">
+                  {t.fuel.scanningTicket || "Analyse du ticket en cours..."}
+                </p>
+                <Progress value={scanProgress} className="h-2" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <div className="space-y-4">
