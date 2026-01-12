@@ -110,9 +110,16 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  // Dev domain for OAuth callback (required by Replit Auth)
-  const devDomain = process.env.REPLIT_DEV_DOMAIN || `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-  const callbackURL = `https://${devDomain}/api/callback`;
+  // Get all allowed domains from REPLIT_DOMAINS (includes custom domains after publishing)
+  const replitDomains = process.env.REPLIT_DOMAINS?.split(',') || [];
+  const devDomain = process.env.REPLIT_DEV_DOMAIN;
+  
+  // Find the best domain for OAuth callback
+  // Priority: 1. First domain from REPLIT_DOMAINS, 2. Dev domain, 3. Fallback
+  const primaryDomain = replitDomains[0] || devDomain || `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+  const callbackURL = `https://${primaryDomain}/api/callback`;
+  
+  console.log("Auth setup - REPLIT_DOMAINS:", replitDomains, "Primary domain:", primaryDomain);
   
   const getHost = (req: any) => {
     return req.get('x-forwarded-host') || req.get('host') || req.hostname;
@@ -134,25 +141,16 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/login", (req, res, next) => {
     const currentHost = getHost(req);
-    const returnTo = req.query.returnTo as string | undefined;
-    console.log("Login request from host:", currentHost, "dev domain:", devDomain, "returnTo:", returnTo);
+    console.log("Login request from host:", currentHost, "primary domain:", primaryDomain);
     
-    // If we're on the custom domain, redirect to dev domain to do OAuth there
-    if (currentHost !== devDomain && !currentHost.includes('replit')) {
-      console.log("Redirecting to dev domain for OAuth");
-      const redirectUrl = `https://${devDomain}/api/login?returnTo=${encodeURIComponent(currentHost)}`;
-      return res.redirect(redirectUrl);
-    }
-    
-    // Store the return host (either from query param or session)
-    const returnHost = returnTo || currentHost;
-    (req.session as any).returnHost = returnHost;
+    // Store the current host to redirect back after auth
+    (req.session as any).returnHost = currentHost;
     
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
       }
-      console.log("Session saved with returnHost:", returnHost, ", proceeding with OAuth");
+      console.log("Session saved with returnHost:", currentHost, ", proceeding with OAuth");
       passport.authenticate("replitauth", {
         prompt: "login consent",
         scope: ["openid", "email", "profile", "offline_access"],
@@ -161,7 +159,8 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/callback", (req, res, next) => {
-    console.log("Callback received, session ID:", req.sessionID);
+    const currentHost = getHost(req);
+    console.log("Callback received on host:", currentHost, "session ID:", req.sessionID);
     const returnHost = (req.session as any).returnHost;
     console.log("Return host from session:", returnHost);
     
@@ -179,16 +178,16 @@ export async function setupAuth(app: Express) {
           console.error("Login error:", loginErr);
           return res.redirect("/api/login");
         }
-        console.log("Login successful");
+        console.log("Login successful on host:", currentHost);
         
-        // For cross-domain transfer, use token-based redirect
-        if (returnHost && returnHost !== devDomain) {
+        // If return host differs from current host, use token-based redirect
+        if (returnHost && returnHost !== currentHost) {
           console.log("Cross-domain auth: generating token for", returnHost);
           storeAuthToken(user).then((authToken) => {
             delete (req.session as any).returnHost;
             res.redirect(`https://${returnHost}/api/auth/token?token=${authToken}`);
-          }).catch((err) => {
-            console.error("Failed to store auth token:", err);
+          }).catch((tokenErr) => {
+            console.error("Failed to store auth token:", tokenErr);
             res.redirect("/");
           });
           return;
