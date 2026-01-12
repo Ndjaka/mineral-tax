@@ -151,10 +151,7 @@ export default function SubscriptionPage() {
                     </>
                   )}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center mt-3">
-                  Code promo LANCEMENT20 disponible (-20%)
-                </p>
-              </div>
+                              </div>
             )}
 
             {isActive && (

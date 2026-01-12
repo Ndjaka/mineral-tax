@@ -5,7 +5,6 @@ import { createServer } from "http";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { getStripeClient } from "./stripeClient";
 import { storage } from "./storage";
-import { setupPromoCode } from "./setupPromoCode";
 
 const app = express();
 const httpServer = createServer(app);
@@ -113,9 +112,6 @@ app.use((req, res, next) => {
 (async () => {
   await setupAuth(app);
   registerAuthRoutes(app);
-  
-  // Setup Stripe promo code on server start
-  setupPromoCode().catch(err => console.error('[Stripe] Promo code setup error:', err));
   
   await registerRoutes(httpServer, app);
 
