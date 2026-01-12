@@ -40,7 +40,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -48,22 +50,29 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Truck, Search } from "lucide-react";
 import type { Machine } from "@shared/schema";
 
+const machineTypesTransportRoutier = [
+  { value: "transport_marchandises", emoji: "🚛" },
+  { value: "autocars_bus", emoji: "🚌" },
+  { value: "transport_passagers", emoji: "🚐" },
+  { value: "deneigement_routier", emoji: "❄️" },
+] as const;
+
+const machineTypesSecteurs = [
+  { value: "agriculture_sylviculture", emoji: "🚜" },
+  { value: "chantier_carrieres", emoji: "🏗️" },
+  { value: "damage_remontees", emoji: "🏔️" },
+  { value: "peche_navigation", emoji: "⚓" },
+] as const;
+
 const machineTypes = [
-  "excavator",
-  "spider_excavator",
-  "loader",
-  "crane",
-  "drill",
-  "finisher",
-  "milling_machine",
-  "roller",
-  "dumper",
-  "forklift",
-  "crusher",
-  "generator",
-  "compressor",
-  "concrete_pump",
-  "other",
+  "transport_marchandises",
+  "autocars_bus",
+  "transport_passagers",
+  "deneigement_routier",
+  "agriculture_sylviculture",
+  "chantier_carrieres",
+  "damage_remontees",
+  "peche_navigation",
 ] as const;
 
 const machineFormSchema = z.object({
@@ -90,7 +99,7 @@ export default function FleetPage() {
     resolver: zodResolver(machineFormSchema),
     defaultValues: {
       name: "",
-      type: "excavator",
+      type: "chantier_carrieres",
       chassisNumber: "",
       year: undefined,
       power: "",
@@ -161,7 +170,7 @@ export default function FleetPage() {
       setEditingMachine(null);
       form.reset({
         name: "",
-        type: "excavator",
+        type: "chantier_carrieres",
         chassisNumber: "",
         year: undefined,
         power: "",
@@ -347,11 +356,22 @@ export default function FleetPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {machineTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {getMachineTypeLabel(type)}
-                          </SelectItem>
-                        ))}
+                        <SelectGroup>
+                          <SelectLabel>Transport Routier & Voyageurs</SelectLabel>
+                          {machineTypesTransportRoutier.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.emoji} {getMachineTypeLabel(type.value)}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel>Secteurs Spécialisés & Hors-Route</SelectLabel>
+                          {machineTypesSecteurs.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.emoji} {getMachineTypeLabel(type.value)}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
                       </SelectContent>
                     </Select>
                     <FormMessage />
