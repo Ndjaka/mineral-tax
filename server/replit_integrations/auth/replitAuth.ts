@@ -134,16 +134,25 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/login", (req, res, next) => {
     const currentHost = getHost(req);
-    console.log("Login request from host:", currentHost, "dev domain:", devDomain);
+    const returnTo = req.query.returnTo as string | undefined;
+    console.log("Login request from host:", currentHost, "dev domain:", devDomain, "returnTo:", returnTo);
     
-    // Store the original host to redirect back after auth
-    (req.session as any).returnHost = currentHost;
+    // If we're on the custom domain, redirect to dev domain to do OAuth there
+    if (currentHost !== devDomain && !currentHost.includes('replit')) {
+      console.log("Redirecting to dev domain for OAuth");
+      const redirectUrl = `https://${devDomain}/api/login?returnTo=${encodeURIComponent(currentHost)}`;
+      return res.redirect(redirectUrl);
+    }
+    
+    // Store the return host (either from query param or session)
+    const returnHost = returnTo || currentHost;
+    (req.session as any).returnHost = returnHost;
     
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
       }
-      console.log("Session saved, proceeding with OAuth");
+      console.log("Session saved with returnHost:", returnHost, ", proceeding with OAuth");
       passport.authenticate("replitauth", {
         prompt: "login consent",
         scope: ["openid", "email", "profile", "offline_access"],
