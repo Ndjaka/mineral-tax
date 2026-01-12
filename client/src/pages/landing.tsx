@@ -3,7 +3,7 @@ import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Truck, Calculator, FileText, Shield, CheckCircle2, ScrollText } from "lucide-react";
+import { Truck, Calculator, FileText, Shield, CheckCircle2, ScrollText, Camera, Lock } from "lucide-react";
 import { Link } from "wouter";
 
 export default function LandingPage() {
@@ -14,6 +14,11 @@ export default function LandingPage() {
       icon: Truck,
       title: t.landing.feature1Title,
       description: t.landing.feature1Desc,
+    },
+    {
+      icon: Camera,
+      title: t.landing.feature4Title || "Scan OCR",
+      description: t.landing.feature4Desc || "Scannez vos tickets de carburant avec votre smartphone pour extraire automatiquement les données.",
     },
     {
       icon: Calculator,
@@ -216,6 +221,15 @@ export default function LandingPage() {
               >
                 <ScrollText className="h-4 w-4" />
                 <span>{t.nav.terms}</span>
+              </Link>
+              <span className="text-muted-foreground/50">|</span>
+              <Link 
+                href="/privacy" 
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                data-testid="link-privacy-footer"
+              >
+                <Lock className="h-4 w-4" />
+                <span>{t.privacy?.title || "Confidentialité"}</span>
               </Link>
               <span className="text-muted-foreground/50">|</span>
               <span>OFDF / BAZG / AFD / FOCBS</span>

@@ -21,6 +21,7 @@ import CalculatorPage from "@/pages/calculator";
 import ReportsPage from "@/pages/reports";
 import SettingsPage from "@/pages/settings";
 import TermsPage from "@/pages/terms";
+import PrivacyPage from "@/pages/privacy";
 import SuccessPage from "@/pages/success";
 import SubscriptionPage from "@/pages/subscription";
 import NotFound from "@/pages/not-found";
@@ -71,6 +72,7 @@ function AuthenticatedRouter() {
         <Route path="/reports" component={ReportsPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/terms" component={TermsPage} />
+        <Route path="/privacy" component={PrivacyPage} />
         <Route path="/success" component={SuccessPage} />
         <Route path="/subscription" component={SubscriptionPage} />
         <Route component={NotFound} />
@@ -98,6 +100,19 @@ function AppContent() {
 
   if (location === "/terms" && !user) {
     return <PublicTermsPage />;
+  }
+
+  if (location === "/privacy" && !user) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <PrivacyPage />
+        <div className="border-t py-4 mt-auto">
+          <div className="max-w-4xl mx-auto px-6 text-center text-sm text-muted-foreground">
+            <a href="/" className="text-primary hover:underline">&larr; Retour à l'accueil</a>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (isLoading) {
