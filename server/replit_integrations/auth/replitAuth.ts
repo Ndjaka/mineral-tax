@@ -1,5 +1,6 @@
 import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
+import crypto from "crypto";
 
 import passport from "passport";
 import session from "express-session";
@@ -7,6 +8,36 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { authStorage } from "./storage";
+import { db } from "../../db";
+import { sql } from "drizzle-orm";
+
+function generateAuthToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+async function storeAuthToken(user: any): Promise<string> {
+  const token = generateAuthToken();
+  const expires = new Date(Date.now() + 60000); // 1 minute expiry
+  const userData = JSON.stringify(user);
+  
+  await db.execute(sql`
+    INSERT INTO auth_tokens (token, user_data, expires_at)
+    VALUES (${token}, ${userData}, ${expires})
+  `);
+  
+  return token;
+}
+
+async function consumeAuthToken(token: string): Promise<any | null> {
+  const result = await db.execute(sql`
+    DELETE FROM auth_tokens 
+    WHERE token = ${token} AND expires_at > NOW()
+    RETURNING user_data
+  `);
+  
+  if (result.rows.length === 0) return null;
+  return JSON.parse(result.rows[0].user_data as string);
+}
 
 const getOidcConfig = memoize(
   async () => {
@@ -79,17 +110,20 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  // Dynamic callback based on request host
+  // Dev domain for OAuth callback (required by Replit Auth)
+  const devDomain = process.env.REPLIT_DEV_DOMAIN || `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+  const callbackURL = `https://${devDomain}/api/callback`;
+  
   const getHost = (req: any) => {
     return req.get('x-forwarded-host') || req.get('host') || req.hostname;
   };
 
-  // Register strategy without static callback - we'll provide it per-request
   const strategy = new Strategy(
     {
       name: "replitauth",
       config,
       scope: "openid email profile offline_access",
+      callbackURL,
     },
     verify
   );
@@ -100,26 +134,28 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/login", (req, res, next) => {
     const currentHost = getHost(req);
-    const callbackURL = `https://${currentHost}/api/callback`;
-    console.log("Login request from host:", currentHost, "callback:", callbackURL);
-    console.log("Starting OAuth, session ID:", req.sessionID);
+    console.log("Login request from host:", currentHost, "dev domain:", devDomain);
+    
+    // Store the original host to redirect back after auth
+    (req.session as any).returnHost = currentHost;
     
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
       }
       console.log("Session saved, proceeding with OAuth");
-      (passport.authenticate as any)("replitauth", {
+      passport.authenticate("replitauth", {
         prompt: "login consent",
         scope: ["openid", "email", "profile", "offline_access"],
-        redirect_uri: callbackURL,
       })(req, res, next);
     });
   });
 
   app.get("/api/callback", (req, res, next) => {
     console.log("Callback received, session ID:", req.sessionID);
-    console.log("Session data:", JSON.stringify(req.session));
+    const returnHost = (req.session as any).returnHost;
+    console.log("Return host from session:", returnHost);
+    
     passport.authenticate("replitauth", (err: any, user: any, info: any) => {
       if (err) {
         console.error("Auth callback error:", err);
@@ -134,10 +170,53 @@ export async function setupAuth(app: Express) {
           console.error("Login error:", loginErr);
           return res.redirect("/api/login");
         }
-        console.log("Login successful, redirecting to /");
+        console.log("Login successful");
+        
+        // For cross-domain transfer, use token-based redirect
+        if (returnHost && returnHost !== devDomain) {
+          console.log("Cross-domain auth: generating token for", returnHost);
+          storeAuthToken(user).then((authToken) => {
+            delete (req.session as any).returnHost;
+            res.redirect(`https://${returnHost}/api/auth/token?token=${authToken}`);
+          }).catch((err) => {
+            console.error("Failed to store auth token:", err);
+            res.redirect("/");
+          });
+          return;
+        }
+        
         return res.redirect("/");
       });
     })(req, res, next);
+  });
+
+  // Token-based session establishment for cross-domain auth
+  app.get("/api/auth/token", async (req, res) => {
+    const token = req.query.token as string;
+    if (!token) {
+      console.error("No auth token provided");
+      return res.redirect("/");
+    }
+    
+    try {
+      const user = await consumeAuthToken(token);
+      if (!user) {
+        console.error("Invalid or expired auth token");
+        return res.redirect("/");
+      }
+      
+      console.log("Token auth successful, establishing session");
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error("Token login error:", err);
+          return res.redirect("/");
+        }
+        return res.redirect("/");
+      });
+    } catch (error) {
+      console.error("Token consumption error:", error);
+      return res.redirect("/");
+    }
   });
 
   app.get("/api/logout", (req, res) => {

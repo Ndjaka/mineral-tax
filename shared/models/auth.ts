@@ -25,5 +25,16 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Cross-domain auth token storage for custom domain authentication
+export const authTokens = pgTable(
+  "auth_tokens",
+  {
+    token: varchar("token").primaryKey(),
+    userData: jsonb("user_data").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+  },
+  (table) => [index("IDX_auth_token_expires").on(table.expiresAt)]
+);
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
