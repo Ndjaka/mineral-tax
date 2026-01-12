@@ -166,14 +166,6 @@ export default function DashboardPage() {
           </h1>
           <p className="text-muted-foreground mt-1">{t.dashboard.summary}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button asChild data-testid="button-quick-fuel">
-            <Link href="/fuel?action=add">
-              <Plus className="h-4 w-4 mr-2" />
-              {t.dashboard.addFuelEntry}
-            </Link>
-          </Button>
-        </div>
       </div>
 
       {subscription?.status === "active" && (
