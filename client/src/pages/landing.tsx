@@ -3,7 +3,7 @@ import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Truck, Calculator, FileText, Shield, CheckCircle2, ScrollText, Camera, Lock } from "lucide-react";
+import { Truck, Calculator, FileText, Shield, CheckCircle2, ScrollText, Camera, Lock, HelpCircle, Building2, ClipboardList, Banknote } from "lucide-react";
 import { Link } from "wouter";
 
 export default function LandingPage() {
@@ -77,11 +77,15 @@ export default function LandingPage() {
                 </div>
                 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-                  {t.landing.heroTitle}
+                  Taxe sur les huiles minérales en Suisse
+                  <span className="block text-2xl md:text-3xl mt-2 text-muted-foreground font-normal">
+                    (Taxe minéral Suisse)
+                  </span>
                 </h1>
                 
                 <p className="text-lg text-muted-foreground max-w-lg">
-                  {t.landing.heroSubtitle}
+                  Simplifiez vos demandes de remboursement de l'impôt sur les huiles minérales. 
+                  Plateforme professionnelle compatible avec Taxas et le formulaire 45.35.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -114,9 +118,9 @@ export default function LandingPage() {
                 <div className="relative">
                   <Card className="bg-card/50 backdrop-blur border-2">
                     <CardContent className="p-6 space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium text-muted-foreground">
-                          {t.reports.rate}
+                          Taux de remboursement OFDF
                         </span>
                         <span className="text-2xl font-bold text-primary font-mono">
                           0.3405 CHF/L
@@ -125,16 +129,16 @@ export default function LandingPage() {
                       <div className="h-px bg-border" />
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{t.reports.totalVolume}</span>
+                          <span className="text-muted-foreground">Volume total</span>
                           <span className="font-mono">5,000 L</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{t.reports.eligibleVolume}</span>
+                          <span className="text-muted-foreground">Volume éligible</span>
                           <span className="font-mono">4,500 L</span>
                         </div>
                         <div className="h-px bg-border" />
-                        <div className="flex justify-between">
-                          <span className="font-medium">{t.reports.reimbursementAmount}</span>
+                        <div className="flex justify-between gap-2">
+                          <span className="font-medium">Remboursement</span>
                           <span className="text-xl font-bold text-primary font-mono">
                             CHF 1,532.25
                           </span>
@@ -150,10 +154,76 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-20 bg-muted/30">
+        <section className="py-20 bg-muted/30" id="quest-ce-que-la-taxe">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{t.landing.trustedBy}</h2>
+              <h2 className="text-3xl font-bold mb-4">Qu'est-ce que la taxe sur les huiles minérales ?</h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                La taxe sur les huiles minérales (Mineralölsteuer) est un impôt spécial prélevé sur les carburants, 
+                huiles de chauffage et gaz en Suisse. Elle est perçue au niveau du commerce et répercutée sur le consommateur final.
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="hover-elevate transition-all duration-200">
+                <CardContent className="p-6 space-y-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <HelpCircle className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Produits concernés</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Diesel, essence, huiles de chauffage, gaz naturel et autres combustibles fossiles utilisés en Suisse.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover-elevate transition-all duration-200">
+                <CardContent className="p-6 space-y-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Building2 className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Qui est concerné ?</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Entreprises de construction, agriculteurs, exploitants de machines hors route et flottes professionnelles.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover-elevate transition-all duration-200">
+                <CardContent className="p-6 space-y-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <ClipboardList className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Plateforme Taxas</h3>
+                  <p className="text-muted-foreground text-sm">
+                    La plateforme officielle Taxas de l'OFDF gère les déclarations et remboursements de la taxe minérale.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover-elevate transition-all duration-200">
+                <CardContent className="p-6 space-y-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Banknote className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Exemptions fiscales</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Réductions et remboursements disponibles pour certains usages professionnels hors route.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20" id="comment-fonctionne">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Comment fonctionne l'impôt minéral en Suisse ?</h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                L'impôt sur les huiles minérales Suisse est calculé selon le volume de carburant consommé. 
+                Le taux actuel de remboursement est de <strong>0.3405 CHF par litre</strong> pour les machines hors route.
+              </p>
             </div>
             
             <div className="grid md:grid-cols-3 gap-6">
@@ -172,16 +242,79 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-20">
+        <section className="py-20 bg-muted/30" id="demande-remboursement">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Comment déposer une demande de remboursement ?</h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                MineralTax simplifie la procédure de remboursement de la taxe minérale. 
+                Générez des rapports compatibles avec le formulaire 45.35 et soumettez-les via Taxas.
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
+                  1
+                </div>
+                <h3 className="text-xl font-semibold">Enregistrez vos machines</h3>
+                <p className="text-muted-foreground">
+                  Ajoutez vos machines hors route éligibles : pelles, chargeuses, bulldozers, grues et plus encore.
+                </p>
+              </div>
+              
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
+                  2
+                </div>
+                <h3 className="text-xl font-semibold">Enregistrez le carburant</h3>
+                <p className="text-muted-foreground">
+                  Scannez vos tickets ou saisissez manuellement vos consommations de diesel et essence.
+                </p>
+              </div>
+              
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
+                  3
+                </div>
+                <h3 className="text-xl font-semibold">Générez le rapport</h3>
+                <p className="text-muted-foreground">
+                  Exportez un rapport PDF conforme au formulaire 45.35 pour soumission à l'OFDF via Taxas.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20" id="pourquoi-mineraltax">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <Card className="bg-primary text-primary-foreground overflow-hidden">
               <CardContent className="p-8 md:p-12">
                 <div className="grid md:grid-cols-2 gap-8 items-center">
                   <div className="space-y-4">
-                    <h2 className="text-3xl font-bold">{t.landing.annualSubscription}</h2>
-                    <p className="text-primary-foreground/80">
-                      {t.landing.heroSubtitle}
-                    </p>
+                    <h2 className="text-3xl font-bold">Pourquoi utiliser MineralTax ?</h2>
+                    <ul className="space-y-3 text-primary-foreground/90">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                        <span>Conforme aux exigences de l'OFDF / BAZG / AFD</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                        <span>Rapports PDF compatibles formulaire 45.35</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                        <span>Calcul automatique au taux officiel 0.3405 CHF/L</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                        <span>Interface en 4 langues (FR, DE, IT, EN)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                        <span>Scan OCR des tickets de carburant</span>
+                      </li>
+                    </ul>
                   </div>
                   <div className="text-center md:text-right">
                     <div className="inline-block">
@@ -196,13 +329,70 @@ export default function LandingPage() {
                         asChild
                         data-testid="button-subscribe"
                       >
-                        <a href="/api/login">{t.settings.subscribe}</a>
+                        <a href="/api/login">Commencer l'essai gratuit</a>
                       </Button>
+                      <p className="text-sm text-primary-foreground/70 mt-2">
+                        10 jours d'essai gratuit
+                      </p>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </section>
+
+        <section className="py-20 bg-muted/30" id="faq">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Questions fréquentes</h2>
+            </div>
+            
+            <div className="space-y-6">
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-2">Qu'est-ce que la taxe minéral Suisse ?</h3>
+                  <p className="text-muted-foreground">
+                    La taxe minéral Suisse, ou impôt sur les huiles minérales, est une taxe prélevée sur les carburants 
+                    et combustibles. Les entreprises utilisant des machines hors route peuvent demander un remboursement 
+                    partiel de cette taxe auprès de l'OFDF.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-2">Comment obtenir un remboursement ?</h3>
+                  <p className="text-muted-foreground">
+                    Pour obtenir un remboursement de la taxe sur les huiles minérales, vous devez soumettre une demande 
+                    via la plateforme Taxas de l'OFDF avec le formulaire 45.35. MineralTax génère automatiquement 
+                    les rapports conformes à ces exigences.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-2">Quels sont les taux de remboursement ?</h3>
+                  <p className="text-muted-foreground">
+                    Le taux de remboursement actuel est de 0.3405 CHF par litre de carburant utilisé 
+                    dans des machines hors route. Ce taux est fixé par l'Office fédéral de la douane 
+                    et de la sécurité des frontières (OFDF/BAZG).
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-2">Quelles machines sont éligibles ?</h3>
+                  <p className="text-muted-foreground">
+                    Les machines éligibles incluent les pelles mécaniques, chargeuses, bulldozers, grues, 
+                    compacteurs, foreuses, générateurs et autres équipements de construction qui ne circulent 
+                    pas sur la voie publique.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </section>
       </main>
@@ -211,7 +401,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>&copy; 2026 MineralTax Swiss.</span>
+              <span>&copy; 2026 MineralTax Swiss. Plateforme de remboursement de la taxe minérale en Suisse.</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <Link 
