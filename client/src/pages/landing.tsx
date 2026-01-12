@@ -286,55 +286,47 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-20" id="pourquoi-mineraltax">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-20" id="tarifs">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Card className="bg-primary text-primary-foreground overflow-hidden">
               <CardContent className="p-8 md:p-12">
-                <div className="grid md:grid-cols-2 gap-8 items-center">
-                  <div className="space-y-4">
-                    <h2 className="text-3xl font-bold">Pourquoi utiliser MineralTax ?</h2>
-                    <ul className="space-y-3 text-primary-foreground/90">
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                        <span>Conforme aux exigences de l'OFDF / BAZG / AFD</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                        <span>Rapports PDF compatibles formulaire 45.35</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                        <span>Calcul automatique au taux officiel 0.3405 CHF/L</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                        <span>Interface en 4 langues (FR, DE, IT, EN)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                        <span>Scan OCR des tickets de carburant</span>
-                      </li>
-                    </ul>
+                <div className="space-y-6">
+                  <h2 className="text-3xl font-bold">Offre de Lancement Exclusive</h2>
+                  
+                  <div className="py-4">
+                    <span className="text-5xl md:text-6xl font-bold">250</span>
+                    <span className="text-2xl ml-2">CHF</span>
+                    <p className="text-primary-foreground/80 mt-2">par an (HT)</p>
                   </div>
-                  <div className="text-center md:text-right">
-                    <div className="inline-block">
-                      <span className="text-5xl md:text-6xl font-bold">250</span>
-                      <span className="text-2xl ml-2">CHF</span>
-                      <p className="text-primary-foreground/80 mt-2">{t.landing.perYear}</p>
-                    </div>
-                    <div className="mt-6">
-                      <Button 
-                        size="lg" 
-                        variant="secondary"
-                        asChild
-                        data-testid="button-subscribe"
-                      >
-                        <a href="/api/login">Commencer l'essai gratuit</a>
-                      </Button>
-                      <p className="text-sm text-primary-foreground/70 mt-2">
-                        10 jours d'essai gratuit
-                      </p>
-                    </div>
+                  
+                  <ul className="space-y-3 text-primary-foreground/90 text-left max-w-md mx-auto">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <span>10 jours d'essai gratuit (sans carte bancaire)</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <span>Accès complet à toutes les fonctionnalités</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <span>Idéal pour toutes les flottes (Route & Hors-Route)</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <span>Archivage sécurisé en Suisse</span>
+                    </li>
+                  </ul>
+                  
+                  <div className="pt-4">
+                    <Button 
+                      size="lg" 
+                      variant="secondary"
+                      asChild
+                      data-testid="button-subscribe"
+                    >
+                      <a href="/api/login">Commencer l'essai gratuit</a>
+                    </Button>
                   </div>
                 </div>
               </CardContent>
