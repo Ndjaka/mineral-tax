@@ -79,25 +79,17 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  // Use the development domain from environment as canonical URL
-  const getCanonicalHost = () => {
-    if (process.env.REPLIT_DEV_DOMAIN) {
-      return process.env.REPLIT_DEV_DOMAIN;
-    }
-    // Fallback for production
-    return `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+  // Dynamic callback based on request host
+  const getHost = (req: any) => {
+    return req.get('x-forwarded-host') || req.get('host') || req.hostname;
   };
 
-  const canonicalHost = getCanonicalHost();
-  const callbackURL = `https://${canonicalHost}/api/callback`;
-
-  // Register a single strategy with the canonical callback URL
+  // Register strategy without static callback - we'll provide it per-request
   const strategy = new Strategy(
     {
       name: "replitauth",
       config,
       scope: "openid email profile offline_access",
-      callbackURL,
     },
     verify
   );
@@ -107,24 +99,20 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
-    // Redirect to canonical domain if not already there
-    const currentHost = req.get('host') || req.hostname;
-    console.log("Login request from host:", currentHost, "canonical:", canonicalHost);
-    if (currentHost !== canonicalHost) {
-      console.log("Redirecting to canonical host");
-      return res.redirect(`https://${canonicalHost}/api/login`);
-    }
+    const currentHost = getHost(req);
+    const callbackURL = `https://${currentHost}/api/callback`;
+    console.log("Login request from host:", currentHost, "callback:", callbackURL);
     console.log("Starting OAuth, session ID:", req.sessionID);
     
-    // Force session save before OAuth redirect
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
       }
       console.log("Session saved, proceeding with OAuth");
-      passport.authenticate("replitauth", {
+      (passport.authenticate as any)("replitauth", {
         prompt: "login consent",
         scope: ["openid", "email", "profile", "offline_access"],
+        redirect_uri: callbackURL,
       })(req, res, next);
     });
   });
@@ -153,11 +141,12 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/logout", (req, res) => {
+    const currentHost = getHost(req);
     req.logout(() => {
       res.redirect(
         client.buildEndSessionUrl(config, {
           client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `https://${canonicalHost}`,
+          post_logout_redirect_uri: `https://${currentHost}`,
         }).href
       );
     });
