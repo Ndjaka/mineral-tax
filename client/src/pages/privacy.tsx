@@ -67,7 +67,7 @@ export default function PrivacyPage() {
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="text-privacy-contact">
             <Mail className="h-4 w-4" />
-            <span>{t.privacy?.contact || "Pour toute question: contact@mineraltax.ch"}</span>
+            <span>{t.privacy?.contact || "Pour toute question: support@mineraltax.ch"}</span>
           </div>
         </CardContent>
       </Card>

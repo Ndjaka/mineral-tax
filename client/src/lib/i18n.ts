@@ -208,7 +208,7 @@ export const translations = {
       paymentsContent: "Les paiements sont traités de manière sécurisée par Stripe, certifié PCI-DSS niveau 1. Nous ne stockons jamais vos informations de carte bancaire.",
       rights: "Vos droits",
       rightsContent: "Conformément au RGPD et à la LPD suisse, vous avez le droit d'accéder, de rectifier et de supprimer vos données personnelles.",
-      contact: "Pour toute question: contact@mineraltax.ch",
+      contact: "Pour toute question: support@mineraltax.ch",
     },
     settings: {
       title: "Paramètres",
@@ -462,7 +462,7 @@ export const translations = {
       paymentsContent: "Zahlungen werden sicher über Stripe abgewickelt, PCI-DSS Level 1 zertifiziert. Wir speichern niemals Ihre Kreditkarteninformationen.",
       rights: "Ihre Rechte",
       rightsContent: "Gemäss DSGVO und Schweizer DSG haben Sie das Recht auf Zugang, Berichtigung und Löschung Ihrer personenbezogenen Daten.",
-      contact: "Bei Fragen: contact@mineraltax.ch",
+      contact: "Bei Fragen: support@mineraltax.ch",
     },
     settings: {
       title: "Einstellungen",
@@ -716,7 +716,7 @@ export const translations = {
       paymentsContent: "I pagamenti vengono elaborati in modo sicuro da Stripe, certificato PCI-DSS livello 1. Non memorizziamo mai le informazioni della tua carta di credito.",
       rights: "I tuoi diritti",
       rightsContent: "In conformità con il GDPR e la LPD svizzera, hai il diritto di accedere, rettificare e cancellare i tuoi dati personali.",
-      contact: "Per domande: contact@mineraltax.ch",
+      contact: "Per domande: support@mineraltax.ch",
     },
     settings: {
       title: "Impostazioni",
@@ -970,7 +970,7 @@ export const translations = {
       paymentsContent: "Payments are processed securely by Stripe, PCI-DSS Level 1 certified. We never store your credit card information.",
       rights: "Your Rights",
       rightsContent: "In accordance with GDPR and Swiss FADP, you have the right to access, rectify, and delete your personal data.",
-      contact: "For questions: contact@mineraltax.ch",
+      contact: "For questions: support@mineraltax.ch",
     },
     settings: {
       title: "Settings",
