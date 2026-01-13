@@ -335,6 +335,7 @@ export const translations = {
       welcome: "Bonjour ! Comment puis-je vous aider ?",
       hint: "Posez-moi vos questions sur le remboursement de l'impôt sur les huiles minérales.",
       placeholder: "Votre message...",
+      helpLabel: "Besoin d'aide ?",
     },
     success: {
       title: "Merci !",
@@ -678,6 +679,7 @@ export const translations = {
       welcome: "Guten Tag! Wie kann ich Ihnen helfen?",
       hint: "Fragen Sie mich zur Mineralölsteuer-Rückerstattung.",
       placeholder: "Ihre Nachricht...",
+      helpLabel: "Hilfe benötigt?",
     },
     success: {
       title: "Vielen Dank!",
@@ -1021,6 +1023,7 @@ export const translations = {
       welcome: "Buongiorno! Come posso aiutarla?",
       hint: "Mi faccia domande sul rimborso dell'imposta sugli oli minerali.",
       placeholder: "Il tuo messaggio...",
+      helpLabel: "Hai bisogno di aiuto?",
     },
     success: {
       title: "Grazie!",
@@ -1364,6 +1367,7 @@ export const translations = {
       welcome: "Hello! How can I help you?",
       hint: "Ask me about mineral oil tax reimbursement.",
       placeholder: "Your message...",
+      helpLabel: "Need help?",
     },
     success: {
       title: "Thank you!",

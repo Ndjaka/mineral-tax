@@ -107,14 +107,19 @@ export function ChatWidget() {
   return (
     <>
       {!isOpen && (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-[#003366] hover:bg-[#002244] z-50"
-          size="icon"
-          data-testid="button-open-chat"
-        >
-          <MessageCircle className="h-6 w-6 text-white" />
-        </Button>
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+          <div className="bg-card border rounded-lg px-3 py-2 shadow-lg animate-bounce text-sm font-medium max-w-[180px]">
+            {t.chatWidget?.helpLabel || "Besoin d'aide ?"}
+          </div>
+          <Button
+            onClick={() => setIsOpen(true)}
+            className="h-16 w-16 rounded-full shadow-xl bg-[#003366] hover:bg-[#002244] ring-4 ring-[#003366]/30 hover:ring-[#003366]/50 transition-all"
+            size="icon"
+            data-testid="button-open-chat"
+          >
+            <MessageCircle className="h-7 w-7 text-white" />
+          </Button>
+        </div>
       )}
 
       {isOpen && (
