@@ -50,29 +50,43 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Truck, Search } from "lucide-react";
 import type { Machine } from "@shared/schema";
 
-const machineTypesTransportRoutier = [
-  { value: "transport_marchandises", emoji: "🚛" },
-  { value: "autocars_bus", emoji: "🚌" },
-  { value: "transport_passagers", emoji: "🚐" },
-  { value: "deneigement_routier", emoji: "❄️" },
+const machineTypesEngins = [
+  { value: "excavator", emoji: "🚜" },
+  { value: "spider_excavator", emoji: "🕷️" },
+  { value: "loader", emoji: "🚛" },
+  { value: "crane", emoji: "🏗️" },
+  { value: "drill", emoji: "🔩" },
+  { value: "finisher", emoji: "🛤️" },
+  { value: "milling_machine", emoji: "⚙️" },
+  { value: "roller", emoji: "🚧" },
 ] as const;
 
-const machineTypesSecteurs = [
-  { value: "agriculture_sylviculture", emoji: "🚜" },
-  { value: "chantier_carrieres", emoji: "🏗️" },
-  { value: "damage_remontees", emoji: "🏔️" },
-  { value: "peche_navigation", emoji: "⚓" },
+const machineTypesAutres = [
+  { value: "dumper", emoji: "🚚" },
+  { value: "forklift", emoji: "📦" },
+  { value: "crusher", emoji: "🪨" },
+  { value: "generator", emoji: "⚡" },
+  { value: "compressor", emoji: "💨" },
+  { value: "concrete_pump", emoji: "🏭" },
+  { value: "other", emoji: "🔧" },
 ] as const;
 
 const machineTypes = [
-  "transport_marchandises",
-  "autocars_bus",
-  "transport_passagers",
-  "deneigement_routier",
-  "agriculture_sylviculture",
-  "chantier_carrieres",
-  "damage_remontees",
-  "peche_navigation",
+  "excavator",
+  "spider_excavator",
+  "loader",
+  "crane",
+  "drill",
+  "finisher",
+  "milling_machine",
+  "roller",
+  "dumper",
+  "forklift",
+  "crusher",
+  "generator",
+  "compressor",
+  "concrete_pump",
+  "other",
 ] as const;
 
 const machineFormSchema = z.object({
@@ -99,7 +113,7 @@ export default function FleetPage() {
     resolver: zodResolver(machineFormSchema),
     defaultValues: {
       name: "",
-      type: "chantier_carrieres",
+      type: "excavator",
       chassisNumber: "",
       year: undefined,
       power: "",
@@ -172,7 +186,7 @@ export default function FleetPage() {
       setEditingMachine(null);
       form.reset({
         name: "",
-        type: "chantier_carrieres",
+        type: "excavator",
         chassisNumber: "",
         year: undefined,
         power: "",
@@ -355,16 +369,16 @@ export default function FleetPage() {
                       </FormControl>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectLabel>Transport Routier & Voyageurs</SelectLabel>
-                          {machineTypesTransportRoutier.map((type) => (
+                          <SelectLabel>Engins de chantier</SelectLabel>
+                          {machineTypesEngins.map((type) => (
                             <SelectItem key={type.value} value={type.value}>
                               {type.emoji} {getMachineTypeLabel(type.value)}
                             </SelectItem>
                           ))}
                         </SelectGroup>
                         <SelectGroup>
-                          <SelectLabel>Secteurs Spécialisés & Hors-Route</SelectLabel>
-                          {machineTypesSecteurs.map((type) => (
+                          <SelectLabel>Autres équipements</SelectLabel>
+                          {machineTypesAutres.map((type) => (
                             <SelectItem key={type.value} value={type.value}>
                               {type.emoji} {getMachineTypeLabel(type.value)}
                             </SelectItem>
