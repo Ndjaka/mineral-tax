@@ -103,6 +103,7 @@ export const translations = {
       successAdd: "Machine ajoutée avec succès",
       successUpdate: "Machine mise à jour avec succès",
       successDelete: "Machine supprimée avec succès",
+      emptyDescription: "Commencez par ajouter vos véhicules et machines",
     },
     fuel: {
       title: "Saisie de carburant",
@@ -128,6 +129,7 @@ export const translations = {
       successAdd: "Entrée ajoutée avec succès",
       successUpdate: "Entrée mise à jour avec succès",
       successDelete: "Entrée supprimée avec succès",
+      emptyDescription: "Commencez par saisir vos consommations de carburant",
     },
     reports: {
       title: "Rapports de remboursement",
@@ -350,6 +352,7 @@ export const translations = {
       successAdd: "Maschine erfolgreich hinzugefügt",
       successUpdate: "Maschine erfolgreich aktualisiert",
       successDelete: "Maschine erfolgreich gelöscht",
+      emptyDescription: "Beginnen Sie mit dem Hinzufügen Ihrer Fahrzeuge und Maschinen",
     },
     fuel: {
       title: "Treibstoffeingabe",
@@ -375,6 +378,7 @@ export const translations = {
       successAdd: "Eintrag erfolgreich hinzugefügt",
       successUpdate: "Eintrag erfolgreich aktualisiert",
       successDelete: "Eintrag erfolgreich gelöscht",
+      emptyDescription: "Beginnen Sie mit der Erfassung Ihres Kraftstoffverbrauchs",
     },
     reports: {
       title: "Rückerstattungsberichte",
@@ -597,6 +601,7 @@ export const translations = {
       successAdd: "Macchina aggiunta con successo",
       successUpdate: "Macchina aggiornata con successo",
       successDelete: "Macchina eliminata con successo",
+      emptyDescription: "Iniziate aggiungendo i vostri veicoli e macchine",
     },
     fuel: {
       title: "Inserimento carburante",
@@ -622,6 +627,7 @@ export const translations = {
       successAdd: "Voce aggiunta con successo",
       successUpdate: "Voce aggiornata con successo",
       successDelete: "Voce eliminata con successo",
+      emptyDescription: "Iniziate registrando i vostri consumi di carburante",
     },
     reports: {
       title: "Rapporti di rimborso",
@@ -844,6 +850,7 @@ export const translations = {
       successAdd: "Machine added successfully",
       successUpdate: "Machine updated successfully",
       successDelete: "Machine deleted successfully",
+      emptyDescription: "Start by adding your vehicles and machines",
     },
     fuel: {
       title: "Fuel Entry",
@@ -869,6 +876,7 @@ export const translations = {
       successAdd: "Entry added successfully",
       successUpdate: "Entry updated successfully",
       successDelete: "Entry deleted successfully",
+      emptyDescription: "Start by entering your fuel consumption records",
     },
     reports: {
       title: "Reimbursement Reports",
