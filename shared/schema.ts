@@ -24,6 +24,14 @@ export const machineTypeEnum = pgEnum("machine_type", [
   "other"
 ]);
 
+export const plateColorEnum = pgEnum("plate_color", [
+  "white",
+  "green", 
+  "yellow",
+  "blue",
+  "none"
+]);
+
 export const taxasActivityEnum = pgEnum("taxas_activity", [
   "agriculture_with_direct",
   "agriculture_without_direct",
@@ -67,6 +75,8 @@ export const machines = pgTable("machines", {
   name: text("name").notNull(),
   type: machineTypeEnum("type").notNull(),
   taxasActivity: taxasActivityEnum("taxas_activity").default("construction"),
+  licensePlate: text("license_plate"),
+  plateColor: plateColorEnum("plate_color").default("none"),
   chassisNumber: text("chassis_number"),
   year: integer("year"),
   power: text("power"),

@@ -105,10 +105,14 @@ const taxasActivities = [
   "other_taxas",
 ] as const;
 
+const plateColors = ["white", "green", "yellow", "blue", "none"] as const;
+
 const machineFormSchema = z.object({
   name: z.string().min(1),
   type: z.enum(machineTypes),
   taxasActivity: z.enum(taxasActivities).optional(),
+  licensePlate: z.string().optional(),
+  plateColor: z.enum(plateColors).optional(),
   chassisNumber: z.string().optional(),
   year: z.coerce.number().min(1900).max(2100).optional(),
   power: z.string().optional(),
@@ -132,6 +136,8 @@ export default function FleetPage() {
       name: "",
       type: "excavator",
       taxasActivity: "construction",
+      licensePlate: "",
+      plateColor: "none",
       chassisNumber: "",
       year: undefined,
       power: "",
@@ -196,6 +202,8 @@ export default function FleetPage() {
         name: machine.name,
         type: machine.type as typeof machineTypes[number],
         taxasActivity: (machine.taxasActivity as typeof taxasActivities[number]) || "construction",
+        licensePlate: machine.licensePlate || "",
+        plateColor: (machine.plateColor as typeof plateColors[number]) || "none",
         chassisNumber: machine.chassisNumber || "",
         year: machine.year || undefined,
         power: machine.power || "",
@@ -207,6 +215,8 @@ export default function FleetPage() {
         name: "",
         type: "excavator",
         taxasActivity: "construction",
+        licensePlate: "",
+        plateColor: "none",
         chassisNumber: "",
         year: undefined,
         power: "",
@@ -241,6 +251,29 @@ export default function FleetPage() {
 
   const getTaxasActivityLabel = (activity: string) => {
     return t.fleet.taxasActivities[activity as keyof typeof t.fleet.taxasActivities] || activity;
+  };
+
+  const getPlateColorInfo = (color: string) => {
+    const colorMap: Record<string, { bg: string; border: string; text: string; eligible: boolean }> = {
+      white: { bg: "bg-white", border: "border-gray-400", text: "text-black", eligible: false },
+      green: { bg: "bg-green-600", border: "border-green-700", text: "text-white", eligible: true },
+      yellow: { bg: "bg-yellow-500", border: "border-yellow-600", text: "text-black", eligible: true },
+      blue: { bg: "bg-blue-600", border: "border-blue-700", text: "text-white", eligible: false },
+      none: { bg: "bg-gray-200", border: "border-gray-400", text: "text-gray-600", eligible: true },
+    };
+    return colorMap[color] || colorMap.none;
+  };
+
+  const getPlateColorLabel = (color: string) => {
+    return t.fleet.plateColors?.[color as keyof typeof t.fleet.plateColors] || color;
+  };
+
+  const watchPlateColor = form.watch("plateColor");
+  
+  const handlePlateColorChange = (color: string) => {
+    form.setValue("plateColor", color as typeof plateColors[number]);
+    const colorInfo = getPlateColorInfo(color);
+    form.setValue("isEligible", colorInfo.eligible);
   };
 
   return (
@@ -306,6 +339,20 @@ export default function FleetPage() {
                 </div>
                 
                 <div className="space-y-2 text-sm">
+                  {machine.licensePlate && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">{t.fleet.licensePlate || "Plaque"}</span>
+                      <div className="flex items-center gap-2">
+                        {machine.plateColor && machine.plateColor !== "none" && (
+                          <span 
+                            className={`w-4 h-4 rounded border ${getPlateColorInfo(machine.plateColor).bg} ${getPlateColorInfo(machine.plateColor).border}`}
+                            title={getPlateColorLabel(machine.plateColor)}
+                          />
+                        )}
+                        <span className="font-mono">{machine.licensePlate}</span>
+                      </div>
+                    </div>
+                  )}
                   {machine.chassisNumber && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t.fleet.chassisNumber}</span>
@@ -439,6 +486,60 @@ export default function FleetPage() {
                   </FormItem>
                 )}
               />
+
+              <div className="space-y-3">
+                <FormLabel>{t.fleet.licensePlate || "Plaque d'immatriculation"}</FormLabel>
+                <div className="flex gap-3">
+                  <FormField
+                    control={form.control}
+                    name="licensePlate"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="e.g. VS 12345" 
+                            data-testid="input-license-plate" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    {t.fleet.plateColorLabel || "Couleur de la plaque (détermine l'éligibilité)"}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {plateColors.map((color) => {
+                      const info = getPlateColorInfo(color);
+                      const isSelected = watchPlateColor === color;
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handlePlateColorChange(color)}
+                          className={`px-3 py-2 rounded-md border-2 text-sm font-medium transition-all ${info.bg} ${info.text} ${
+                            isSelected ? "ring-2 ring-primary ring-offset-2" : info.border
+                          }`}
+                          data-testid={`button-plate-color-${color}`}
+                        >
+                          {getPlateColorLabel(color)}
+                          {color !== "none" && (
+                            <span className="ml-1.5 text-xs opacity-75">
+                              {info.eligible ? "✓" : "✗"}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t.fleet.plateColorHint || "Plaques vertes (agricoles) et jaunes (industrielles) = éligibles. Plaques blanches (routières) = non éligibles."}
+                  </p>
+                </div>
+              </div>
 
               <FormField
                 control={form.control}
