@@ -234,8 +234,11 @@ export async function registerRoutes(
   app.post("/api/machines", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
+      console.log("Creating machine for user:", userId);
+      console.log("Request body:", req.body);
       
       const accessCheck = await checkSubscriptionAccess(userId);
+      console.log("Subscription access check:", accessCheck);
       if (!accessCheck.allowed) {
         return res.status(403).json({ 
           message: "Subscription required to add machines",
@@ -244,10 +247,13 @@ export async function registerRoutes(
       }
       
       const data = insertMachineSchema.parse({ ...req.body, userId });
+      console.log("Parsed machine data:", data);
       const machine = await storage.createMachine(data);
+      console.log("Machine created:", machine);
       res.status(201).json(machine);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error:", error.errors);
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
       console.error("Error creating machine:", error);

@@ -120,11 +120,13 @@ export default function FleetPage() {
       handleCloseDialog();
     },
     onError: (error: any) => {
+      console.error("Create machine error:", error);
       if (error?.message?.includes("403") || error?.code === "subscription_required") {
         toast({ title: t.subscription.subscriptionRequired, variant: "destructive" });
         setLocation("/subscription");
       } else {
-        toast({ title: t.common.error, variant: "destructive" });
+        const errorMessage = error?.message || t.common.error;
+        toast({ title: errorMessage, variant: "destructive" });
       }
     },
   });
