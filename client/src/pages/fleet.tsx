@@ -89,9 +89,26 @@ const machineTypes = [
   "other",
 ] as const;
 
+const taxasActivities = [
+  "agriculture_with_direct",
+  "agriculture_without_direct",
+  "forestry",
+  "rinsing",
+  "concession_transport",
+  "natural_stone",
+  "snow_groomer",
+  "professional_fishing",
+  "stationary_generator",
+  "stationary_cleaning",
+  "stationary_combustion",
+  "construction",
+  "other_taxas",
+] as const;
+
 const machineFormSchema = z.object({
   name: z.string().min(1),
   type: z.enum(machineTypes),
+  taxasActivity: z.enum(taxasActivities).optional(),
   chassisNumber: z.string().optional(),
   year: z.coerce.number().min(1900).max(2100).optional(),
   power: z.string().optional(),
@@ -114,6 +131,7 @@ export default function FleetPage() {
     defaultValues: {
       name: "",
       type: "excavator",
+      taxasActivity: "construction",
       chassisNumber: "",
       year: undefined,
       power: "",
@@ -177,6 +195,7 @@ export default function FleetPage() {
       form.reset({
         name: machine.name,
         type: machine.type as typeof machineTypes[number],
+        taxasActivity: (machine.taxasActivity as typeof taxasActivities[number]) || "construction",
         chassisNumber: machine.chassisNumber || "",
         year: machine.year || undefined,
         power: machine.power || "",
@@ -187,6 +206,7 @@ export default function FleetPage() {
       form.reset({
         name: "",
         type: "excavator",
+        taxasActivity: "construction",
         chassisNumber: "",
         year: undefined,
         power: "",
@@ -217,6 +237,10 @@ export default function FleetPage() {
 
   const getMachineTypeLabel = (type: string) => {
     return t.fleet.types[type as keyof typeof t.fleet.types] || type;
+  };
+
+  const getTaxasActivityLabel = (activity: string) => {
+    return t.fleet.taxasActivities[activity as keyof typeof t.fleet.taxasActivities] || activity;
   };
 
   return (
@@ -384,6 +408,31 @@ export default function FleetPage() {
                             </SelectItem>
                           ))}
                         </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="taxasActivity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.fleet.taxasActivity}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-taxas-activity">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {taxasActivities.map((activity) => (
+                          <SelectItem key={activity} value={activity}>
+                            {getTaxasActivityLabel(activity)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

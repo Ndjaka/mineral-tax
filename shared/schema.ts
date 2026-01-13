@@ -24,6 +24,29 @@ export const machineTypeEnum = pgEnum("machine_type", [
   "other"
 ]);
 
+export const taxasActivityEnum = pgEnum("taxas_activity", [
+  "agriculture_with_direct",
+  "agriculture_without_direct",
+  "forestry",
+  "rinsing",
+  "concession_transport",
+  "natural_stone",
+  "snow_groomer",
+  "professional_fishing",
+  "stationary_generator",
+  "stationary_cleaning",
+  "stationary_combustion",
+  "construction",
+  "other_taxas"
+]);
+
+export const taxasStatusEnum = pgEnum("taxas_status", [
+  "draft",
+  "ready_for_taxas",
+  "submitted_to_taxas",
+  "approved"
+]);
+
 export const fuelTypeEnum = pgEnum("fuel_type", [
   "diesel",
   "gasoline",
@@ -43,6 +66,7 @@ export const machines = pgTable("machines", {
   userId: varchar("user_id").notNull(),
   name: text("name").notNull(),
   type: machineTypeEnum("type").notNull(),
+  taxasActivity: taxasActivityEnum("taxas_activity").default("construction"),
   chassisNumber: text("chassis_number"),
   year: integer("year"),
   power: text("power"),
@@ -73,6 +97,9 @@ export const reports = pgTable("reports", {
   eligibleVolumeLiters: real("eligible_volume_liters").notNull(),
   reimbursementAmount: real("reimbursement_amount").notNull(),
   status: text("status").notNull().default("draft"),
+  taxasStatus: taxasStatusEnum("taxas_status").default("draft"),
+  taxasSubmissionRef: text("taxas_submission_ref"),
+  taxasSubmittedAt: timestamp("taxas_submitted_at"),
   language: text("language").notNull().default("fr"),
   createdAt: timestamp("created_at").defaultNow(),
 });

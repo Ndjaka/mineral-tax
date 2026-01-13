@@ -754,14 +754,36 @@ export async function registerRoutes(
 
 const OFDF_MACHINE_TYPES: Record<string, string> = {
   excavator: "Bagger / Excavatrice",
+  spider_excavator: "Schreitbagger / Pelle araignée",
   loader: "Lader / Chargeuse",
   crane: "Kran / Grue",
+  drill: "Bohrgerät / Foreuse",
+  finisher: "Fertiger / Finisseur",
+  milling_machine: "Fräsmaschine / Fraiseuse",
+  roller: "Walze / Rouleau",
   generator: "Stromaggregat / Groupe électrogène",
   compressor: "Kompressor / Compresseur",
   forklift: "Gabelstapler / Chariot élévateur",
   dumper: "Dumper / Tombereau",
-  roller: "Walze / Rouleau",
+  crusher: "Brecher / Concasseur",
+  concrete_pump: "Betonpumpe / Pompe à béton",
   other: "Andere / Autre",
+};
+
+const TAXAS_ACTIVITY_CODES: Record<string, string> = {
+  agriculture_with_direct: "AGRI_DIRECT",
+  agriculture_without_direct: "AGRI_NO_DIRECT",
+  forestry: "SYLV",
+  rinsing: "RINC",
+  concession_transport: "TRANSP_CONC",
+  natural_stone: "PIERRE_NAT",
+  snow_groomer: "DAMEUSE",
+  professional_fishing: "PECHE",
+  stationary_generator: "STAT_GEN",
+  stationary_cleaning: "STAT_NETT",
+  stationary_combustion: "STAT_COMB",
+  construction: "CONSTRUCT",
+  other_taxas: "AUTRE",
 };
 
 function generateTaxasCsv(
@@ -771,7 +793,11 @@ function generateTaxasCsv(
 ): string {
   const lines: string[] = [];
   
-  lines.push("Date;Invoice_Number;Machine_Name;Machine_Type;Volume_Liters;Fuel_Type;Eligible;Rate_CHF;Amount_CHF");
+  lines.push("# MineralTax Swiss - Export Taxas OFDF");
+  lines.push("# Format compatible avec l'application Taxas (bazg.admin.ch)");
+  lines.push("# Période: " + new Date(report.periodStart).toISOString().split('T')[0] + " - " + new Date(report.periodEnd).toISOString().split('T')[0]);
+  lines.push("");
+  lines.push("Date;Invoice_Number;Machine_Name;Machine_Type;Taxas_Activity;Chassis_VIN;Volume_Liters;Fuel_Type;Eligible;Rate_CHF;Amount_CHF");
   
   for (const entry of fuelEntries) {
     const machine = entry.machine || machines.find(m => m.id === entry.machineId);
@@ -789,11 +815,17 @@ function generateTaxasCsv(
       ? (OFDF_MACHINE_TYPES[machine.type] || OFDF_MACHINE_TYPES.other) 
       : OFDF_MACHINE_TYPES.other;
     
+    const taxasActivity = (machine as any)?.taxasActivity 
+      ? (TAXAS_ACTIVITY_CODES[(machine as any).taxasActivity] || TAXAS_ACTIVITY_CODES.other_taxas)
+      : TAXAS_ACTIVITY_CODES.construction;
+    
     lines.push([
       dateStr,
       entry.invoiceNumber || "",
       machine?.name || "",
       machineType,
+      taxasActivity,
+      machine?.chassisNumber || "",
       volumeLiters.toFixed(2),
       entry.fuelType || "diesel",
       isEligible ? "1" : "0",
@@ -803,12 +835,20 @@ function generateTaxasCsv(
   }
   
   lines.push("");
+  lines.push("# Récapitulatif");
   lines.push("Total_Volume_Liters;Eligible_Volume_Liters;Reimbursement_Amount_CHF");
   lines.push([
     parseFloat(report.totalVolumeLiters).toFixed(2),
     parseFloat(report.eligibleVolumeLiters).toFixed(2),
     parseFloat(report.reimbursementAmount).toFixed(2)
   ].join(";"));
+  
+  lines.push("");
+  lines.push("# Instructions Taxas:");
+  lines.push("# 1. Connectez-vous à ePortal (eportal.admin.ch)");
+  lines.push("# 2. Accédez à Taxas > Remboursement huiles minérales");
+  lines.push("# 3. Importez ce fichier CSV ou saisissez manuellement");
+  lines.push("# Taux remboursement OFDF: 0.3405 CHF/L");
   
   return lines.join("\n");
 }

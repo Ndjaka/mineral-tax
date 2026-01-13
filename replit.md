@@ -12,10 +12,11 @@ Professional SaaS application for Swiss mineral oil tax (Mineralölsteuer) reimb
 
 ## Key Features
 1. **Multilingual Support**: FR, DE, IT, EN with official OFDF terminology
-2. **Fleet Management**: Register and manage off-road machines
+2. **Fleet Management**: Register and manage off-road machines with Taxas categories
 3. **Fuel Entry**: Log fuel consumption with invoice tracking
 4. **Calculator**: Apply OFDF rate of 0.3405 CHF/L
 5. **Reports**: Generate PDF reports for Form 45.35
+6. **Taxas Integration**: Bridge between companies and the official OFDF Taxas system
 
 ## Technical Architecture
 
@@ -100,7 +101,41 @@ Email service (Resend) was proposed but user dismissed setup (2026-01-11). To en
 - **AFD** (IT): Amministrazione federale delle dogane
 - **FOCBS** (EN): Federal Office for Customs and Border Security
 - **Form 45.35**: Official reimbursement request form
-- **Taxas**: Official submission application
+- **Taxas**: Official digital platform for consumption tax management
+
+## Taxas Integration (Implemented 2026-01-13)
+MineralTax serves as a bridge between companies and the official Taxas system:
+
+### Taxas Activity Categories
+Machines can be assigned official Taxas reimbursement categories:
+- `agriculture_with_direct` / `agriculture_without_direct`
+- `forestry` (Sylviculture)
+- `rinsing` (Rinçage)
+- `concession_transport` (Transport concessionnaire)
+- `natural_stone` (Extraction de pierres naturelles)
+- `snow_groomer` (Dameuses)
+- `professional_fishing` (Pêche professionnelle)
+- `stationary_generator` / `stationary_cleaning` / `stationary_combustion`
+- `construction` (Construction / Chantier)
+
+### Taxas-Compatible CSV Export
+The CSV export includes:
+- Date, invoice number, machine name/type
+- Taxas activity code (AGRI_DIRECT, SYLV, CONSTRUCT, etc.)
+- Chassis/VIN number
+- Volume, fuel type, eligibility, reimbursement calculation
+
+### Taxas Preparation Page
+Dedicated `/taxas` page with:
+- Step-by-step guide for ePortal registration
+- Pre-submission checklist
+- Links to official OFDF resources
+- Explanation of MineralTax as bridge to Taxas
+
+### Database Schema Updates
+- `taxas_activity` enum on `machines` table
+- `taxas_status` enum on `reports` table (draft, ready_for_taxas, submitted_to_taxas, approved)
+- `taxas_submission_ref` and `taxas_submitted_at` fields on reports
 
 ## Reimbursement Rate
 - Current rate: **0.3405 CHF per liter**
