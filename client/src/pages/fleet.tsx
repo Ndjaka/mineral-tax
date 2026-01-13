@@ -310,12 +310,8 @@ export default function FleetPage() {
             <Truck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <h3 className="font-medium mb-2">{t.common.noData}</h3>
             <p className="text-muted-foreground text-sm mb-4">
-              {t.fleet.addMachine}
+              {t.fleet.emptyDescription || "Commencez par ajouter vos véhicules et machines"}
             </p>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t.fleet.addMachine}
-            </Button>
           </CardContent>
         </Card>
       )}

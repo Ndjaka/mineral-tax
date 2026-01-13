@@ -414,7 +414,15 @@ export default function LandingPage() {
                 <span>{t.privacy?.title || "Confidentialité"}</span>
               </Link>
               <span className="text-muted-foreground/50">|</span>
-              <span>OFDF / BAZG / AFD / FOCBS</span>
+              <a 
+                href="https://www.bazg.admin.ch/bazg/fr/home.html" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+                data-testid="link-ofdf"
+              >
+                OFDF / BAZG / AFD / FOCBS
+              </a>
             </div>
           </div>
         </div>

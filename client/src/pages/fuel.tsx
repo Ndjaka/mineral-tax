@@ -410,12 +410,8 @@ export default function FuelPage() {
             <Fuel className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <h3 className="font-medium mb-2">{t.common.noData}</h3>
             <p className="text-muted-foreground text-sm mb-4">
-              {t.fuel.addEntry}
+              {t.fuel.emptyDescription || "Commencez par saisir vos consommations de carburant"}
             </p>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t.fuel.addEntry}
-            </Button>
           </CardContent>
         </Card>
       )}
