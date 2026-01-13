@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { I18nContext, translations, type Language } from "@/lib/i18n";
+import { I18nContext, translations, type Language, type Translations } from "@/lib/i18n";
 
 const STORAGE_KEY = "mineraltax-language";
 
@@ -37,7 +37,7 @@ export function I18nProvider({ children }: I18nProviderProps) {
   const value = {
     language,
     setLanguage,
-    t: translations[language],
+    t: translations[language] as Translations,
   };
 
   return (
