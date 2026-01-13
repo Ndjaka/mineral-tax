@@ -126,6 +126,7 @@ export const translations = {
       licensePlate: "Plaque d'immatriculation",
       plateColorLabel: "Couleur de la plaque (détermine l'éligibilité)",
       plateColorHint: "Plaques vertes (agricoles) et jaunes (industrielles) = éligibles. Plaques blanches (routières) = non éligibles.",
+      whitePlateWarning: "Plaque blanche/bleue marquée comme éligible - documentez l'usage spécial (déneigement, etc.) pour Taxas.",
       plateColors: {
         white: "Blanche",
         green: "Verte",
@@ -480,6 +481,7 @@ export const translations = {
       licensePlate: "Kontrollschild",
       plateColorLabel: "Schildfarbe (bestimmt die Berechtigung)",
       plateColorHint: "Grüne (landwirtschaftliche) und gelbe (industrielle) Schilder = berechtigt. Weisse (Strassen-) Schilder = nicht berechtigt.",
+      whitePlateWarning: "Weisses/blaues Schild als berechtigt markiert - dokumentieren Sie die Sondernutzung (Schneeräumung, etc.) für Taxas.",
       plateColors: {
         white: "Weiss",
         green: "Grün",
@@ -834,6 +836,7 @@ export const translations = {
       licensePlate: "Targa",
       plateColorLabel: "Colore della targa (determina l'idoneità)",
       plateColorHint: "Targhe verdi (agricole) e gialle (industriali) = idonee. Targhe bianche (stradali) = non idonee.",
+      whitePlateWarning: "Targa bianca/blu contrassegnata come idonea - documentare l'uso speciale (sgombero neve, ecc.) per Taxas.",
       plateColors: {
         white: "Bianca",
         green: "Verde",
@@ -1188,6 +1191,7 @@ export const translations = {
       licensePlate: "License Plate",
       plateColorLabel: "Plate color (determines eligibility)",
       plateColorHint: "Green (agricultural) and yellow (industrial) plates = eligible. White (road) plates = not eligible.",
+      whitePlateWarning: "White/blue plate marked as eligible - document the special use (snow plowing, etc.) for Taxas.",
       plateColors: {
         white: "White",
         green: "Green",

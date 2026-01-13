@@ -129,6 +129,7 @@ export default function FleetPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
   const [deletingMachine, setDeletingMachine] = useState<Machine | null>(null);
+  const [hasEligibilityOverride, setHasEligibilityOverride] = useState(false);
 
   const form = useForm<MachineFormData>({
     resolver: zodResolver(machineFormSchema),
@@ -196,6 +197,7 @@ export default function FleetPage() {
   });
 
   const handleOpenDialog = (machine?: Machine) => {
+    setHasEligibilityOverride(false);
     if (machine) {
       setEditingMachine(machine);
       form.reset({
@@ -209,6 +211,7 @@ export default function FleetPage() {
         power: machine.power || "",
         isEligible: machine.isEligible,
       });
+      setHasEligibilityOverride(true);
     } else {
       setEditingMachine(null);
       form.reset({
@@ -229,6 +232,7 @@ export default function FleetPage() {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingMachine(null);
+    setHasEligibilityOverride(false);
     form.reset();
   };
 
@@ -269,12 +273,22 @@ export default function FleetPage() {
   };
 
   const watchPlateColor = form.watch("plateColor");
+  const watchIsEligible = form.watch("isEligible");
   
   const handlePlateColorChange = (color: string) => {
     form.setValue("plateColor", color as typeof plateColors[number]);
-    const colorInfo = getPlateColorInfo(color);
-    form.setValue("isEligible", colorInfo.eligible);
+    if (!hasEligibilityOverride) {
+      const colorInfo = getPlateColorInfo(color);
+      form.setValue("isEligible", colorInfo.eligible);
+    }
   };
+
+  const handleEligibilityChange = (value: boolean) => {
+    setHasEligibilityOverride(true);
+    form.setValue("isEligible", value);
+  };
+
+  const showWhitePlateWarning = (watchPlateColor === "white" || watchPlateColor === "blue") && watchIsEligible;
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
@@ -596,20 +610,29 @@ export default function FleetPage() {
                 control={form.control}
                 name="isEligible"
                 render={({ field }) => (
-                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">{t.fleet.eligible}</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        {t.calculator.eligibilityNote}
-                      </p>
+                  <FormItem className="space-y-3">
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">{t.fleet.eligible}</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          {t.calculator.eligibilityNote}
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={handleEligibilityChange}
+                          data-testid="switch-eligible"
+                        />
+                      </FormControl>
                     </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid="switch-eligible"
-                      />
-                    </FormControl>
+                    {showWhitePlateWarning && (
+                      <div className="flex items-start gap-2 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
+                        <span className="text-sm">
+                          {t.fleet.whitePlateWarning || "Plaque blanche/bleue marquée comme éligible - documentez l'usage spécial (déneigement, etc.) pour Taxas."}
+                        </span>
+                      </div>
+                    )}
                   </FormItem>
                 )}
               />
