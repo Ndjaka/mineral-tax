@@ -25,6 +25,7 @@ import PrivacyPage from "@/pages/privacy";
 import SuccessPage from "@/pages/success";
 import SubscriptionPage from "@/pages/subscription";
 import TaxasPage from "@/pages/taxas";
+import CompanyPage from "@/pages/company";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -72,6 +73,7 @@ function AuthenticatedRouter() {
         <Route path="/calculator" component={CalculatorPage} />
         <Route path="/reports" component={ReportsPage} />
         <Route path="/taxas" component={TaxasPage} />
+        <Route path="/company" component={CompanyPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />

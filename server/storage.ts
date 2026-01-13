@@ -4,6 +4,7 @@ import {
   reports,
   subscriptions,
   invoices,
+  companyProfiles,
   type Machine,
   type InsertMachine,
   type FuelEntry,
@@ -14,6 +15,8 @@ import {
   type InsertSubscription,
   type Invoice,
   type InsertInvoice,
+  type CompanyProfile,
+  type InsertCompanyProfile,
   REIMBURSEMENT_RATE_CHF_PER_LITER,
 } from "@shared/schema";
 import { db } from "./db";
@@ -71,6 +74,9 @@ export interface IStorage {
   getInvoice(id: string, userId: string): Promise<Invoice | undefined>;
   createInvoice(data: InsertInvoice): Promise<Invoice>;
   getNextInvoiceNumber(): Promise<string>;
+
+  getCompanyProfile(userId: string): Promise<CompanyProfile | undefined>;
+  createOrUpdateCompanyProfile(data: InsertCompanyProfile): Promise<CompanyProfile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -413,6 +419,25 @@ export class DatabaseStorage implements IStorage {
     
     const nextNumber = (result?.count || 0) + 1;
     return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+  }
+
+  async getCompanyProfile(userId: string): Promise<CompanyProfile | undefined> {
+    const [profile] = await db.select().from(companyProfiles).where(eq(companyProfiles.userId, userId));
+    return profile;
+  }
+
+  async createOrUpdateCompanyProfile(data: InsertCompanyProfile): Promise<CompanyProfile> {
+    const existing = await this.getCompanyProfile(data.userId);
+    if (existing) {
+      const [profile] = await db
+        .update(companyProfiles)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(companyProfiles.userId, data.userId))
+        .returning();
+      return profile;
+    }
+    const [profile] = await db.insert(companyProfiles).values(data).returning();
+    return profile;
   }
 }
 

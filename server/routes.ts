@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { isAuthenticated } from "./replit_integrations/auth";
-import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, type Machine, type FuelEntry, type Invoice, REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
+import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, insertCompanyProfileSchema, type Machine, type FuelEntry, type Invoice, type CompanyProfile, REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
 import { z } from "zod";
 import PDFDocument from "pdfkit";
 import { getUncachableStripeClient } from "./stripeClient";
@@ -593,6 +593,33 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error verifying checkout:", error);
       res.status(500).json({ message: "Failed to verify checkout" });
+    }
+  });
+
+  // Company profile endpoints
+  app.get("/api/company-profile", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const profile = await storage.getCompanyProfile(userId);
+      res.json(profile || null);
+    } catch (error) {
+      console.error("Error fetching company profile:", error);
+      res.status(500).json({ message: "Failed to fetch company profile" });
+    }
+  });
+
+  app.post("/api/company-profile", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = insertCompanyProfileSchema.parse({ ...req.body, userId });
+      const profile = await storage.createOrUpdateCompanyProfile(data);
+      res.json(profile);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error saving company profile:", error);
+      res.status(500).json({ message: "Failed to save company profile" });
     }
   });
 

@@ -132,6 +132,26 @@ export const invoices = pgTable("invoices", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const companyProfiles = pgTable("company_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  companyName: text("company_name").notNull(),
+  ideNumber: text("ide_number"),
+  street: text("street"),
+  postalCode: text("postal_code"),
+  city: text("city"),
+  canton: text("canton"),
+  country: text("country").default("Suisse"),
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  bankName: text("bank_name"),
+  iban: text("iban"),
+  bic: text("bic"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const machinesRelations = relations(machines, ({ many }) => ({
   fuelEntries: many(fuelEntries),
 }));
@@ -182,7 +202,16 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   createdAt: true,
 });
 
+export const insertCompanyProfileSchema = createInsertSchema(companyProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type Invoice = typeof invoices.$inferSelect;
+
+export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;
+export type CompanyProfile = typeof companyProfiles.$inferSelect;
 
 export const REIMBURSEMENT_RATE_CHF_PER_LITER = 0.3405;
