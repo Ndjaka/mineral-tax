@@ -254,13 +254,13 @@ export default function FuelPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold" data-testid="text-fuel-title">
+          <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-fuel-title">
             {t.fuel.title}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             {entries?.length || 0} {t.dashboard.recentEntries.toLowerCase()}
           </p>
         </div>
@@ -354,9 +354,9 @@ export default function FuelPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <p className="text-2xl font-bold font-mono">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                      <div className="text-left sm:text-right">
+                        <p className="text-xl sm:text-2xl font-bold font-mono">
                           {formatNumber(entry.volumeLiters)} L
                         </p>
                         <p className="text-sm text-muted-foreground">
@@ -364,8 +364,8 @@ export default function FuelPage() {
                         </p>
                       </div>
                       
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-primary font-mono">
+                      <div className="text-left sm:text-right">
+                        <p className="text-lg sm:text-xl font-bold text-primary font-mono">
                           {formatCurrency(reimbursement)}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -373,7 +373,7 @@ export default function FuelPage() {
                         </p>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 ml-auto">
                         <Button
                           variant="outline"
                           size="icon"

@@ -152,24 +152,24 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold" data-testid="text-reports-title">
+          <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-reports-title">
             {t.reports.title}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             {t.reports.formReference}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setIsHelpDialogOpen(true)} data-testid="button-admin-help">
-            <HelpCircle className="h-4 w-4 mr-2" />
-            {t.reports.adminHelp}
+            <HelpCircle className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">{t.reports.adminHelp}</span>
           </Button>
           <Button onClick={() => setIsDialogOpen(true)} data-testid="button-generate-report">
-            <Plus className="h-4 w-4 mr-2" />
-            {t.reports.generate}
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">{t.reports.generate}</span>
           </Button>
         </div>
       </div>
@@ -219,24 +219,25 @@ export default function ReportsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">{t.reports.eligibleVolume}</p>
+                  <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                    <div className="text-left sm:text-right">
+                      <p className="text-xs sm:text-sm text-muted-foreground">{t.reports.eligibleVolume}</p>
                       <p className="font-mono font-medium">
                         {formatNumber(report.eligibleVolumeLiters)} L
                       </p>
                     </div>
                     
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">{t.reports.reimbursementAmount}</p>
-                      <p className="text-xl font-bold text-primary font-mono">
+                    <div className="text-left sm:text-right">
+                      <p className="text-xs sm:text-sm text-muted-foreground">{t.reports.reimbursementAmount}</p>
+                      <p className="text-lg sm:text-xl font-bold text-primary font-mono">
                         {formatCurrency(report.reimbursementAmount)}
                       </p>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 ml-auto">
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => exportCsvMutation.mutate(report.id)}
                         disabled={exportCsvMutation.isPending}
                         data-testid={`button-export-csv-${report.id}`}
@@ -246,13 +247,14 @@ export default function ReportsPage() {
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <>
-                            <FileSpreadsheet className="h-4 w-4 mr-2" />
-                            Taxas
+                            <FileSpreadsheet className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Taxas</span>
                           </>
                         )}
                       </Button>
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => downloadMutation.mutate(report.id)}
                         disabled={downloadMutation.isPending}
                         data-testid={`button-download-${report.id}`}
@@ -261,8 +263,8 @@ export default function ReportsPage() {
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <>
-                            <Download className="h-4 w-4 mr-2" />
-                            PDF
+                            <Download className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">PDF</span>
                           </>
                         )}
                       </Button>

@@ -158,13 +158,13 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold" data-testid="text-dashboard-title">
+          <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-dashboard-title">
             {t.dashboard.welcome}, {user?.firstName || "User"}
           </h1>
-          <p className="text-muted-foreground mt-1">{t.dashboard.summary}</p>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">{t.dashboard.summary}</p>
         </div>
       </div>
 

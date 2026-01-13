@@ -244,13 +244,13 @@ export default function FleetPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold" data-testid="text-fleet-title">
+          <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-fleet-title">
             {t.fleet.title}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             {machines?.length || 0} {t.dashboard.activeMachines.toLowerCase()}
           </p>
         </div>

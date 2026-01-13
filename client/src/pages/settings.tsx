@@ -67,9 +67,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-3xl font-semibold" data-testid="text-settings-title">
+        <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-settings-title">
           {t.settings.title}
         </h1>
       </div>

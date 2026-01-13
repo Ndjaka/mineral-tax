@@ -68,17 +68,17 @@ export default function TaxasPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-5xl mx-auto">
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-semibold" data-testid="text-taxas-title">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-taxas-title">
             {t.taxas.title}
           </h1>
-          <Badge variant="secondary" className="ml-2">
+          <Badge variant="secondary">
             OFDF / BAZG
           </Badge>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-sm md:text-base text-muted-foreground">
           {t.taxas.subtitle}
         </p>
       </div>

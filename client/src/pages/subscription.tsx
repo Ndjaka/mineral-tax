@@ -59,7 +59,7 @@ export default function SubscriptionPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4 md:space-y-6">
         <Skeleton className="h-12 w-64" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -67,12 +67,12 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold" data-testid="text-subscription-title">
+        <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-subscription-title">
           {t.nav.subscription}
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-sm md:text-base text-muted-foreground mt-1">
           {isActive
             ? t.subscription.subscriptionActiveMessage
             : isTrialExpired

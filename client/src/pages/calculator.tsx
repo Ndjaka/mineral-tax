@@ -30,12 +30,12 @@ export default function CalculatorPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-3xl font-semibold" data-testid="text-calculator-title">
+        <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-calculator-title">
           {t.calculator.title}
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-sm md:text-base text-muted-foreground mt-1">
           {t.calculator.eligibilityNote}
         </p>
       </div>

@@ -152,10 +152,10 @@ export default function CompanyPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">{t.company.title}</h1>
-        <p className="text-muted-foreground">{t.company.subtitle}</p>
+        <h1 className="text-xl md:text-2xl font-bold">{t.company.title}</h1>
+        <p className="text-sm md:text-base text-muted-foreground">{t.company.subtitle}</p>
       </div>
 
       <Alert>
@@ -226,7 +226,7 @@ export default function CompanyPage() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="postalCode"
@@ -254,7 +254,7 @@ export default function CompanyPage() {
                   )}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="canton"
@@ -317,7 +317,7 @@ export default function CompanyPage() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="contactEmail"
