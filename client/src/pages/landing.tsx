@@ -88,20 +88,20 @@ export default function LandingPage() {
       </header>
 
       <main className="pt-16">
-        {/* Disclaimer Banner */}
-        <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <p className="text-sm text-amber-800 dark:text-amber-200 text-center">
-              <strong>MineralTax</strong> est un outil SaaS privé qui vous aide à préparer vos demandes de remboursement. 
-              Pour la soumission officielle, utilisez la plateforme{" "}
+        {/* Subtle Disclaimer Banner - integrated with site design */}
+        <div className="bg-muted/50 border-b">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <p className="text-xs text-muted-foreground text-center">
+              <span className="opacity-70">Outil privé d'aide à la préparation</span>
+              {" • "}
               <a 
-                href="https://www.bazg.admin.ch/bazg/fr/home/temaschwerpunkte/taxas.html" 
+                href="https://www.bazg.admin.ch/bazg/fr/home.html" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="underline hover:no-underline font-medium"
+                className="text-primary hover:underline"
               >
-                Taxas de l'OFDF
-              </a>.
+                Site officiel OFDF
+              </a>
             </p>
           </div>
         </div>
@@ -542,7 +542,7 @@ export default function LandingPage() {
                 </div>
                 <Button variant="outline" asChild>
                   <a 
-                    href="https://www.bazg.admin.ch/bazg/fr/home/temaschwerpunkte/taxas.html" 
+                    href="https://www.bazg.admin.ch/bazg/fr/home/actualites/forumd/fuer-fachleute/rueckerstattung-co2-abgabe-verbrauchssteuerplattform-taxas.html" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     data-testid="link-taxas-official"
@@ -698,7 +698,7 @@ export default function LandingPage() {
               <h4 className="font-semibold text-sm">Liens officiels</h4>
               <div className="flex flex-col gap-2 text-sm">
                 <a 
-                  href="https://www.bazg.admin.ch/bazg/fr/home/temaschwerpunkte/taxas.html" 
+                  href="https://www.bazg.admin.ch/bazg/fr/home/actualites/forumd/fuer-fachleute/rueckerstattung-co2-abgabe-verbrauchssteuerplattform-taxas.html" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground transition-colors"
