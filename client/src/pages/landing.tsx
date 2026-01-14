@@ -1,13 +1,35 @@
+import { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Truck, Calculator, FileText, Shield, CheckCircle2, ScrollText, Camera, Lock, HelpCircle, Building2, ClipboardList, Banknote } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Truck, Calculator, FileText, Shield, CheckCircle2, ScrollText, Camera, Lock, HelpCircle, Building2, ClipboardList, Banknote, ShieldCheck, ArrowRight, FileCheck } from "lucide-react";
 import { Link } from "wouter";
+
+const REIMBURSEMENT_RATE = 0.3405;
 
 export default function LandingPage() {
   const { t } = useI18n();
+  const [volumeLiters, setVolumeLiters] = useState(20000);
+  
+  const calculatedReimbursement = useMemo(() => {
+    return volumeLiters * REIMBURSEMENT_RATE;
+  }, [volumeLiters]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("fr-CH", {
+      style: "currency",
+      currency: "CHF",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat("fr-CH").format(num);
+  };
 
   const features = [
     {
@@ -117,33 +139,50 @@ export default function LandingPage() {
               <div className="relative lg:pl-8">
                 <div className="relative">
                   <Card className="bg-card/50 backdrop-blur border-2">
-                    <CardContent className="p-6 space-y-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Taux de remboursement OFDF
-                        </span>
-                        <span className="text-2xl font-bold text-primary font-mono">
-                          0.3405 CHF/L
-                        </span>
+                    <CardContent className="p-6 space-y-5">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          {t.landing.sliderLabel || "Votre consommation annuelle de diesel"}
+                        </p>
+                        <p className="text-3xl font-bold font-mono text-foreground">
+                          {formatNumber(volumeLiters)} L
+                        </p>
                       </div>
+                      
+                      <Slider
+                        value={[volumeLiters]}
+                        onValueChange={(value) => setVolumeLiters(value[0])}
+                        min={1000}
+                        max={100000}
+                        step={1000}
+                        className="py-4"
+                        data-testid="slider-volume"
+                      />
+                      
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>1'000 L</span>
+                        <span>100'000 L</span>
+                      </div>
+                      
                       <div className="h-px bg-border" />
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Volume total</span>
-                          <span className="font-mono">5,000 L</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Volume éligible</span>
-                          <span className="font-mono">4,500 L</span>
-                        </div>
-                        <div className="h-px bg-border" />
-                        <div className="flex justify-between gap-2">
-                          <span className="font-medium">Remboursement</span>
-                          <span className="text-xl font-bold text-primary font-mono">
-                            CHF 1,532.25
-                          </span>
-                        </div>
+                      
+                      <div className="text-center space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          {t.landing.sliderResult || "Vous pouvez récupérer"}
+                        </p>
+                        <p className="text-4xl md:text-5xl font-bold text-primary font-mono" data-testid="text-calculated-reimbursement">
+                          {formatCurrency(calculatedReimbursement)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t.landing.sliderRate || "Taux OFDF: 0.3405 CHF/L"}
+                        </p>
                       </div>
+                      
+                      <Button className="w-full" size="lg" asChild>
+                        <a href="/api/login" data-testid="button-cta-calculator">
+                          {t.landing.sliderCta || "Commencer gratuitement"}
+                        </a>
+                      </Button>
                     </CardContent>
                   </Card>
                   
@@ -282,6 +321,133 @@ export default function LandingPage() {
                   Exportez un rapport PDF conforme au formulaire 45.35 pour soumission à l'OFDF via Taxas.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20" id="conformite-ofdf">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 text-sm font-medium mb-6">
+                <ShieldCheck className="h-5 w-5" />
+                <span>{t.landing.ofdfBadge || "Génère des fichiers compatibles OFDF 2026"}</span>
+              </div>
+              <h2 className="text-3xl font-bold mb-4">{t.landing.ofdfTitle || "Compatible avec l'administration suisse"}</h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                {t.landing.ofdfSubtitle || "MineralTax génère des fichiers conformes aux exigences de l'OFDF. Vos données transitent en toute sécurité vers ePortal et Taxas."}
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="text-center">
+                <CardContent className="p-6 space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <FileCheck className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold">{t.landing.ofdfStep1Title || "1. Préparez vos données"}</h3>
+                  <p className="text-muted-foreground text-sm">
+                    {t.landing.ofdfStep1Desc || "Saisissez vos machines et consommations dans MineralTax. L'application vérifie automatiquement la conformité."}
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="text-center">
+                <CardContent className="p-6 space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <ArrowRight className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold">{t.landing.ofdfStep2Title || "2. Exportez le rapport"}</h3>
+                  <p className="text-muted-foreground text-sm">
+                    {t.landing.ofdfStep2Desc || "Générez un PDF conforme au formulaire 45.35 et un CSV compatible Taxas pour votre déclaration."}
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="text-center">
+                <CardContent className="p-6 space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <Shield className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold">{t.landing.ofdfStep3Title || "3. Soumettez via ePortal"}</h3>
+                  <p className="text-muted-foreground text-sm">
+                    {t.landing.ofdfStep3Desc || "Connectez-vous à ePortal.admin.ch avec votre CH-Login et importez vos fichiers dans Taxas."}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="mt-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                {t.landing.ofdfNote || "MineralTax ne transmet pas directement vos données à l'administration. Vous gardez le contrôle total de vos soumissions."}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 bg-muted/30" id="audit-conformite">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400 text-sm font-medium">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>{t.landing.auditBadge || "Tranquillité d'esprit"}</span>
+                </div>
+                <h2 className="text-3xl font-bold">{t.landing.auditTitle || "Nous vérifions vos erreurs"}</h2>
+                <p className="text-lg text-muted-foreground">
+                  {t.landing.auditSubtitle || "Avant chaque soumission, notre système analyse automatiquement vos données pour détecter les incohérences."}
+                </p>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>{t.landing.auditCheck1 || "Détection des doublons de factures"}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>{t.landing.auditCheck2 || "Vérification des volumes anormaux"}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>{t.landing.auditCheck3 || "Validation des catégories Taxas"}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>{t.landing.auditCheck4 || "Contrôle des dates et périodes"}</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <Card className="bg-card border-2">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{t.landing.auditResultTitle || "Audit de conformité"}</p>
+                      <p className="text-sm text-muted-foreground">{t.landing.auditResultSubtitle || "Aucune erreur détectée"}</p>
+                    </div>
+                  </div>
+                  <div className="h-px bg-border" />
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{t.landing.auditItemMachines || "Machines vérifiées"}</span>
+                      <span className="font-mono text-green-600">12 / 12</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{t.landing.auditItemEntries || "Entrées analysées"}</span>
+                      <span className="font-mono text-green-600">156 / 156</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{t.landing.auditItemDuplicates || "Doublons détectés"}</span>
+                      <span className="font-mono text-green-600">0</span>
+                    </div>
+                  </div>
+                  <div className="h-px bg-border" />
+                  <Button className="w-full" disabled>
+                    {t.landing.auditReady || "Prêt pour soumission"}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>

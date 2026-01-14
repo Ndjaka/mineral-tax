@@ -462,6 +462,126 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/reports/audit", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { periodStart, periodEnd } = req.body;
+      
+      let startDate: Date;
+      let endDate: Date;
+      try {
+        startDate = parseDate(periodStart);
+        endDate = parseDate(periodEnd);
+      } catch (err) {
+        return res.status(400).json({ message: "Invalid date format. Use ISO 8601 format." });
+      }
+      
+      const fuelEntries = await storage.getFuelEntries(userId);
+      const machines = await storage.getMachines(userId);
+      
+      const entriesInPeriod = fuelEntries.filter(entry => {
+        const entryDate = new Date(entry.invoiceDate);
+        return entryDate >= startDate && entryDate <= endDate;
+      });
+      
+      const findings: { type: "error" | "warning"; code: string; message: string; details?: any }[] = [];
+      
+      const invoiceGroups = new Map<string, typeof entriesInPeriod>();
+      entriesInPeriod.forEach(entry => {
+        if (entry.invoiceNumber) {
+          const key = `${entry.machineId}-${entry.invoiceNumber}`;
+          const group = invoiceGroups.get(key) || [];
+          group.push(entry);
+          invoiceGroups.set(key, group);
+        }
+      });
+      
+      invoiceGroups.forEach((entries, key) => {
+        if (entries.length > 1) {
+          const machine = machines.find(m => m.id === entries[0].machineId);
+          findings.push({
+            type: "error",
+            code: "DUPLICATE_INVOICE",
+            message: `Facture en double détectée: ${entries[0].invoiceNumber}`,
+            details: {
+              invoiceNumber: entries[0].invoiceNumber,
+              machineName: machine?.name || "Unknown",
+              count: entries.length,
+            },
+          });
+        }
+      });
+      
+      const machineVolumes = new Map<string, number>();
+      entriesInPeriod.forEach(entry => {
+        const current = machineVolumes.get(entry.machineId) || 0;
+        machineVolumes.set(entry.machineId, current + Number(entry.volumeLiters));
+      });
+      
+      machineVolumes.forEach((totalVolume, machineId) => {
+        const machine = machines.find(m => m.id === machineId);
+        if (totalVolume > 50000) {
+          findings.push({
+            type: "warning",
+            code: "HIGH_VOLUME",
+            message: `Volume élevé pour ${machine?.name || "Unknown"}: ${totalVolume.toLocaleString()} L`,
+            details: {
+              machineName: machine?.name || "Unknown",
+              volume: totalVolume,
+            },
+          });
+        }
+      });
+      
+      entriesInPeriod.forEach(entry => {
+        if (Number(entry.volumeLiters) <= 0) {
+          findings.push({
+            type: "error",
+            code: "INVALID_VOLUME",
+            message: `Volume invalide: ${entry.volumeLiters} L`,
+            details: {
+              entryId: entry.id,
+              volume: entry.volumeLiters,
+            },
+          });
+        }
+      });
+      
+      const machinesWithoutTaxas = machines.filter(m => 
+        m.isEligible && !m.taxasActivity
+      );
+      machinesWithoutTaxas.forEach(machine => {
+        findings.push({
+          type: "warning",
+          code: "MISSING_TAXAS_CATEGORY",
+          message: `Catégorie Taxas manquante: ${machine.name}`,
+          details: {
+            machineId: machine.id,
+            machineName: machine.name,
+          },
+        });
+      });
+      
+      const auditResult = {
+        periodStart: startDate.toISOString(),
+        periodEnd: endDate.toISOString(),
+        summary: {
+          machinesChecked: machines.length,
+          entriesAnalyzed: entriesInPeriod.length,
+          errors: findings.filter(f => f.type === "error").length,
+          warnings: findings.filter(f => f.type === "warning").length,
+        },
+        findings,
+        isValid: findings.filter(f => f.type === "error").length === 0,
+      };
+      
+      res.json(auditResult);
+    } catch (error) {
+      console.error("Error running audit:", error);
+      res.status(500).json({ message: "Failed to run audit" });
+    }
+  });
+
   app.get("/api/subscription", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);

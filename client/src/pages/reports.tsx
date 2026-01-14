@@ -27,9 +27,29 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, FileText, Download, Calendar, Loader2, HelpCircle, FileSpreadsheet, ExternalLink, Key, Building, AppWindow } from "lucide-react";
+import { Plus, FileText, Download, Calendar, Loader2, HelpCircle, FileSpreadsheet, ExternalLink, Key, Building, AppWindow, ShieldCheck, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import type { Report } from "@shared/schema";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+
+type AuditFinding = {
+  type: "error" | "warning";
+  code: string;
+  message: string;
+  details?: any;
+};
+
+type AuditResult = {
+  periodStart: string;
+  periodEnd: string;
+  summary: {
+    machinesChecked: number;
+    entriesAnalyzed: number;
+    errors: number;
+    warnings: number;
+  };
+  findings: AuditFinding[];
+  isValid: boolean;
+};
 
 const reportFormSchema = z.object({
   periodStart: z.string().min(1),
@@ -44,6 +64,7 @@ export default function ReportsPage() {
   const [, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
+  const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
 
   const form = useForm<ReportFormData>({
     resolver: zodResolver(reportFormSchema),
@@ -121,6 +142,33 @@ export default function ReportsPage() {
       toast({ title: t.common.error, variant: "destructive" });
     },
   });
+
+  const auditMutation = useMutation({
+    mutationFn: (data: ReportFormData) =>
+      apiRequest("POST", "/api/reports/audit", {
+        periodStart: new Date(data.periodStart).toISOString(),
+        periodEnd: new Date(data.periodEnd).toISOString(),
+      }),
+    onSuccess: (result: AuditResult) => {
+      setAuditResult(result);
+      if (result.isValid) {
+        toast({ title: t.reports.auditSuccess || "Audit réussi - Aucune erreur détectée" });
+      } else {
+        toast({ 
+          title: t.reports.auditErrors || "Erreurs détectées dans vos données", 
+          variant: "destructive" 
+        });
+      }
+    },
+    onError: () => {
+      toast({ title: t.common.error, variant: "destructive" });
+    },
+  });
+
+  const handleAudit = () => {
+    const values = form.getValues();
+    auditMutation.mutate(values);
+  };
 
   const onSubmit = (data: ReportFormData) => {
     generateMutation.mutate(data);
@@ -291,7 +339,7 @@ export default function ReportsPage() {
         </Card>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setAuditResult(null); }}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t.reports.generate}</DialogTitle>
@@ -305,7 +353,12 @@ export default function ReportsPage() {
                   <FormItem>
                     <FormLabel>{t.reports.periodStart} *</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} data-testid="input-period-start" />
+                      <Input 
+                        type="date" 
+                        {...field} 
+                        onChange={(e) => { field.onChange(e); setAuditResult(null); }}
+                        data-testid="input-period-start" 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -319,7 +372,12 @@ export default function ReportsPage() {
                   <FormItem>
                     <FormLabel>{t.reports.periodEnd} *</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} data-testid="input-period-end" />
+                      <Input 
+                        type="date" 
+                        {...field} 
+                        onChange={(e) => { field.onChange(e); setAuditResult(null); }}
+                        data-testid="input-period-end" 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -339,13 +397,74 @@ export default function ReportsPage() {
                 </CardContent>
               </Card>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAudit}
+                disabled={auditMutation.isPending}
+                className="w-full"
+                data-testid="button-run-audit"
+              >
+                {auditMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                )}
+                {t.reports.runAudit || "Vérifier la conformité"}
+              </Button>
+
+              {auditResult && (
+                <Card className={auditResult.isValid ? "border-green-500/50 bg-green-50/50 dark:bg-green-950/20" : "border-destructive/50 bg-destructive/10"}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      {auditResult.isValid ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-destructive" />
+                      )}
+                      <span className="font-medium">
+                        {auditResult.isValid 
+                          ? (t.reports.auditPassed || "Données conformes") 
+                          : (t.reports.auditFailed || "Corrections requises")}
+                      </span>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground">
+                      {t.reports.auditSummary || "Résumé"}: {auditResult.summary.entriesAnalyzed} {t.fuel.title || "entrées"}, {auditResult.summary.machinesChecked} {t.fleet.title || "machines"}
+                    </div>
+
+                    {auditResult.findings.length > 0 && (
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {auditResult.findings.map((finding, idx) => (
+                          <div
+                            key={idx}
+                            className={`flex items-start gap-2 text-sm p-2 rounded ${
+                              finding.type === "error" 
+                                ? "bg-destructive/20 text-destructive" 
+                                : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"
+                            }`}
+                          >
+                            {finding.type === "error" ? (
+                              <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                            ) : (
+                              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                            )}
+                            <span>{finding.message}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              <DialogFooter className="gap-2">
+                <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); setAuditResult(null); }}>
                   {t.common.cancel}
                 </Button>
                 <Button
                   type="submit"
-                  disabled={generateMutation.isPending}
+                  disabled={generateMutation.isPending || !auditResult || !auditResult.isValid}
                   data-testid="button-confirm-generate"
                 >
                   {generateMutation.isPending && (
