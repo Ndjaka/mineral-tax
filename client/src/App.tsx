@@ -26,6 +26,10 @@ import SuccessPage from "@/pages/success";
 import SubscriptionPage from "@/pages/subscription";
 import TaxasPage from "@/pages/taxas";
 import CompanyPage from "@/pages/company";
+import RessourcesPage from "@/pages/ressources";
+import GuideRemboursementPage from "@/pages/seo/guide-remboursement";
+import MachinesEligiblesPage from "@/pages/seo/machines-eligibles";
+import TauxRemboursementPage from "@/pages/seo/taux-remboursement";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -79,6 +83,10 @@ function AuthenticatedRouter() {
         <Route path="/privacy" component={PrivacyPage} />
         <Route path="/success" component={SuccessPage} />
         <Route path="/subscription" component={SubscriptionPage} />
+        <Route path="/ressources" component={RessourcesPage} />
+        <Route path="/ressources/guide-remboursement" component={GuideRemboursementPage} />
+        <Route path="/ressources/machines-eligibles" component={MachinesEligiblesPage} />
+        <Route path="/ressources/taux-remboursement" component={TauxRemboursementPage} />
         <Route component={NotFound} />
       </Switch>
     </AuthenticatedLayout>
@@ -117,6 +125,22 @@ function AppContent() {
         </div>
       </div>
     );
+  }
+
+  if (location === "/ressources" && !user) {
+    return <RessourcesPage />;
+  }
+
+  if (location === "/ressources/guide-remboursement" && !user) {
+    return <GuideRemboursementPage />;
+  }
+
+  if (location === "/ressources/machines-eligibles" && !user) {
+    return <MachinesEligiblesPage />;
+  }
+
+  if (location === "/ressources/taux-remboursement" && !user) {
+    return <TauxRemboursementPage />;
   }
 
   if (isLoading) {

@@ -11,7 +11,7 @@ import { Link } from "wouter";
 const REIMBURSEMENT_RATE = 0.3405;
 
 export default function LandingPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [volumeLiters, setVolumeLiters] = useState(20000);
   
   const calculatedReimbursement = useMemo(() => {
@@ -561,7 +561,15 @@ export default function LandingPage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>&copy; 2026 MineralTax Swiss. Plateforme de remboursement de la taxe minérale en Suisse.</span>
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+              <Link 
+                href="/ressources" 
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                data-testid="link-ressources-footer"
+              >
+                <span>{language === "fr" ? "Ressources" : language === "de" ? "Ressourcen" : language === "it" ? "Risorse" : "Resources"}</span>
+              </Link>
+              <span className="text-muted-foreground/50">|</span>
               <Link 
                 href="/terms" 
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
