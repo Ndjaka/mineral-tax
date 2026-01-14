@@ -88,6 +88,24 @@ export default function LandingPage() {
       </header>
 
       <main className="pt-16">
+        {/* Disclaimer Banner */}
+        <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <p className="text-sm text-amber-800 dark:text-amber-200 text-center">
+              <strong>MineralTax</strong> est un outil SaaS privé qui vous aide à préparer vos demandes de remboursement. 
+              Pour la soumission officielle, utilisez la plateforme{" "}
+              <a 
+                href="https://www.bazg.admin.ch/bazg/fr/home/temaschwerpunkte/taxas.html" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="underline hover:no-underline font-medium"
+              >
+                Taxas de l'OFDF
+              </a>.
+            </p>
+          </div>
+        </div>
+
         <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted/30">
           <div className="absolute inset-0 bg-grid-pattern opacity-5" />
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
@@ -452,7 +470,92 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-20" id="tarifs">
+        {/* Trust & Security Section */}
+        <section className="py-20" id="confiance">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Confiance & Sécurité</h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                MineralTax est un outil professionnel développé pour faciliter vos démarches administratives. 
+                Nous ne remplaçons pas les services officiels, nous vous aidons à mieux les utiliser.
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="hover-elevate">
+                <CardContent className="p-6 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                    <ShieldCheck className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h3 className="font-semibold">Données en Suisse</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Vos données sont hébergées sur des serveurs sécurisés avec chiffrement SSL/TLS.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover-elevate">
+                <CardContent className="p-6 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto">
+                    <Lock className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold">Aucune transmission automatique</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Nous ne transmettons jamais vos données à l'administration. Vous gardez le contrôle total.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover-elevate">
+                <CardContent className="p-6 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto">
+                    <FileCheck className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <h3 className="font-semibold">Compatible Taxas</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Nos exports CSV sont formatés selon les exigences de la plateforme officielle Taxas.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover-elevate">
+                <CardContent className="p-6 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
+                    <Building2 className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <h3 className="font-semibold">Outil privé, pas officiel</h3>
+                  <p className="text-sm text-muted-foreground">
+                    MineralTax est une solution SaaS privée. La soumission officielle se fait sur Taxas.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mt-10 p-6 bg-muted/50 rounded-lg border">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Shield className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="font-semibold">Lien officiel OFDF / BAZG</p>
+                    <p className="text-sm text-muted-foreground">Pour toutes vos démarches officielles</p>
+                  </div>
+                </div>
+                <Button variant="outline" asChild>
+                  <a 
+                    href="https://www.bazg.admin.ch/bazg/fr/home/temaschwerpunkte/taxas.html" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    data-testid="link-taxas-official"
+                  >
+                    Accéder à Taxas <ArrowRight className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 bg-muted/30" id="tarifs">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Card className="bg-primary text-primary-foreground overflow-hidden">
               <CardContent className="p-8 md:p-12">
@@ -555,48 +658,80 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t py-8">
+      <footer className="border-t py-12 bg-muted/30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>&copy; 2026 MineralTax Swiss. Plateforme de remboursement de la taxe minérale en Suisse.</span>
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
+            {/* Brand */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
+                  <span className="text-primary-foreground font-bold text-lg">MT</span>
+                </div>
+                <span className="font-semibold">MineralTax Swiss</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Outil SaaS privé pour la préparation des demandes de remboursement de la taxe sur les huiles minérales en Suisse.
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                Ce site n'est pas affilié à l'administration fédérale suisse.
+              </p>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
-              <Link 
-                href="/ressources" 
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-                data-testid="link-ressources-footer"
-              >
-                <span>{language === "fr" ? "Ressources" : language === "de" ? "Ressourcen" : language === "it" ? "Risorse" : "Resources"}</span>
-              </Link>
-              <span className="text-muted-foreground/50">|</span>
-              <Link 
-                href="/terms" 
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-                data-testid="link-terms-footer"
-              >
-                <ScrollText className="h-4 w-4" />
-                <span>{t.nav.terms}</span>
-              </Link>
-              <span className="text-muted-foreground/50">|</span>
-              <Link 
-                href="/privacy" 
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-                data-testid="link-privacy-footer"
-              >
-                <Lock className="h-4 w-4" />
-                <span>{t.privacy?.title || "Confidentialité"}</span>
-              </Link>
-              <span className="text-muted-foreground/50">|</span>
-              <a 
-                href="https://www.bazg.admin.ch/bazg/fr/home.html" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors"
-                data-testid="link-ofdf"
-              >
-                OFDF / BAZG / AFD / FOCBS
-              </a>
+            
+            {/* Links */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm">Liens utiles</h4>
+              <div className="flex flex-col gap-2 text-sm">
+                <Link href="/ressources" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-ressources-footer">
+                  {language === "fr" ? "Ressources" : language === "de" ? "Ressourcen" : language === "it" ? "Risorse" : "Resources"}
+                </Link>
+                <Link href="/terms" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-terms-footer">
+                  {t.nav.terms}
+                </Link>
+                <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-privacy-footer">
+                  {t.privacy?.title || "Confidentialité"}
+                </Link>
+              </div>
+            </div>
+            
+            {/* Official Links */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm">Liens officiels</h4>
+              <div className="flex flex-col gap-2 text-sm">
+                <a 
+                  href="https://www.bazg.admin.ch/bazg/fr/home/temaschwerpunkte/taxas.html" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-taxas-footer"
+                >
+                  Plateforme Taxas (OFDF)
+                </a>
+                <a 
+                  href="https://www.bazg.admin.ch/bazg/fr/home.html" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-ofdf-footer"
+                >
+                  OFDF / BAZG / AFD / FOCBS
+                </a>
+                <a 
+                  href="https://www.ch.ch" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-chch-footer"
+                >
+                  ch.ch - Portail suisse
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t pt-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+              <span>&copy; 2026 MineralTax Swiss. Tous droits réservés.</span>
+              <span>Hébergé sur infrastructure sécurisée • Connexion SSL/TLS</span>
             </div>
           </div>
         </div>

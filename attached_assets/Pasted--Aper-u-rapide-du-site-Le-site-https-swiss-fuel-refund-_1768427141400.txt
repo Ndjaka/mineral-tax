@@ -1,0 +1,23 @@
+🔍 Aperçu rapide du site
+Le site https://swiss-fuel-refund.replit.app/ semble être une page hébergée gratuitement sur Replit — une plateforme où n’importe qui (développeurs ou non) peut créer et partager un petit site ou une application web.
+Le contenu mentionné (via votre URL) fait référence à quelque chose comme « Taxe sur les huiles minérales en Suisse 2026 – Guide + Remboursement | MineralTax » — ce qui laisse penser que le site voudrait parler du remboursement de la taxe sur les carburants/minéraux en Suisse (impôt sur les huiles minérales).
+
+Cependant :
+
+⭐ Ce n’est pas un site officiel d’une administration suisse (comme l’Office fédéral de la douane ou autre).
+⭐ Il est hébergé sur Replit, une plateforme de développement, ce qui veut dire que le contenu peut être créé par n’importe qui et n’a pas forcément de lien avec une autorité officielle ou une entreprise reconnue.
+📌 Contexte utile (impôt sur les huiles minérales en Suisse)
+En Suisse, il existe bien une taxe sur les huiles minérales (une taxe spéciale sur l’essence, le diesel, etc.) gérée par l’administration fédérale. Des mécanismes de remboursement existent pour certaines catégories d’utilisateurs (ex. agriculteurs).
+À partir de 2026, la procédure de remboursement pour ces taxes change et nécessite un enregistrement préalable via la plateforme officielle «Taxas» de l’administration douanière suisse si l’on veut faire une demande de remboursement.
+
+⚠️ Attention
+Comme le site est hébergé sur Replit et non sur un domaine officiel (.ch), il peut être :
+une simple page informative ou un prototype personnel,
+parfois un site qui pourrait ne pas être fiable ou complet,
+voire potentiellement trompeur si vous devez fournir des informations personnelles.
+👉 Il n’est pas recommandé de faire confiance à ce type de site pour des démarches officielles ou pour saisir des données sensibles.
+🛡️ Comment faire la démarche officielle
+Pour un remboursement réel de la taxe sur les huiles minérales en Suisse, il faut :
+passer par les services officiels (ex. l’administration fédérale des douanes),
+s’inscrire à la plateforme officielle («Taxas») et suivre la procédure prévue par la loi.
+Si vous voulez, je peux vous donner le lien officiel ou les étapes étape par étape pour faire une vraie demande de remboursement en Suisse (sans passer par ce site).
