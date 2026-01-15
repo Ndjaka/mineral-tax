@@ -54,13 +54,7 @@ export default function LandingPage() {
     },
   ];
 
-  const benefits = [
-    "OFDF / BAZG / AFD / FOCBS",
-    "Formulaire 45.35",
-    "Taxas",
-    "4 Sprachen / 4 langues",
-  ];
-
+  
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
@@ -111,46 +105,45 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                  <Shield className="h-4 w-4" />
-                  <span>Swiss Made Solution</span>
-                </div>
-                
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-                  Taxe sur les huiles minérales en Suisse
-                  <span className="block text-2xl md:text-3xl mt-2 text-muted-foreground font-normal">
-                    (Taxe minéral Suisse)
-                  </span>
+                  Déclaration simplifiée de la taxe sur les huiles minérales en Suisse
                 </h1>
                 
-                <p className="text-lg text-muted-foreground max-w-lg">
-                  Simplifiez vos demandes de remboursement de l'impôt sur les huiles minérales. 
-                  Plateforme professionnelle compatible avec Taxas et le formulaire 45.35.
+                <p className="text-xl text-muted-foreground max-w-lg">
+                  Gagnez du temps sur vos demandes de remboursement. MineralTax prépare automatiquement 
+                  vos rapports conformes au formulaire 45.35 et à la plateforme Taxas de l'OFDF.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button size="lg" asChild data-testid="button-cta-primary">
-                    <a href="/api/login">{t.landing.cta}</a>
+                    <a href="/api/login">Commencer la déclaration</a>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild data-testid="button-cta-secondary">
+                    <a href="#comment-ca-marche">Voir comment ça marche</a>
                   </Button>
                 </div>
                 
                 <p className="text-sm text-muted-foreground">
-                  {t.terms.bySigningIn}{" "}
-                  <Link href="/terms" className="text-primary underline hover:no-underline" data-testid="link-terms-hero">
-                    {t.terms.termsLink}
-                  </Link>
+                  Essai gratuit 10 jours — sans carte bancaire
                 </p>
 
-                <div className="flex flex-wrap gap-3">
-                  {benefits.map((benefit) => (
-                    <div
-                      key={benefit}
-                      className="flex items-center gap-1.5 text-sm text-muted-foreground"
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
-                      <span>{benefit}</span>
-                    </div>
-                  ))}
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>Conforme formulaire 45.35</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>Export compatible Taxas</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>Calcul automatique 0.3405 CHF/L</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>4 langues officielles</span>
+                  </div>
                 </div>
               </div>
 
@@ -207,6 +200,98 @@ export default function LandingPage() {
                   <div className="absolute -z-10 -top-4 -right-4 w-full h-full bg-primary/10 rounded-lg" />
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 bg-muted/30" id="comment-ca-marche">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Comment ça marche</h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                Trois étapes simples pour récupérer votre remboursement
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
+                  1
+                </div>
+                <h3 className="text-xl font-semibold">Enregistrez vos machines</h3>
+                <p className="text-muted-foreground">
+                  Ajoutez vos pelles, chargeuses, grues et autres équipements hors route avec leurs catégories Taxas.
+                </p>
+              </div>
+              
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
+                  2
+                </div>
+                <h3 className="text-xl font-semibold">Saisissez vos consommations</h3>
+                <p className="text-muted-foreground">
+                  Entrez vos tickets de carburant manuellement ou scannez-les avec l'OCR. Le calcul est automatique.
+                </p>
+              </div>
+              
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
+                  3
+                </div>
+                <h3 className="text-xl font-semibold">Exportez pour Taxas</h3>
+                <p className="text-muted-foreground">
+                  Générez votre rapport PDF conforme 45.35 et le fichier CSV prêt pour la plateforme officielle.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20" id="pour-qui">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Pour qui ?</h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                MineralTax est conçu pour les entreprises suisses utilisant des machines hors route
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="hover-elevate transition-all duration-200">
+                <CardContent className="p-6 space-y-3">
+                  <h3 className="text-lg font-semibold">Entreprises de construction</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Pelles, chargeuses, bulldozers, grues
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover-elevate transition-all duration-200">
+                <CardContent className="p-6 space-y-3">
+                  <h3 className="text-lg font-semibold">Exploitations agricoles</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Tracteurs, moissonneuses, machines forestières
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover-elevate transition-all duration-200">
+                <CardContent className="p-6 space-y-3">
+                  <h3 className="text-lg font-semibold">Entreprises de transport</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Chariots élévateurs, équipements portuaires
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover-elevate transition-all duration-200">
+                <CardContent className="p-6 space-y-3">
+                  <h3 className="text-lg font-semibold">Gestionnaires de flotte</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Générateurs, dameuses, équipements fixes
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
@@ -653,6 +738,22 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-8 md:p-12 text-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">
+                Prêt à simplifier vos déclarations ?
+              </h2>
+              <p className="text-primary-foreground/90 mb-8 max-w-xl mx-auto">
+                Commencez dès maintenant avec 10 jours d'essai gratuit. Aucune carte bancaire requise.
+              </p>
+              <Button size="lg" variant="secondary" asChild data-testid="button-cta-final">
+                <a href="/api/login">Commencer la déclaration</a>
+              </Button>
             </div>
           </div>
         </section>
