@@ -116,7 +116,7 @@ export default function LandingPage() {
                 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button size="lg" asChild data-testid="button-cta-primary">
-                    <a href="/api/login">Commencer la déclaration</a>
+                    <a href="/api/login">Commencer l'essai gratuit</a>
                   </Button>
                   <Button size="lg" variant="outline" asChild data-testid="button-cta-secondary">
                     <a href="#comment-ca-marche">Voir comment ça marche</a>
@@ -124,7 +124,7 @@ export default function LandingPage() {
                 </div>
                 
                 <p className="text-sm text-muted-foreground">
-                  Essai gratuit 10 jours — sans carte bancaire
+                  Accès immédiat • Sans carte bancaire • Conforme Taxas 45.35
                 </p>
 
                 <div className="flex flex-wrap gap-4">
@@ -746,14 +746,17 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-8 md:p-12 text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">
-                Prêt à simplifier vos déclarations ?
+                Prêt à récupérer votre remboursement ?
               </h2>
-              <p className="text-primary-foreground/90 mb-8 max-w-xl mx-auto">
-                Commencez dès maintenant avec 10 jours d'essai gratuit. Aucune carte bancaire requise.
+              <p className="text-primary-foreground/90 mb-6 max-w-xl mx-auto">
+                Rejoignez les entreprises suisses qui simplifient leurs déclarations Taxas.
               </p>
               <Button size="lg" variant="secondary" asChild data-testid="button-cta-final">
-                <a href="/api/login">Commencer la déclaration</a>
+                <a href="/api/login">Commencer l'essai gratuit (10 jours)</a>
               </Button>
+              <p className="text-primary-foreground/70 text-sm mt-4">
+                Accès immédiat • Sans carte bancaire • Conforme Taxas 45.35
+              </p>
             </div>
           </div>
         </section>
