@@ -83,157 +83,263 @@
     <link rel="apple-touch-icon" href="/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Outfit:wght@100..900&family=Oxanium:wght@200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* Static content is visible by default for crawlers */
+      #static-seo-content {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.6;
+        color: #1a1a1a;
+        background: #fff;
+      }
+      /* Hide static content when React app loads */
+      .js-loaded #static-seo-content {
+        display: none !important;
+      }
+      /* Show React app only when JS loads */
+      #root {
+        display: none;
+      }
+      .js-loaded #root {
+        display: block;
+      }
+    </style>
   </head>
   <body>
-    <!-- SEO-friendly static content for bots that don't execute JavaScript -->
-    <div id="root">
-      <!-- This content is replaced by React when JS loads, but visible to crawlers -->
-      <header style="padding: 1rem; border-bottom: 1px solid #eee;">
-        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <strong>MineralTax Swiss</strong>
-            <span style="font-size: 0.875rem; color: #666; margin-left: 0.5rem;">Remboursement taxe minérale</span>
+    <!-- Static SEO content - visible to crawlers without JavaScript -->
+    <div id="static-seo-content">
+      <header style="padding: 1rem 1.5rem; border-bottom: 1px solid #e5e5e5; background: #fff;">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 40px; height: 40px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+              <span style="color: white; font-weight: bold; font-size: 1.125rem;">MT</span>
+            </div>
+            <div>
+              <strong style="font-size: 1rem;">MineralTax Swiss</strong>
+              <span style="display: block; font-size: 0.75rem; color: #666;">Remboursement taxe minérale</span>
+            </div>
           </div>
-          <a href="/api/login" style="background: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; text-decoration: none;">Connexion</a>
+          <a href="/api/login" style="display: inline-block; background: #2563eb; color: white; padding: 0.625rem 1.25rem; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 0.875rem;">Connexion</a>
         </div>
       </header>
       
-      <main style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
-        <p style="font-size: 0.875rem; text-align: center; color: #666; margin-bottom: 2rem;">
-          Outil privé d'aide à la préparation • <a href="https://www.bazg.admin.ch/bazg/fr/home.html">Site officiel OFDF</a>
+      <div style="background: #f8f9fa; padding: 0.5rem 1rem; text-align: center; border-bottom: 1px solid #e5e5e5;">
+        <p style="margin: 0; font-size: 0.75rem; color: #666;">
+          Outil privé d'aide à la préparation • 
+          <a href="https://www.bazg.admin.ch/bazg/fr/home.html" style="color: #2563eb; text-decoration: none;">Site officiel OFDF</a>
         </p>
-        
-        <article>
-          <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1rem;">
+      </div>
+      
+      <main style="max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem;">
+        <article style="max-width: 800px;">
+          <div style="display: inline-block; background: #eff6ff; color: #2563eb; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; margin-bottom: 1.5rem;">
+            Swiss Made Solution
+          </div>
+          
+          <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0 0 0.5rem 0; line-height: 1.2;">
             Taxe sur les huiles minérales en Suisse
-            <span style="display: block; font-size: 1.5rem; font-weight: normal; color: #666;">(Taxe minéral Suisse)</span>
+            <span style="display: block; font-size: 1.5rem; font-weight: 400; color: #666; margin-top: 0.5rem;">(Taxe minéral Suisse)</span>
           </h1>
           
-          <p style="font-size: 1.125rem; color: #666; max-width: 600px; margin-bottom: 2rem;">
+          <p style="font-size: 1.125rem; color: #666; margin: 1.5rem 0 2rem 0; max-width: 600px;">
             Simplifiez vos demandes de remboursement de l'impôt sur les huiles minérales. 
             Plateforme professionnelle compatible avec Taxas et le formulaire 45.35.
           </p>
           
-          <a href="/api/login" style="display: inline-block; background: #2563eb; color: white; padding: 0.75rem 1.5rem; border-radius: 0.375rem; text-decoration: none; font-weight: 500;">
+          <a href="/api/login" style="display: inline-block; background: #2563eb; color: white; padding: 0.875rem 1.75rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1rem; margin-bottom: 2rem;">
             Commencer l'essai gratuit de 10 jours
           </a>
           
-          <ul style="margin-top: 2rem; list-style: none; padding: 0;">
-            <li>✓ OFDF / BAZG / AFD / FOCBS</li>
-            <li>✓ Formulaire 45.35</li>
-            <li>✓ Compatible Taxas</li>
-            <li>✓ 4 langues (FR, DE, IT, EN)</li>
+          <ul style="list-style: none; padding: 0; margin: 2rem 0; display: flex; flex-wrap: wrap; gap: 1rem;">
+            <li style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #333;">
+              <span style="color: #2563eb;">✓</span> OFDF / BAZG / AFD / FOCBS
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #333;">
+              <span style="color: #2563eb;">✓</span> Formulaire 45.35
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #333;">
+              <span style="color: #2563eb;">✓</span> Compatible Taxas
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #333;">
+              <span style="color: #2563eb;">✓</span> 4 langues (FR, DE, IT, EN)
+            </li>
           </ul>
         </article>
         
-        <section style="margin-top: 4rem;">
-          <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">Qu'est-ce que la taxe sur les huiles minérales ?</h2>
-          <p style="color: #666;">
+        <section style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #e5e5e5;">
+          <h2 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 1rem 0;">Qu'est-ce que la taxe sur les huiles minérales ?</h2>
+          <p style="color: #666; max-width: 800px; margin-bottom: 2rem;">
             La taxe sur les huiles minérales (Mineralölsteuer) est un impôt spécial prélevé sur les carburants, 
             huiles de chauffage et gaz en Suisse. Elle est perçue au niveau du commerce et répercutée sur le consommateur final.
             Les entreprises de construction, agriculteurs et exploitants de machines hors route peuvent demander un remboursement.
           </p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px;">
+              <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.75rem 0;">Produits concernés</h3>
+              <p style="color: #666; font-size: 0.875rem; margin: 0;">
+                Diesel, essence, huiles de chauffage, gaz naturel et autres combustibles fossiles utilisés en Suisse.
+              </p>
+            </div>
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px;">
+              <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.75rem 0;">Qui est concerné ?</h3>
+              <p style="color: #666; font-size: 0.875rem; margin: 0;">
+                Entreprises de construction, agriculteurs, exploitants de machines hors route et flottes professionnelles.
+              </p>
+            </div>
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px;">
+              <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.75rem 0;">Plateforme Taxas</h3>
+              <p style="color: #666; font-size: 0.875rem; margin: 0;">
+                La plateforme officielle Taxas de l'OFDF gère les déclarations et remboursements de la taxe minérale.
+              </p>
+            </div>
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px;">
+              <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.75rem 0;">Exemptions fiscales</h3>
+              <p style="color: #666; font-size: 0.875rem; margin: 0;">
+                Réductions et remboursements disponibles pour certains usages professionnels hors route.
+              </p>
+            </div>
+          </div>
         </section>
         
-        <section style="margin-top: 3rem;">
-          <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">Taux de remboursement</h2>
-          <p style="color: #666;">
-            Le taux actuel de remboursement est de <strong>0.3405 CHF par litre</strong> pour les machines hors route.
+        <section style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #e5e5e5;">
+          <h2 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 1rem 0;">Taux de remboursement</h2>
+          <p style="color: #666; max-width: 800px;">
+            Le taux actuel de remboursement est de <strong style="color: #2563eb; font-size: 1.25rem;">0.3405 CHF par litre</strong> pour les machines hors route.
             Ce taux est fixé par l'Office fédéral de la douane et de la sécurité des frontières (OFDF/BAZG).
+          </p>
+          <p style="color: #666; margin-top: 1rem;">
+            Exemple : Pour 20'000 litres de diesel consommés, vous pouvez récupérer <strong>6'810 CHF</strong>.
           </p>
         </section>
         
-        <section style="margin-top: 3rem;">
-          <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">Fonctionnalités</h2>
-          <ul style="color: #666;">
-            <li><strong>Gestion de flotte</strong> - Enregistrez et gérez vos machines avec les catégories Taxas officielles</li>
-            <li><strong>Scan OCR</strong> - Scannez vos tickets de carburant avec votre smartphone</li>
-            <li><strong>Calcul automatique</strong> - Application du taux OFDF de 0.3405 CHF/L</li>
-            <li><strong>Rapports PDF</strong> - Génération de rapports conformes au formulaire 45.35</li>
-            <li><strong>Export CSV Taxas</strong> - Fichiers prêts pour la plateforme officielle</li>
+        <section style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #e5e5e5;">
+          <h2 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 1.5rem 0;">Fonctionnalités MineralTax</h2>
+          <ul style="color: #666; padding-left: 1.5rem; line-height: 2;">
+            <li><strong>Gestion de flotte</strong> — Enregistrez et gérez vos machines avec les catégories Taxas officielles</li>
+            <li><strong>Scan OCR</strong> — Scannez vos tickets de carburant avec votre smartphone pour extraire automatiquement les données</li>
+            <li><strong>Calcul automatique</strong> — Application du taux OFDF de 0.3405 CHF/L sur toutes vos entrées</li>
+            <li><strong>Rapports PDF</strong> — Génération de rapports conformes au formulaire 45.35</li>
+            <li><strong>Export CSV Taxas</strong> — Fichiers prêts pour la plateforme officielle de l'OFDF</li>
+            <li><strong>Audit de conformité</strong> — Vérification automatique des doublons et anomalies avant soumission</li>
           </ul>
         </section>
         
-        <section style="margin-top: 3rem;">
-          <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">Tarif</h2>
-          <p style="font-size: 2rem; font-weight: bold;">250 CHF <span style="font-size: 1rem; font-weight: normal;">par an</span></p>
-          <p style="color: #666;">10 jours d'essai gratuit sans carte bancaire</p>
+        <section style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #e5e5e5;">
+          <h2 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 1.5rem 0;">Tarif</h2>
+          <div style="background: #2563eb; color: white; padding: 2rem; border-radius: 16px; max-width: 400px;">
+            <p style="margin: 0; font-size: 0.875rem; opacity: 0.9;">Abonnement annuel</p>
+            <p style="margin: 0.5rem 0; font-size: 3rem; font-weight: 700;">250 CHF</p>
+            <p style="margin: 0 0 1.5rem 0; font-size: 0.875rem; opacity: 0.9;">par an (HT)</p>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.875rem;">
+              <li style="margin-bottom: 0.5rem;">✓ 10 jours d'essai gratuit (sans carte bancaire)</li>
+              <li style="margin-bottom: 0.5rem;">✓ Accès complet à toutes les fonctionnalités</li>
+              <li style="margin-bottom: 0.5rem;">✓ Machines illimitées</li>
+              <li style="margin-bottom: 0.5rem;">✓ Archivage sécurisé</li>
+            </ul>
+          </div>
         </section>
         
-        <section style="margin-top: 3rem;">
-          <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">Questions fréquentes</h2>
+        <section style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #e5e5e5;">
+          <h2 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 1.5rem 0;">Questions fréquentes</h2>
           
-          <h3 style="font-size: 1.25rem; font-weight: 600;">Qu'est-ce que la taxe minéral Suisse ?</h3>
-          <p style="color: #666; margin-bottom: 1rem;">
-            La taxe minéral Suisse, ou impôt sur les huiles minérales, est une taxe prélevée sur les carburants 
-            et combustibles. Les entreprises utilisant des machines hors route peuvent demander un remboursement 
-            partiel de cette taxe auprès de l'OFDF.
-          </p>
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.5rem 0;">Qu'est-ce que la taxe minéral Suisse ?</h3>
+            <p style="color: #666; margin: 0;">
+              La taxe minéral Suisse, ou impôt sur les huiles minérales, est une taxe prélevée sur les carburants 
+              et combustibles. Les entreprises utilisant des machines hors route peuvent demander un remboursement 
+              partiel de cette taxe auprès de l'OFDF.
+            </p>
+          </div>
           
-          <h3 style="font-size: 1.25rem; font-weight: 600;">Comment obtenir un remboursement ?</h3>
-          <p style="color: #666; margin-bottom: 1rem;">
-            Pour obtenir un remboursement de la taxe sur les huiles minérales, vous devez soumettre une demande 
-            via la plateforme Taxas de l'OFDF avec le formulaire 45.35. MineralTax génère automatiquement 
-            les rapports conformes à ces exigences.
-          </p>
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.5rem 0;">Comment obtenir un remboursement ?</h3>
+            <p style="color: #666; margin: 0;">
+              Pour obtenir un remboursement de la taxe sur les huiles minérales, vous devez soumettre une demande 
+              via la plateforme Taxas de l'OFDF avec le formulaire 45.35. MineralTax génère automatiquement 
+              les rapports conformes à ces exigences.
+            </p>
+          </div>
           
-          <h3 style="font-size: 1.25rem; font-weight: 600;">Quels sont les taux de remboursement ?</h3>
-          <p style="color: #666; margin-bottom: 1rem;">
-            Le taux de remboursement actuel est de 0.3405 CHF par litre de carburant utilisé 
-            dans des machines hors route. Ce taux est fixé par l'Office fédéral de la douane 
-            et de la sécurité des frontières (OFDF/BAZG).
-          </p>
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.5rem 0;">Quels sont les taux de remboursement ?</h3>
+            <p style="color: #666; margin: 0;">
+              Le taux de remboursement actuel est de 0.3405 CHF par litre de carburant utilisé 
+              dans des machines hors route. Ce taux est fixé par l'Office fédéral de la douane 
+              et de la sécurité des frontières (OFDF/BAZG).
+            </p>
+          </div>
           
-          <h3 style="font-size: 1.25rem; font-weight: 600;">Quelles machines sont éligibles ?</h3>
-          <p style="color: #666; margin-bottom: 1rem;">
-            Les machines éligibles incluent les pelles mécaniques, chargeuses, bulldozers, grues, 
-            compacteurs, foreuses, générateurs et autres équipements de construction qui ne circulent 
-            pas sur la voie publique.
-          </p>
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.5rem 0;">Quelles machines sont éligibles ?</h3>
+            <p style="color: #666; margin: 0;">
+              Les machines éligibles incluent les pelles mécaniques, chargeuses, bulldozers, grues, 
+              compacteurs, foreuses, générateurs et autres équipements de construction qui ne circulent 
+              pas sur la voie publique.
+            </p>
+          </div>
         </section>
         
-        <section style="margin-top: 3rem;">
-          <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">Confiance et Sécurité</h2>
-          <p style="color: #666;">
+        <section style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #e5e5e5;">
+          <h2 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 1rem 0;">Confiance et Sécurité</h2>
+          <p style="color: #666; max-width: 800px;">
             MineralTax est un outil SaaS privé qui vous aide à préparer vos demandes de remboursement. 
-            Nous ne transmettons jamais vos données à l'administration - vous gardez le contrôle total.
+            Nous ne transmettons jamais vos données à l'administration — vous gardez le contrôle total.
             Nos exports CSV sont formatés selon les exigences de la plateforme officielle Taxas.
           </p>
-          <p style="color: #666; margin-top: 1rem;">
-            <strong>Ce site n'est pas affilié à l'administration fédérale suisse.</strong>
-            Pour la soumission officielle, utilisez la <a href="https://www.bazg.admin.ch/bazg/fr/home.html">plateforme Taxas de l'OFDF</a>.
+          <p style="color: #666; margin-top: 1rem; padding: 1rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <strong>Important :</strong> Ce site n'est pas affilié à l'administration fédérale suisse.
+            Pour la soumission officielle, utilisez la <a href="https://www.bazg.admin.ch/bazg/fr/home.html" style="color: #2563eb;">plateforme officielle OFDF</a>.
           </p>
         </section>
       </main>
       
-      <footer style="border-top: 1px solid #eee; padding: 2rem 1rem; margin-top: 4rem;">
+      <footer style="background: #f8f9fa; border-top: 1px solid #e5e5e5; padding: 3rem 1.5rem; margin-top: 4rem;">
         <div style="max-width: 1200px; margin: 0 auto;">
-          <p><strong>MineralTax Swiss</strong></p>
-          <p style="color: #666; font-size: 0.875rem;">
-            Outil SaaS privé pour la préparation des demandes de remboursement de la taxe sur les huiles minérales en Suisse.
-          </p>
-          <p style="color: #999; font-size: 0.75rem; margin-top: 1rem;">
-            Ce site n'est pas affilié à l'administration fédérale suisse.
-          </p>
-          <nav style="margin-top: 1rem;">
-            <a href="/ressources" style="margin-right: 1rem;">Ressources</a>
-            <a href="/terms" style="margin-right: 1rem;">Conditions</a>
-            <a href="/privacy" style="margin-right: 1rem;">Confidentialité</a>
-            <a href="https://www.bazg.admin.ch/bazg/fr/home.html" target="_blank" rel="noopener noreferrer">OFDF / BAZG</a>
-          </nav>
-          <p style="color: #999; font-size: 0.75rem; margin-top: 1rem;">© 2026 MineralTax Swiss. Tous droits réservés.</p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="width: 40px; height: 40px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                  <span style="color: white; font-weight: bold;">MT</span>
+                </div>
+                <strong>MineralTax Swiss</strong>
+              </div>
+              <p style="color: #666; font-size: 0.875rem; margin: 0;">
+                Outil SaaS privé pour la préparation des demandes de remboursement de la taxe sur les huiles minérales en Suisse.
+              </p>
+              <p style="color: #999; font-size: 0.75rem; margin-top: 0.5rem;">
+                Ce site n'est pas affilié à l'administration fédérale suisse.
+              </p>
+            </div>
+            <div>
+              <h4 style="font-size: 0.875rem; font-weight: 600; margin: 0 0 1rem 0;">Liens utiles</h4>
+              <nav style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+                <a href="/ressources" style="color: #666; text-decoration: none;">Ressources</a>
+                <a href="/terms" style="color: #666; text-decoration: none;">Conditions générales</a>
+                <a href="/privacy" style="color: #666; text-decoration: none;">Confidentialité</a>
+              </nav>
+            </div>
+            <div>
+              <h4 style="font-size: 0.875rem; font-weight: 600; margin: 0 0 1rem 0;">Liens officiels</h4>
+              <nav style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+                <a href="https://www.bazg.admin.ch/bazg/fr/home/actualites/forumd/fuer-fachleute/rueckerstattung-co2-abgabe-verbrauchssteuerplattform-taxas.html" target="_blank" rel="noopener noreferrer" style="color: #666; text-decoration: none;">Plateforme Taxas (OFDF)</a>
+                <a href="https://www.bazg.admin.ch/bazg/fr/home.html" target="_blank" rel="noopener noreferrer" style="color: #666; text-decoration: none;">OFDF / BAZG / AFD / FOCBS</a>
+                <a href="https://www.ch.ch" target="_blank" rel="noopener noreferrer" style="color: #666; text-decoration: none;">ch.ch - Portail suisse</a>
+              </nav>
+            </div>
+          </div>
+          <div style="border-top: 1px solid #e5e5e5; padding-top: 1.5rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; font-size: 0.75rem; color: #999;">
+            <span>© 2026 MineralTax Swiss. Tous droits réservés.</span>
+            <span>Hébergé sur infrastructure sécurisée • Connexion SSL/TLS</span>
+          </div>
         </div>
       </footer>
     </div>
     
-    <!-- Fallback for users with JavaScript disabled -->
-    <noscript>
-      <style>
-        #root { display: block !important; }
-      </style>
-    </noscript>
+    <!-- React app container - hidden until JS loads -->
+    <div id="root"></div>
     
+    <!-- Load React app - will add .js-loaded class to body -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
