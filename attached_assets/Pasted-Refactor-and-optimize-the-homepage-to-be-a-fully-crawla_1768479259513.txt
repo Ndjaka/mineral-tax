@@ -1,0 +1,64 @@
+Refactor and optimize the homepage to be a fully crawlable, SEO-friendly, and high-conversion landing page for a Swiss B2B SaaS.
+
+Context:
+This is a micro-SaaS called "MineralTax" that simplifies the declaration and refund of the Swiss mineral oil tax for companies.
+
+GOALS:
+- Make the homepage readable by bots, crawlers, and SEO tools (no JS required to see main content).
+- Improve clarity of the value proposition in under 3 seconds.
+- Increase conversion for a regulated Swiss B2B audience.
+- Preserve all existing application logic and functionality.
+
+REQUIREMENTS:
+
+1. HTML & Crawlability
+- Serve meaningful HTML on initial load.
+- Ensure all main marketing text is visible in raw HTML source.
+- Avoid JS-only rendering for the homepage.
+- Keep the app loading after the static content.
+
+2. SEO Basics
+- Add an optimized <title> tag.
+- Add a clear <meta name="description">.
+- Use one single <h1> with a strong value proposition.
+- Use semantic <h2> sections.
+
+3. Copywriting (French)
+- Clear, simple, non-technical language.
+- Switzerland-specific wording.
+- Focus on benefits: time saved, compliance, reduced risk.
+- Avoid buzzwords and vague SaaS language.
+
+Suggested H1:
+"Déclaration simplifiée de la taxe sur les huiles minérales en Suisse"
+
+4. Page Structure
+Add the following sections using semantic HTML:
+- Hero section with H1, short subtitle, and one primary CTA.
+- How it works (3 simple steps).
+- Who it is for (target company types).
+- Swiss compliance and regulation reassurance (Taxas / OFDF, without claiming official affiliation).
+- Pricing section clearly stating 250 CHF / year.
+- Final CTA.
+
+5. CTA
+- Add one primary call-to-action above the fold.
+- Use action-oriented wording such as:
+  "Commencer la déclaration"
+  or "Voir un exemple conforme Taxas"
+
+6. Compliance & Trust
+- Explicitly mention Swiss regulation.
+- Reference Taxas and OFDF factually.
+- Do not imply official endorsement.
+- Emphasize correctness and compliance.
+
+7. Non-goals
+- Do NOT redesign the UI.
+- Do NOT remove or break existing JS/app logic.
+- Do NOT introduce unnecessary complexity.
+
+FINAL CHECK:
+The homepage must be fully understandable and informative even if JavaScript is disabled.
+
+Proceed with these changes.
