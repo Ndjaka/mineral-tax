@@ -206,6 +206,17 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/dashboard/trends", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const trends = await storage.getFuelTrends(userId);
+      res.json(trends);
+    } catch (error) {
+      console.error("Error fetching fuel trends:", error);
+      res.status(500).json({ message: "Failed to fetch fuel trends" });
+    }
+  });
+
   app.get("/api/machines", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);

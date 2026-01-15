@@ -105,6 +105,7 @@ export const translations = {
       addMachine: "Ajouter véhicule/machine",
       addFuelEntry: "Saisir du carburant",
       generateReport: "Générer un rapport",
+      consumptionTrends: "Évolution des consommations",
     },
     fleet: {
       title: "Gestion de flotte",
@@ -493,6 +494,7 @@ export const translations = {
       addMachine: "Fahrzeug/Maschine hinzufügen",
       addFuelEntry: "Treibstoff erfassen",
       generateReport: "Bericht erstellen",
+      consumptionTrends: "Verbrauchsentwicklung",
     },
     fleet: {
       title: "Flottenmanagement",
@@ -881,6 +883,7 @@ export const translations = {
       addMachine: "Aggiungi veicolo/macchina",
       addFuelEntry: "Inserisci carburante",
       generateReport: "Genera rapporto",
+      consumptionTrends: "Andamento dei consumi",
     },
     fleet: {
       title: "Gestione flotta",
@@ -1269,6 +1272,7 @@ export const translations = {
       addMachine: "Add vehicle/machine",
       addFuelEntry: "Add fuel entry",
       generateReport: "Generate report",
+      consumptionTrends: "Consumption trends",
     },
     fleet: {
       title: "Fleet Management",

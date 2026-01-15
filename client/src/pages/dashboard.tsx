@@ -19,10 +19,20 @@ import {
   CheckCircle,
   Download,
   Receipt,
+  BarChart3,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Machine, FuelEntry, Report, Invoice } from "@shared/schema";
 import { REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface DashboardStats {
   totalMachines: number;
@@ -31,6 +41,12 @@ interface DashboardStats {
   eligibleVolume: number;
   estimatedReimbursement: number;
   pendingReports: number;
+}
+
+interface FuelTrend {
+  month: string;
+  volume: number;
+  reimbursement: number;
 }
 
 export default function DashboardPage() {
@@ -91,6 +107,10 @@ export default function DashboardPage() {
   const { data: invoices } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
     enabled: subscription?.status === "active",
+  });
+
+  const { data: trends, isLoading: trendsLoading } = useQuery<FuelTrend[]>({
+    queryKey: ["/api/dashboard/trends"],
   });
 
   const downloadInvoice = (invoiceId: string) => {
@@ -218,6 +238,100 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {trends && trends.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg">
+                {t.dashboard.consumptionTrends || "Évolution des consommations"}
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {trendsLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <div className="h-64" data-testid="chart-fuel-trends">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={trends.map((t) => ({
+                      ...t,
+                      monthLabel: new Date(t.month + "-01").toLocaleDateString("fr-CH", {
+                        month: "short",
+                        year: "2-digit",
+                      }),
+                    }))}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis
+                      dataKey="monthLabel"
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                      tickFormatter={(v) => `${v} L`}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                      tickFormatter={(v) => `${v} CHF`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(value: number, name: string) => [
+                        name === "volume"
+                          ? `${formatNumber(value)} L`
+                          : formatCurrency(value),
+                        name === "volume" ? "Volume" : "Remboursement",
+                      ]}
+                    />
+                    <Area
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="volume"
+                      stroke="hsl(var(--chart-2))"
+                      fill="hsl(var(--chart-2))"
+                      fillOpacity={0.3}
+                      name="volume"
+                    />
+                    <Area
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="reimbursement"
+                      stroke="hsl(var(--primary))"
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.2}
+                      name="reimbursement"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            <div className="flex justify-center gap-6 mt-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-chart-2" />
+                <span className="text-muted-foreground">Volume (L)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary" />
+                <span className="text-muted-foreground">Remboursement (CHF)</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">

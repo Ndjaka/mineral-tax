@@ -59,6 +59,12 @@ export interface IStorage {
     pendingReports: number;
   }>;
 
+  getFuelTrends(userId: string): Promise<{
+    month: string;
+    volume: number;
+    reimbursement: number;
+  }[]>;
+
   calculateReportData(userId: string, periodStart: Date, periodEnd: Date): Promise<{
     totalVolumeLiters: number;
     eligibleVolumeLiters: number;
@@ -317,6 +323,34 @@ export class DatabaseStorage implements IStorage {
       estimatedReimbursement: eligibleVolume * REIMBURSEMENT_RATE_CHF_PER_LITER,
       pendingReports: pendingReportsCount[0]?.count || 0,
     };
+  }
+
+  async getFuelTrends(userId: string): Promise<{
+    month: string;
+    volume: number;
+    reimbursement: number;
+  }[]> {
+    const result = await db
+      .select({
+        month: sql<string>`to_char(${fuelEntries.invoiceDate}, 'YYYY-MM')`,
+        volume: sql<number>`coalesce(sum(${fuelEntries.volumeLiters}), 0)::real`,
+      })
+      .from(fuelEntries)
+      .leftJoin(machines, eq(fuelEntries.machineId, machines.id))
+      .where(
+        and(
+          eq(fuelEntries.userId, userId),
+          eq(machines.isEligible, true)
+        )
+      )
+      .groupBy(sql`to_char(${fuelEntries.invoiceDate}, 'YYYY-MM')`)
+      .orderBy(sql`to_char(${fuelEntries.invoiceDate}, 'YYYY-MM')`);
+
+    return result.map((row) => ({
+      month: row.month,
+      volume: row.volume,
+      reimbursement: row.volume * REIMBURSEMENT_RATE_CHF_PER_LITER,
+    }));
   }
 
   async calculateReportData(userId: string, periodStart: Date, periodEnd: Date): Promise<{

@@ -53,6 +53,7 @@ server/
 
 ## API Endpoints
 - `GET /api/dashboard/stats` - Dashboard statistics
+- `GET /api/dashboard/trends` - Fuel consumption trends by month (for chart visualization)
 - `GET/POST /api/machines` - Machine CRUD
 - `GET/POST /api/fuel-entries` - Fuel entry CRUD
 - `GET/POST /api/reports` - Report generation
