@@ -30,6 +30,8 @@ import RessourcesPage from "@/pages/ressources";
 import GuideRemboursementPage from "@/pages/seo/guide-remboursement";
 import MachinesEligiblesPage from "@/pages/seo/machines-eligibles";
 import TauxRemboursementPage from "@/pages/seo/taux-remboursement";
+import LoginPage from "@/pages/login";
+import RegisterPage from "@/pages/register";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -141,6 +143,14 @@ function AppContent() {
 
   if (location === "/ressources/taux-remboursement" && !user) {
     return <TauxRemboursementPage />;
+  }
+
+  if (location === "/login" && !user) {
+    return <LoginPage />;
+  }
+
+  if (location === "/register" && !user) {
+    return <RegisterPage />;
   }
 
   if (isLoading) {

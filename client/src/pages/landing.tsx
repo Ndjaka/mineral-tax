@@ -74,7 +74,7 @@ export default function LandingPage() {
               <LanguageSelector />
               <ThemeToggle />
               <Button asChild data-testid="button-login">
-                <a href="/api/login">{t.common.login}</a>
+                <Link href="/login">{t.common.login}</Link>
               </Button>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function LandingPage() {
                 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button size="lg" asChild data-testid="button-cta-primary">
-                    <a href="/api/login">Commencer l'essai gratuit</a>
+                    <Link href="/register">Commencer l'essai gratuit</Link>
                   </Button>
                   <Button size="lg" variant="outline" asChild data-testid="button-cta-secondary">
                     <a href="#comment-ca-marche">Voir comment ça marche</a>
