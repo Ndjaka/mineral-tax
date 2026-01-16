@@ -8,7 +8,7 @@ Professional SaaS application for Swiss mineral oil tax (Mineralölsteuer) reimb
 - **Frontend**: React with TypeScript, Vite, Tailwind CSS, Shadcn UI
 - **Backend**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Replit Auth (OpenID Connect)
+- **Authentication**: Dual auth (Replit Auth + Local email/password)
 
 ## Key Features
 1. **Multilingual Support**: FR, DE, IT, EN with official OFDF terminology
@@ -82,6 +82,36 @@ server/
 - Checkout flow: /api/checkout creates session, redirects to /dashboard?session_id=...
 - Webhook route registered before express.json() to receive raw Buffer
 - Success callback verifies payment and activates subscription
+
+### Dual Authentication System (Implemented 2026-01-16)
+Supports both Replit Auth and local email/password authentication for Swiss hosting migration:
+
+**Local Auth Endpoints:**
+- `POST /api/auth/local/register` - Create account with email/password
+- `POST /api/auth/local/login` - Login with email/password
+- `POST /api/auth/local/logout` - Logout from local session
+- `GET /api/auth/local/user` - Get current local user
+
+**Pages:**
+- `/login` - Email/password login page
+- `/register` - Registration page with Swiss-themed design
+
+**Security:**
+- bcrypt password hashing with cost factor 12
+- Password requirements: 12+ characters, at least 1 letter and 1 number
+- Passwords never returned in API responses
+- Session-based authentication using same session store as Replit Auth
+
+**Database Schema:**
+- `passwordHash` field on users table
+- `authProvider` enum: "replit" or "local"
+- `passwordSet` boolean for future password reset support
+
+**Migration Strategy:**
+- Both auth systems run in parallel during transition period
+- Users can use either Replit Auth or local auth
+- Same session infrastructure for seamless experience
+- See GUIDE_MIGRATION_HEBERGEUR_SUISSE.md for Swiss hosting deployment
 
 ### Email Notifications (TODO)
 Email service (Resend) was proposed but user dismissed setup (2026-01-11). To enable email notifications later:
