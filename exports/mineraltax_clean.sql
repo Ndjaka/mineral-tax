@@ -188,3 +188,52 @@ CREATE TABLE messages (
 -- ============================================
 -- Fin du schéma MineralTax
 -- ============================================
+
+-- ============================================
+-- Tables Stripe (optionnel - recréées par SDK)
+-- ============================================
+
+CREATE SCHEMA IF NOT EXISTS stripe;
+
+CREATE TYPE stripe.pricing_type AS ENUM ('one_time', 'recurring');
+CREATE TYPE stripe.pricing_tiers AS ENUM ('standard', 'volume');
+
+CREATE TABLE stripe.products (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255),
+    description TEXT,
+    active BOOLEAN DEFAULT true,
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE stripe.prices (
+    id VARCHAR(255) PRIMARY KEY,
+    product VARCHAR(255) REFERENCES stripe.products(id),
+    active BOOLEAN DEFAULT true,
+    currency VARCHAR(3) DEFAULT 'chf',
+    unit_amount INTEGER,
+    type stripe.pricing_type DEFAULT 'recurring',
+    recurring_interval VARCHAR(20),
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE stripe.customers (
+    id VARCHAR(255) PRIMARY KEY,
+    email VARCHAR(255),
+    name VARCHAR(255),
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Produit et prix MineralTax (à ajuster selon votre Stripe Dashboard)
+INSERT INTO stripe.products (id, name, description, active) VALUES 
+('prod_mineraltax_annual', 'MineralTax Abonnement Annuel', 'Accès complet à MineralTax Swiss', true);
+
+INSERT INTO stripe.prices (id, product, active, currency, unit_amount, type, recurring_interval) VALUES 
+('price_mineraltax_250chf', 'prod_mineraltax_annual', true, 'chf', 25000, 'recurring', 'year');
+
+-- ============================================
+-- Fin export complet
+-- ============================================
