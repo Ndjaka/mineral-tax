@@ -220,20 +220,7 @@ export default function RegisterPage() {
               </p>
             </form>
 
-            <div className="mt-6 text-center space-y-4">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">{t.auth?.or || "ou"}</span>
-                </div>
-              </div>
-
-              <Button variant="outline" asChild className="w-full" data-testid="button-register-replit">
-                <a href="/api/login">{t.auth?.loginWithReplit || "Continuer avec Replit"}</a>
-              </Button>
-
+            <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 {t.auth?.hasAccount || "Déjà un compte ?"}{" "}
                 <Link href="/login" className="text-primary hover:underline" data-testid="link-login">
