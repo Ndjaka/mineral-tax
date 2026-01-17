@@ -74,6 +74,7 @@ export const machines = pgTable("machines", {
   userId: varchar("user_id").notNull(),
   name: text("name").notNull(),
   type: machineTypeEnum("type").notNull(),
+  customType: text("custom_type"),
   taxasActivity: taxasActivityEnum("taxas_activity").default("construction"),
   licensePlate: text("license_plate"),
   plateColor: plateColorEnum("plate_color").default("none"),
