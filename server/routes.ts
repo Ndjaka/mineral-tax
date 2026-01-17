@@ -972,9 +972,13 @@ function generateTaxasCsv(
       ? invoiceDate.toISOString().split('T')[0] 
       : "";
     
-    const machineType = machine?.type 
+    let machineType = machine?.type 
       ? (OFDF_MACHINE_TYPES[machine.type] || OFDF_MACHINE_TYPES.other) 
       : OFDF_MACHINE_TYPES.other;
+    
+    if (machine?.type === "other" && machine.customType) {
+      machineType = `Autre - ${machine.customType}`;
+    }
     
     const taxasActivity = (machine as any)?.taxasActivity 
       ? (TAXAS_ACTIVITY_CODES[(machine as any).taxasActivity] || TAXAS_ACTIVITY_CODES.other_taxas)

@@ -47,7 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Truck, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Truck, Search, AlertTriangle } from "lucide-react";
 import type { Machine } from "@shared/schema";
 
 const machineTypesEngins = [
@@ -110,6 +110,7 @@ const plateColors = ["white", "green", "yellow", "blue", "none"] as const;
 const machineFormSchema = z.object({
   name: z.string().min(1),
   type: z.enum(machineTypes),
+  customType: z.string().optional(),
   taxasActivity: z.enum(taxasActivities).optional(),
   licensePlate: z.string().optional(),
   plateColor: z.enum(plateColors).optional(),
@@ -117,6 +118,14 @@ const machineFormSchema = z.object({
   year: z.coerce.number().min(1900).max(2100).optional(),
   power: z.string().optional(),
   isEligible: z.boolean().default(true),
+}).refine((data) => {
+  if (data.type === "other") {
+    return data.customType && data.customType.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Veuillez préciser le type de machine",
+  path: ["customType"],
 });
 
 type MachineFormData = z.infer<typeof machineFormSchema>;
@@ -136,6 +145,7 @@ export default function FleetPage() {
     defaultValues: {
       name: "",
       type: "excavator",
+      customType: "",
       taxasActivity: "construction",
       licensePlate: "",
       plateColor: "none",
@@ -203,6 +213,7 @@ export default function FleetPage() {
       form.reset({
         name: machine.name,
         type: machine.type as typeof machineTypes[number],
+        customType: machine.customType || "",
         taxasActivity: (machine.taxasActivity as typeof taxasActivities[number]) || "construction",
         licensePlate: machine.licensePlate || "",
         plateColor: (machine.plateColor as typeof plateColors[number]) || "none",
@@ -217,6 +228,7 @@ export default function FleetPage() {
       form.reset({
         name: "",
         type: "excavator",
+        customType: "",
         taxasActivity: "construction",
         licensePlate: "",
         plateColor: "none",
@@ -274,6 +286,7 @@ export default function FleetPage() {
 
   const watchPlateColor = form.watch("plateColor");
   const watchIsEligible = form.watch("isEligible");
+  const watchType = form.watch("type");
   
   const handlePlateColorChange = (color: string) => {
     form.setValue("plateColor", color as typeof plateColors[number]);
@@ -475,6 +488,34 @@ export default function FleetPage() {
                   </FormItem>
                 )}
               />
+
+              {watchType === "other" && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="customType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Précisez le type de machine *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="Ex: Broyeur fixe, Pompe à lisier, Compresseur..."
+                            data-testid="input-custom-type"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex items-start gap-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/30">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                      <strong>Note :</strong> Les machines de type "Autre" peuvent nécessiter une validation manuelle de l'OFDF. Assurez-vous qu'elles ne sont pas destinées au transport routier.
+                    </p>
+                  </div>
+                </>
+              )}
 
               <FormField
                 control={form.control}

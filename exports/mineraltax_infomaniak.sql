@@ -143,6 +143,7 @@ CREATE TABLE machines (
     user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     type machine_type NOT NULL,
+    custom_type TEXT,
     taxas_activity taxas_activity DEFAULT 'construction',
     license_plate TEXT,
     plate_color plate_color DEFAULT 'none',
