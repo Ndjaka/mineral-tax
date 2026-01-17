@@ -1,0 +1,47 @@
+"Agis en tant qu'Expert Software Engineer et UX Designer spécialisé dans le marché SaaS suisse. Applique cette mise à jour majeure pour finaliser MineralTax pour le lancement du 19 janvier 2026.
+
+1. Intelligence des Dates (Maintenance Zéro) :
+
+Crée une variable globale anneeFiscale = année_actuelle - 1.
+
+Partout où une année est mentionnée (titres, textes, exports), utilise cette variable. En 2026, l'interface doit parler de la 'Période Fiscale 2025'.
+
+Le nom du fichier CSV généré doit être dynamique : MineralTax_Export_${anneeFiscale}_[NomClient].csv.
+
+2. Bannière d'Urgence Intelligente :
+
+Ajoute une bannière 'Sticky' en haut de page.
+
+Logique : Affiche-la uniquement entre le 1er janvier et le 31 mars.
+
+Texte : '⚠️ Période fiscale ${anneeFiscale} : Déposez vos demandes de remboursement avant la clôture annuelle !'
+
+Style : Fond Jaune Ambre, texte noir, avec un bouton 'X' pour fermer.
+
+3. Guide d'Importation Taxas (Post-Export) :
+
+Après la génération du CSV, redirige ou affiche une section /guide-export.
+
+Affiche une barre de progression : [1. Calcul Terminé ✓] -> [2. Fichier Prêt ✓] -> [3. Importation Taxas ⏳].
+
+Ajoute ces instructions claires :
+
+Étape 1 : Téléchargez votre fichier CSV optimisé.
+
+Étape 2 : Connectez-vous sur Agate.ch (ajoute un bouton vers le portail).
+
+Étape 3 : Dans le formulaire 45.35, cliquez sur 'Importer CSV' et sélectionnez notre fichier.
+
+4. Mise en Conformité Suisse (LPD & Juridique) :
+
+Crée les pages /cgv et /confidentialite.
+
+Ajoute un footer professionnel sur toutes les pages : 'MineralTax Swiss | Hébergé en Suisse par Infomaniak 🇨🇭 | Données sécurisées (LPD) | For juridique : [Ta Ville], Suisse.'
+
+Ajoute une clause de non-affiliation : 'MineralTax n'est pas un service officiel de l'OFDF mais un outil d'aide à la préparation conforme aux formats fédéraux.'
+
+5. Design & Conversion :
+
+Nettoie l'interface : utilise des polices modernes (Inter ou Roboto), des boutons d'action clairs, et un bouton 'Besoin d'aide ?' qui pointe vers ton e-mail de support.
+
+Assure-toi que l'application est 100% 'Mobile Friendly' pour les scans de tickets sur le terrain."

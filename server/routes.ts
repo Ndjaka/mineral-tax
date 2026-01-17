@@ -865,8 +865,11 @@ export async function registerRoutes(
 
       const csvContent = generateTaxasCsv(report, details.machines, details.fuelEntries);
       
+      const fiscalYear = new Date().getFullYear() - 1;
+      const filename = `MineralTax_Export_${fiscalYear}_${report.id}.csv`;
+      
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader("Content-Disposition", `attachment; filename="mineraltax-data-${report.id}.csv"`);
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
       res.send(csvContent);
     } catch (error) {
       console.error("Error generating CSV:", error);

@@ -13,7 +13,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrialBanner } from "@/components/trial-banner";
 import { AppFooter } from "@/components/app-footer";
 import { ChatWidget } from "@/components/chat-widget";
+import { UrgentBanner } from "@/components/urgent-banner";
 import LandingPage from "@/pages/landing";
+import CGVPage from "@/pages/cgv";
+import ConfidentialitePage from "@/pages/confidentialite";
+import GuideExportPage from "@/pages/guide-export";
 import DashboardPage from "@/pages/dashboard";
 import FleetPage from "@/pages/fleet";
 import FuelPage from "@/pages/fuel";
@@ -42,26 +46,29 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full">
-        <AppSidebar />
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between gap-2 p-2 border-b shadow-sm bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <div className="flex items-center gap-2">
-              <LanguageSelector />
-              <ThemeToggle />
-            </div>
-          </header>
-          <main className="flex-1 overflow-auto flex flex-col">
-            <div className="px-4 pt-4">
-              <TrialBanner />
-            </div>
-            <div className="flex-1">
-              {children}
-            </div>
-            <AppFooter />
-          </main>
-          <ChatWidget />
+      <div className="flex flex-col h-screen w-full">
+        <UrgentBanner />
+        <div className="flex flex-1 overflow-hidden">
+          <AppSidebar />
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <header className="flex items-center justify-between gap-2 p-2 border-b shadow-sm bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <div className="flex items-center gap-2">
+                <LanguageSelector />
+                <ThemeToggle />
+              </div>
+            </header>
+            <main className="flex-1 overflow-auto flex flex-col">
+              <div className="px-4 pt-4">
+                <TrialBanner />
+              </div>
+              <div className="flex-1">
+                {children}
+              </div>
+              <AppFooter />
+            </main>
+            <ChatWidget />
+          </div>
         </div>
       </div>
     </SidebarProvider>
@@ -89,6 +96,9 @@ function AuthenticatedRouter() {
         <Route path="/ressources/guide-remboursement" component={GuideRemboursementPage} />
         <Route path="/ressources/machines-eligibles" component={MachinesEligiblesPage} />
         <Route path="/ressources/taux-remboursement" component={TauxRemboursementPage} />
+        <Route path="/guide-export" component={GuideExportPage} />
+        <Route path="/cgv" component={CGVPage} />
+        <Route path="/confidentialite" component={ConfidentialitePage} />
         <Route component={NotFound} />
       </Switch>
     </AuthenticatedLayout>
@@ -143,6 +153,14 @@ function AppContent() {
 
   if (location === "/ressources/taux-remboursement" && !user) {
     return <TauxRemboursementPage />;
+  }
+
+  if (location === "/cgv" && !user) {
+    return <CGVPage />;
+  }
+
+  if (location === "/confidentialite" && !user) {
+    return <ConfidentialitePage />;
   }
 
   if (location === "/login" && !user) {
