@@ -207,7 +207,7 @@ export default function FuelPage() {
     return t.fuel.fuelTypes[type as keyof typeof t.fuel.fuelTypes] || type;
   };
 
-  const eligibleMachines = machines?.filter((m) => m.isEligible) || [];
+  const allMachines = machines || [];
 
   const handleScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -438,9 +438,12 @@ export default function FuelPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {eligibleMachines.map((machine) => (
+                        {allMachines.map((machine) => (
                           <SelectItem key={machine.id} value={machine.id}>
                             {machine.name}
+                            {!machine.isEligible && (
+                              <span className="ml-2 text-xs text-muted-foreground">(non éligible)</span>
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
