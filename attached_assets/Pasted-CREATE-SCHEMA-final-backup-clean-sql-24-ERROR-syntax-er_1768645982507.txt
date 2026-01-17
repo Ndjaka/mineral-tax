@@ -1,0 +1,64 @@
+CREATE SCHEMA
+final_backup_clean.sql:24: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TYPE public.auth_provider AS ENUM (
+^
+final_backup_clean.sql:37: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TYPE public.fuel_type AS ENUM (
+^
+final_backup_clean.sql:62: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TYPE public.machine_type AS ENUM (
+^
+final_backup_clean.sql:77: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TYPE public.plate_color AS ENUM (
+^
+final_backup_clean.sql:92: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TYPE public.subscription_status AS ENUM (
+^
+final_backup_clean.sql:115: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TYPE public.taxas_activity AS ENUM (
+^
+final_backup_clean.sql:129: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TYPE public.taxas_status AS ENUM (
+^
+final_backup_clean.sql:141: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TYPE stripe.pricing_tiers AS ENUM (
+^
+final_backup_clean.sql:153: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TYPE stripe.pricing_type AS ENUM (
+^
+final_backup_clean.sql:158: ERROR: syntax error at or near "default_tablespace"
+LINE 3: SET default_tablespace = '';
+^
+SET
+CREATE TABLE
+final_backup_clean.sql:197: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TABLE public.company_profiles (
+^
+final_backup_clean.sql:210: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TABLE public.conversations (
+^
+final_backup_clean.sql:225: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE SEQUENCE public.conversations_id_seq
+^
+final_backup_clean.sql:234: ERROR: syntax error at or near "public"
+LINE 3: ALTER SEQUENCE public.conversations_id_seq OWNED BY public.c...
+^
+final_backup_clean.sql:252: ERROR: type "public.fuel_type" does not exist
+LINE 17: fuel_type public.fuel_type DEFAULT 'diesel'::public.fuel...
+^
+final_backup_clean.sql:271: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TABLE public.invoices (
+^
+final_backup_clean.sql:294: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TABLE public.machines (
+^
+final_backup_clean.sql:309: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE TABLE public.messages (
+^
+final_backup_clean.sql:324: ERROR: syntax error at or near "CREATE"
+LINE 3: CREATE SEQUENCE public.messages_id_seq
+^
+final_backup_clean.sql:333: ERROR: syntax error at or near "public"
+LINE 3: ALTER SEQUENCE public.messages_id_seq OWNED BY public.messag...
+^
+final_backup_clean.sql:354: ERROR: type "public.taxas_sta
