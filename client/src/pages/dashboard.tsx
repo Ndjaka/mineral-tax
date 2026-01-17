@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Machine, FuelEntry, Report, Invoice } from "@shared/schema";
-import { REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
+import { calculateReimbursement } from "@shared/schema";
 import {
   AreaChart,
   Area,
@@ -370,7 +370,7 @@ export default function DashboardPage() {
                     <div className="text-right">
                       <p className="font-mono font-medium">{formatNumber(entry.volumeLiters)} L</p>
                       <p className="text-xs text-primary font-mono">
-                        {formatCurrency(entry.volumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER)}
+                        {formatCurrency(calculateReimbursement(entry.volumeLiters))}
                       </p>
                     </div>
                   </div>

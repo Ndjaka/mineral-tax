@@ -18,6 +18,7 @@ import {
   type CompanyProfile,
   type InsertCompanyProfile,
   REIMBURSEMENT_RATE_CHF_PER_LITER,
+  calculateReimbursement,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
@@ -320,7 +321,7 @@ export class DatabaseStorage implements IStorage {
       totalFuelEntries: entryStats[0]?.count || 0,
       totalVolume,
       eligibleVolume,
-      estimatedReimbursement: eligibleVolume * REIMBURSEMENT_RATE_CHF_PER_LITER,
+      estimatedReimbursement: calculateReimbursement(eligibleVolume),
       pendingReports: pendingReportsCount[0]?.count || 0,
     };
   }
@@ -349,7 +350,7 @@ export class DatabaseStorage implements IStorage {
     return result.map((row) => ({
       month: row.month,
       volume: row.volume,
-      reimbursement: row.volume * REIMBURSEMENT_RATE_CHF_PER_LITER,
+      reimbursement: calculateReimbursement(row.volume),
     }));
   }
 
@@ -392,7 +393,7 @@ export class DatabaseStorage implements IStorage {
     return {
       totalVolumeLiters,
       eligibleVolumeLiters,
-      reimbursementAmount: eligibleVolumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER,
+      reimbursementAmount: calculateReimbursement(eligibleVolumeLiters),
     };
   }
 

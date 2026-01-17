@@ -48,7 +48,7 @@ import {
 import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import type { Machine, FuelEntry } from "@shared/schema";
-import { REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
+import { calculateReimbursement } from "@shared/schema";
 import { extractTextFromImage } from "@/lib/ocr";
 
 const fuelTypes = ["diesel", "gasoline", "biodiesel"] as const;
@@ -90,7 +90,7 @@ export default function FuelPage() {
 
   const volumeValue = form.watch("volumeLiters");
   const calculatedReimbursement = volumeValue
-    ? (volumeValue * REIMBURSEMENT_RATE_CHF_PER_LITER).toFixed(2)
+    ? calculateReimbursement(volumeValue).toFixed(2)
     : "0.00";
 
   const { data: machines } = useQuery<Machine[]>({
@@ -329,7 +329,7 @@ export default function FuelPage() {
         <div className="space-y-4">
           {entries.map((entry) => {
             const machine = machines?.find((m) => m.id === entry.machineId);
-            const reimbursement = entry.volumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER;
+            const reimbursement = calculateReimbursement(entry.volumeLiters);
             
             return (
               <Card key={entry.id} className="hover-elevate" data-testid={`card-fuel-entry-${entry.id}`}>

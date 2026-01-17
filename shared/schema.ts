@@ -225,3 +225,11 @@ export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;
 export type CompanyProfile = typeof companyProfiles.$inferSelect;
 
 export const REIMBURSEMENT_RATE_CHF_PER_LITER = 0.3405;
+
+export function roundToCentimes(amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
+
+export function calculateReimbursement(volumeLiters: number): number {
+  return roundToCentimes(volumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER);
+}

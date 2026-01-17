@@ -6,14 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Calculator, TrendingUp, ArrowRight, ArrowLeft, HelpCircle } from "lucide-react";
-
-const RATE = 0.3405;
+import { calculateReimbursement } from "@shared/schema";
 
 export default function TauxRemboursementPage() {
   const { language } = useI18n();
   const [volume, setVolume] = useState(10000);
 
-  const reimbursement = volume * RATE;
+  const reimbursement = calculateReimbursement(volume);
 
   const content = {
     fr: {

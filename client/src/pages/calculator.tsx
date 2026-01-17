@@ -4,14 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calculator, Info, AlertCircle } from "lucide-react";
-import { REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
+import { calculateReimbursement } from "@shared/schema";
 
 export default function CalculatorPage() {
   const { t } = useI18n();
   const [volume, setVolume] = useState<string>("");
 
   const volumeNum = parseFloat(volume) || 0;
-  const reimbursement = volumeNum * REIMBURSEMENT_RATE_CHF_PER_LITER;
+  const reimbursement = calculateReimbursement(volumeNum);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("de-CH", {

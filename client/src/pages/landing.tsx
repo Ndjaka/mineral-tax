@@ -8,14 +8,14 @@ import { Slider } from "@/components/ui/slider";
 import { Truck, Calculator, FileText, Shield, CheckCircle2, ScrollText, Camera, Lock, HelpCircle, Building2, ClipboardList, Banknote, ShieldCheck, ArrowRight, FileCheck } from "lucide-react";
 import { Link } from "wouter";
 
-const REIMBURSEMENT_RATE = 0.3405;
+import { calculateReimbursement } from "@shared/schema";
 
 export default function LandingPage() {
   const { t, language } = useI18n();
   const [volumeLiters, setVolumeLiters] = useState(20000);
   
   const calculatedReimbursement = useMemo(() => {
-    return volumeLiters * REIMBURSEMENT_RATE;
+    return calculateReimbursement(volumeLiters);
   }, [volumeLiters]);
 
   const formatCurrency = (amount: number) => {

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { isAuthenticated } from "./replit_integrations/auth";
-import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, insertCompanyProfileSchema, type Machine, type FuelEntry, type Invoice, type CompanyProfile, REIMBURSEMENT_RATE_CHF_PER_LITER } from "@shared/schema";
+import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, insertCompanyProfileSchema, type Machine, type FuelEntry, type Invoice, type CompanyProfile, REIMBURSEMENT_RATE_CHF_PER_LITER, calculateReimbursement } from "@shared/schema";
 import { z } from "zod";
 import PDFDocument from "pdfkit";
 import { getUncachableStripeClient } from "./stripeClient";
@@ -962,7 +962,7 @@ function generateTaxasCsv(
     const isEligible = machine?.isEligible ?? true;
     const volumeLiters = parseFloat(entry.volumeLiters.toString());
     const rate = REIMBURSEMENT_RATE_CHF_PER_LITER;
-    const amount = isEligible ? volumeLiters * rate : 0;
+    const amount = isEligible ? calculateReimbursement(volumeLiters) : 0;
     
     const invoiceDate = entry.invoiceDate ? new Date(entry.invoiceDate) : null;
     const dateStr = invoiceDate && !isNaN(invoiceDate.getTime()) 
@@ -1262,7 +1262,7 @@ async function generatePdf(
     machines.filter(m => m.isEligible).forEach((machine) => {
       const liters = machineVolumes.get(machine.id) || 0;
       if (liters > 0) {
-        const reimbursement = liters * REIMBURSEMENT_RATE_CHF_PER_LITER;
+        const reimbursement = calculateReimbursement(liters);
         totalLiters += liters;
         totalReimbursement += reimbursement;
         
