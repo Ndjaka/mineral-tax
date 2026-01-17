@@ -5,6 +5,7 @@ import {
   subscriptions,
   invoices,
   companyProfiles,
+  users,
   type Machine,
   type InsertMachine,
   type FuelEntry,
@@ -17,6 +18,7 @@ import {
   type InsertInvoice,
   type CompanyProfile,
   type InsertCompanyProfile,
+  type User,
   REIMBURSEMENT_RATE_CHF_PER_LITER,
   calculateReimbursement,
 } from "@shared/schema";
@@ -24,6 +26,7 @@ import { db } from "./db";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 
 export interface IStorage {
+  getUser(userId: string): Promise<User | undefined>;
   getMachines(userId: string): Promise<Machine[]>;
   getMachine(id: string, userId: string): Promise<Machine | undefined>;
   createMachine(data: InsertMachine): Promise<Machine>;
@@ -87,6 +90,11 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async getUser(userId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user;
+  }
+
   async getMachines(userId: string): Promise<Machine[]> {
     return db.select().from(machines).where(eq(machines.userId, userId)).orderBy(desc(machines.createdAt));
   }

@@ -1,7 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { isAuthenticated } from "./replit_integrations/auth";
+// DÉSACTIVÉ POUR INFOMANIAK - Utiliser auth locale
+// import { isAuthenticated } from "./replit_integrations/auth";
+import { isLocalAuthenticated as isAuthenticated } from "./localAuth";
 import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, insertCompanyProfileSchema, type Machine, type FuelEntry, type Invoice, type CompanyProfile, REIMBURSEMENT_RATE_CHF_PER_LITER, calculateReimbursement } from "@shared/schema";
 import { z } from "zod";
 import PDFDocument from "pdfkit";
@@ -160,7 +162,8 @@ async function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
 const languageSchema = z.enum(SUPPORTED_LANGUAGES);
 
 function getUserId(req: any): string {
-  return req.user?.claims?.sub;
+  // Pour auth locale (Infomaniak) - utiliser la session
+  return req.session?.userId;
 }
 
 async function checkSubscriptionAccess(userId: string): Promise<{ allowed: boolean; reason?: string }> {
@@ -627,8 +630,9 @@ export async function registerRoutes(
   app.post("/api/checkout", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
-      const user = (req as any).user;
-      const email = user?.claims?.email || `user-${userId}@mineraltax.ch`;
+      // Récupérer l'email depuis la base de données (auth locale)
+      const dbUser = await storage.getUser(userId);
+      const email = dbUser?.email || `user-${userId}@mineraltax.ch`;
       
       const stripe = await getUncachableStripeClient();
       const subscription = await storage.getOrCreateSubscription(userId);

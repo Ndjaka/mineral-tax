@@ -2,14 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@shared/models/auth";
 
 async function fetchUser(): Promise<User | null> {
-  const replitResponse = await fetch("/api/auth/user", {
-    credentials: "include",
-  });
-
-  if (replitResponse.ok) {
-    return replitResponse.json();
-  }
-
+  // INFOMANIAK: Utiliser uniquement l'authentification locale
   const localResponse = await fetch("/api/auth/local/user", {
     credentials: "include",
   });
@@ -22,17 +15,12 @@ async function fetchUser(): Promise<User | null> {
 }
 
 async function logout(): Promise<void> {
-  const localResponse = await fetch("/api/auth/local/logout", {
+  // INFOMANIAK: Utiliser uniquement l'authentification locale
+  await fetch("/api/auth/local/logout", {
     method: "POST",
     credentials: "include",
   });
-
-  if (localResponse.ok) {
-    window.location.href = "/";
-    return;
-  }
-
-  window.location.href = "/api/logout";
+  window.location.href = "/";
 }
 
 export function useAuth() {
