@@ -86,7 +86,7 @@ export default function LandingPage() {
         <div className="bg-muted/50 border-b">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <p className="text-xs text-muted-foreground text-center">
-              <span className="opacity-70">Outil privé d'aide à la préparation</span>
+              <span className="opacity-70">{t.landing.disclaimerTool}</span>
               {" • "}
               <a 
                 href="https://www.bazg.admin.ch/bazg/fr/home.html" 
@@ -94,7 +94,7 @@ export default function LandingPage() {
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
               >
-                Site officiel OFDF
+                {t.landing.disclaimerOfficial}
               </a>
             </p>
           </div>
@@ -106,43 +106,42 @@ export default function LandingPage() {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-                  Déclaration simplifiée de la taxe sur les huiles minérales en Suisse
+                  {t.landing.heroTitle}
                 </h1>
                 
                 <p className="text-xl text-muted-foreground max-w-lg">
-                  Gagnez du temps sur vos demandes de remboursement. MineralTax prépare automatiquement 
-                  vos rapports conformes au formulaire 45.35 et à la plateforme Taxas de l'OFDF.
+                  {t.landing.heroSubtitle}
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button size="lg" asChild data-testid="button-cta-primary">
-                    <Link href="/register">Commencer l'essai gratuit</Link>
+                    <Link href="/register">{t.landing.cta}</Link>
                   </Button>
                   <Button size="lg" variant="outline" asChild data-testid="button-cta-secondary">
-                    <a href="#comment-ca-marche">Voir comment ça marche</a>
+                    <a href="#comment-ca-marche">{t.landing.ctaSecondary}</a>
                   </Button>
                 </div>
                 
                 <p className="text-sm text-muted-foreground">
-                  Accès immédiat • Sans carte bancaire • Conforme Taxas 45.35
+                  {t.landing.ctaSubtext}
                 </p>
 
                 <div className="flex flex-wrap gap-4">
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>Conforme formulaire 45.35</span>
+                    <span>{t.landing.badge1}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>Export compatible Taxas</span>
+                    <span>{t.landing.badge2}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>Calcul automatique 0.3405 CHF/L</span>
+                    <span>{t.landing.badge3}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>4 langues officielles</span>
+                    <span>{t.landing.badge4}</span>
                   </div>
                 </div>
               </div>
@@ -207,9 +206,9 @@ export default function LandingPage() {
         <section className="py-20 bg-muted/30" id="comment-ca-marche">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Comment ça marche</h2>
+              <h2 className="text-3xl font-bold mb-4">{t.landing.howItWorksTitle}</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Trois étapes simples pour récupérer votre remboursement
+                {t.landing.howItWorksSubtitle}
               </p>
             </div>
             
@@ -218,9 +217,9 @@ export default function LandingPage() {
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
                   1
                 </div>
-                <h3 className="text-xl font-semibold">Enregistrez vos machines</h3>
+                <h3 className="text-xl font-semibold">{t.landing.step1Title}</h3>
                 <p className="text-muted-foreground">
-                  Ajoutez vos pelles, chargeuses, grues et autres équipements hors route avec leurs catégories Taxas.
+                  {t.landing.step1Desc}
                 </p>
               </div>
               
@@ -228,9 +227,9 @@ export default function LandingPage() {
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
                   2
                 </div>
-                <h3 className="text-xl font-semibold">Saisissez vos consommations</h3>
+                <h3 className="text-xl font-semibold">{t.landing.step2Title}</h3>
                 <p className="text-muted-foreground">
-                  Entrez vos tickets de carburant manuellement ou scannez-les avec l'OCR. Le calcul est automatique.
+                  {t.landing.step2Desc}
                 </p>
               </div>
               
@@ -238,9 +237,9 @@ export default function LandingPage() {
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
                   3
                 </div>
-                <h3 className="text-xl font-semibold">Exportez pour Taxas</h3>
+                <h3 className="text-xl font-semibold">{t.landing.step3Title}</h3>
                 <p className="text-muted-foreground">
-                  Générez votre rapport PDF conforme 45.35 et le fichier CSV prêt pour la plateforme officielle.
+                  {t.landing.step3Desc}
                 </p>
               </div>
             </div>
@@ -250,45 +249,45 @@ export default function LandingPage() {
         <section className="py-20" id="pour-qui">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Pour qui ?</h2>
+              <h2 className="text-3xl font-bold mb-4">{t.landing.forWhoTitle}</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                MineralTax est conçu pour les entreprises suisses utilisant des machines hors route
+                {t.landing.forWhoSubtitle}
               </p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-3">
-                  <h3 className="text-lg font-semibold">Entreprises de construction</h3>
+                  <h3 className="text-lg font-semibold">{t.landing.forWho1Title}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Pelles, chargeuses, bulldozers, grues
+                    {t.landing.forWho1Desc}
                   </p>
                 </CardContent>
               </Card>
               
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-3">
-                  <h3 className="text-lg font-semibold">Exploitations agricoles</h3>
+                  <h3 className="text-lg font-semibold">{t.landing.forWho2Title}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Tracteurs, moissonneuses, machines forestières
+                    {t.landing.forWho2Desc}
                   </p>
                 </CardContent>
               </Card>
               
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-3">
-                  <h3 className="text-lg font-semibold">Entreprises de transport</h3>
+                  <h3 className="text-lg font-semibold">{t.landing.forWho3Title}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Chariots élévateurs, équipements portuaires
+                    {t.landing.forWho3Desc}
                   </p>
                 </CardContent>
               </Card>
               
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-3">
-                  <h3 className="text-lg font-semibold">Gestionnaires de flotte</h3>
+                  <h3 className="text-lg font-semibold">{t.landing.forWho4Title}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Générateurs, dameuses, équipements fixes
+                    {t.landing.forWho4Desc}
                   </p>
                 </CardContent>
               </Card>
@@ -299,10 +298,9 @@ export default function LandingPage() {
         <section className="py-20 bg-muted/30" id="quest-ce-que-la-taxe">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Qu'est-ce que la taxe sur les huiles minérales ?</h2>
+              <h2 className="text-3xl font-bold mb-4">{t.landing.whatIsTaxTitle}</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                La taxe sur les huiles minérales (Mineralölsteuer) est un impôt spécial prélevé sur les carburants, 
-                huiles de chauffage et gaz en Suisse. Elle est perçue au niveau du commerce et répercutée sur le consommateur final.
+                {t.landing.whatIsTaxSubtitle}
               </p>
             </div>
             
@@ -312,9 +310,9 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                     <HelpCircle className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold">Produits concernés</h3>
+                  <h3 className="text-lg font-semibold">{t.landing.whatIsTax1Title}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Diesel, essence, huiles de chauffage, gaz naturel et autres combustibles fossiles utilisés en Suisse.
+                    {t.landing.whatIsTax1Desc}
                   </p>
                 </CardContent>
               </Card>
@@ -324,9 +322,9 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Building2 className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold">Qui est concerné ?</h3>
+                  <h3 className="text-lg font-semibold">{t.landing.whatIsTax2Title}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Entreprises de construction, agriculteurs, exploitants de machines hors route et flottes professionnelles.
+                    {t.landing.whatIsTax2Desc}
                   </p>
                 </CardContent>
               </Card>
@@ -336,9 +334,9 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                     <ClipboardList className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold">Plateforme Taxas</h3>
+                  <h3 className="text-lg font-semibold">{t.landing.whatIsTax3Title}</h3>
                   <p className="text-muted-foreground text-sm">
-                    La plateforme officielle Taxas de l'OFDF gère les déclarations et remboursements de la taxe minérale.
+                    {t.landing.whatIsTax3Desc}
                   </p>
                 </CardContent>
               </Card>
@@ -348,9 +346,9 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Banknote className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold">Exemptions fiscales</h3>
+                  <h3 className="text-lg font-semibold">{t.landing.whatIsTax4Title}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Réductions et remboursements disponibles pour certains usages professionnels hors route.
+                    {t.landing.whatIsTax4Desc}
                   </p>
                 </CardContent>
               </Card>
@@ -361,10 +359,9 @@ export default function LandingPage() {
         <section className="py-20" id="comment-fonctionne">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Comment fonctionne l'impôt minéral en Suisse ?</h2>
+              <h2 className="text-3xl font-bold mb-4">{t.landing.howTaxWorksTitle}</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                L'impôt sur les huiles minérales Suisse est calculé selon le volume de carburant consommé. 
-                Le taux actuel de remboursement est de <strong>0.3405 CHF par litre</strong> pour les machines hors route.
+                {t.landing.howTaxWorksSubtitle}
               </p>
             </div>
             
@@ -387,10 +384,9 @@ export default function LandingPage() {
         <section className="py-20 bg-muted/30" id="demande-remboursement">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Comment déposer une demande de remboursement ?</h2>
+              <h2 className="text-3xl font-bold mb-4">{t.landing.howToClaimTitle}</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                MineralTax simplifie la procédure de remboursement de la taxe minérale. 
-                Générez des rapports compatibles avec le formulaire 45.35 et soumettez-les via Taxas.
+                {t.landing.howToClaimSubtitle}
               </p>
             </div>
             
@@ -399,9 +395,9 @@ export default function LandingPage() {
                 <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
                   1
                 </div>
-                <h3 className="text-xl font-semibold">Enregistrez vos machines</h3>
+                <h3 className="text-xl font-semibold">{t.landing.claimStep1Title}</h3>
                 <p className="text-muted-foreground">
-                  Ajoutez vos machines hors route éligibles : pelles, chargeuses, bulldozers, grues et plus encore.
+                  {t.landing.claimStep1Desc}
                 </p>
               </div>
               
@@ -409,9 +405,9 @@ export default function LandingPage() {
                 <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
                   2
                 </div>
-                <h3 className="text-xl font-semibold">Enregistrez le carburant</h3>
+                <h3 className="text-xl font-semibold">{t.landing.claimStep2Title}</h3>
                 <p className="text-muted-foreground">
-                  Scannez vos tickets ou saisissez manuellement vos consommations de diesel et essence.
+                  {t.landing.claimStep2Desc}
                 </p>
               </div>
               
@@ -419,9 +415,9 @@ export default function LandingPage() {
                 <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
                   3
                 </div>
-                <h3 className="text-xl font-semibold">Générez le rapport</h3>
+                <h3 className="text-xl font-semibold">{t.landing.claimStep3Title}</h3>
                 <p className="text-muted-foreground">
-                  Exportez un rapport PDF conforme au formulaire 45.35 pour soumission à l'OFDF via Taxas.
+                  {t.landing.claimStep3Desc}
                 </p>
               </div>
             </div>
@@ -559,10 +555,9 @@ export default function LandingPage() {
         <section className="py-20" id="confiance">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Confiance & Sécurité</h2>
+              <h2 className="text-3xl font-bold mb-4">{t.landing.trustTitle}</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                MineralTax est un outil professionnel développé pour faciliter vos démarches administratives. 
-                Nous ne remplaçons pas les services officiels, nous vous aidons à mieux les utiliser.
+                {t.landing.trustSubtitle}
               </p>
             </div>
             
@@ -572,9 +567,9 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
                     <ShieldCheck className="h-6 w-6 text-green-600" />
                   </div>
-                  <h3 className="font-semibold">Données en Suisse</h3>
+                  <h3 className="font-semibold">{t.landing.trust1Title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Vos données sont hébergées sur des serveurs sécurisés avec chiffrement SSL/TLS.
+                    {t.landing.trust1Desc}
                   </p>
                 </CardContent>
               </Card>
@@ -584,9 +579,9 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto">
                     <Lock className="h-6 w-6 text-blue-600" />
                   </div>
-                  <h3 className="font-semibold">Aucune transmission automatique</h3>
+                  <h3 className="font-semibold">{t.landing.trust2Title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Nous ne transmettons jamais vos données à l'administration. Vous gardez le contrôle total.
+                    {t.landing.trust2Desc}
                   </p>
                 </CardContent>
               </Card>
@@ -596,9 +591,9 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto">
                     <FileCheck className="h-6 w-6 text-purple-600" />
                   </div>
-                  <h3 className="font-semibold">Compatible Taxas</h3>
+                  <h3 className="font-semibold">{t.landing.trust3Title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Nos exports CSV sont formatés selon les exigences de la plateforme officielle Taxas.
+                    {t.landing.trust3Desc}
                   </p>
                 </CardContent>
               </Card>
@@ -608,9 +603,9 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
                     <Building2 className="h-6 w-6 text-amber-600" />
                   </div>
-                  <h3 className="font-semibold">Outil privé, pas officiel</h3>
+                  <h3 className="font-semibold">{t.landing.trust4Title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    MineralTax est une solution SaaS privée. La soumission officielle se fait sur Taxas.
+                    {t.landing.trust4Desc}
                   </p>
                 </CardContent>
               </Card>
@@ -621,8 +616,8 @@ export default function LandingPage() {
                 <div className="flex items-center gap-3">
                   <Shield className="h-8 w-8 text-primary" />
                   <div>
-                    <p className="font-semibold">Lien officiel OFDF / BAZG</p>
-                    <p className="text-sm text-muted-foreground">Pour toutes vos démarches officielles</p>
+                    <p className="font-semibold">{t.landing.officialLink}</p>
+                    <p className="text-sm text-muted-foreground">{t.landing.officialLinkSubtitle}</p>
                   </div>
                 </div>
                 <Button variant="outline" asChild>
@@ -632,7 +627,7 @@ export default function LandingPage() {
                     rel="noopener noreferrer"
                     data-testid="link-taxas-official"
                   >
-                    Accéder à Taxas <ArrowRight className="ml-2 h-4 w-4" />
+                    {t.landing.accessTaxas} <ArrowRight className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
               </div>
@@ -642,35 +637,46 @@ export default function LandingPage() {
 
         <section className="py-20 bg-muted/30" id="tarifs">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold mb-8">{t.landing.pricingTitle}</h2>
             <Card className="bg-primary text-primary-foreground overflow-hidden">
               <CardContent className="p-8 md:p-12">
                 <div className="space-y-6">
-                  <h2 className="text-3xl font-bold">Offre de Lancement Exclusive</h2>
+                  <p className="text-lg text-primary-foreground/80">{t.landing.pricingSubtitle}</p>
                   
                   <div className="py-4">
                     <span className="text-5xl md:text-6xl font-bold">250</span>
                     <span className="text-2xl ml-2">CHF</span>
-                    <p className="text-primary-foreground/80 mt-2">par an (HT)</p>
+                    <p className="text-primary-foreground/80 mt-2">{t.landing.pricingPeriod}</p>
                   </div>
                   
                   <ul className="space-y-3 text-primary-foreground/90 text-left max-w-md mx-auto">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>10 jours d'essai gratuit (sans carte bancaire)</span>
+                      <span>{t.landing.pricingFeature1}</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>Accès complet à toutes les fonctionnalités</span>
+                      <span>{t.landing.pricingFeature2}</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>Idéal pour toutes les flottes (Route & Hors-Route)</span>
+                      <span>{t.landing.pricingFeature3}</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>Archivage sécurisé en Suisse</span>
+                      <span>{t.landing.pricingFeature4}</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <span>{t.landing.pricingFeature5}</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <span>{t.landing.pricingFeature6}</span>
                     </li>
                   </ul>
+                  
+                  <p className="text-sm text-primary-foreground/70">{t.landing.pricingTrial}</p>
                   
                   <div className="pt-4">
                     <Button 
@@ -679,7 +685,7 @@ export default function LandingPage() {
                       asChild
                       data-testid="button-subscribe"
                     >
-                      <a href="/api/login">Commencer l'essai gratuit</a>
+                      <Link href="/register">{t.landing.pricingCta}</Link>
                     </Button>
                   </div>
                 </div>
@@ -691,50 +697,42 @@ export default function LandingPage() {
         <section className="py-20 bg-muted/30" id="faq">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Questions fréquentes</h2>
+              <h2 className="text-3xl font-bold mb-4">{t.landing.faqTitle}</h2>
             </div>
             
             <div className="space-y-6">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">Qu'est-ce que la taxe minéral Suisse ?</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t.landing.faq1Question}</h3>
                   <p className="text-muted-foreground">
-                    La taxe minéral Suisse, ou impôt sur les huiles minérales, est une taxe prélevée sur les carburants 
-                    et combustibles. Les entreprises utilisant des machines hors route peuvent demander un remboursement 
-                    partiel de cette taxe auprès de l'OFDF.
+                    {t.landing.faq1Answer}
                   </p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">Comment obtenir un remboursement ?</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t.landing.faq2Question}</h3>
                   <p className="text-muted-foreground">
-                    Pour obtenir un remboursement de la taxe sur les huiles minérales, vous devez soumettre une demande 
-                    via la plateforme Taxas de l'OFDF avec le formulaire 45.35. MineralTax génère automatiquement 
-                    les rapports conformes à ces exigences.
+                    {t.landing.faq2Answer}
                   </p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">Quels sont les taux de remboursement ?</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t.landing.faq3Question}</h3>
                   <p className="text-muted-foreground">
-                    Le taux de remboursement actuel est de 0.3405 CHF par litre de carburant utilisé 
-                    dans des machines hors route. Ce taux est fixé par l'Office fédéral de la douane 
-                    et de la sécurité des frontières (OFDF/BAZG).
+                    {t.landing.faq3Answer}
                   </p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">Quelles machines sont éligibles ?</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t.landing.faq4Question}</h3>
                   <p className="text-muted-foreground">
-                    Les machines éligibles incluent les pelles mécaniques, chargeuses, bulldozers, grues, 
-                    compacteurs, foreuses, générateurs et autres équipements de construction qui ne circulent 
-                    pas sur la voie publique.
+                    {t.landing.faq4Answer}
                   </p>
                 </CardContent>
               </Card>
@@ -746,16 +744,16 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-8 md:p-12 text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">
-                Prêt à récupérer votre remboursement ?
+                {t.landing.sliderResult}
               </h2>
               <p className="text-primary-foreground/90 mb-6 max-w-xl mx-auto">
-                Rejoignez les entreprises suisses qui simplifient leurs déclarations Taxas.
+                {t.landing.trustedBy}
               </p>
               <Button size="lg" variant="secondary" asChild data-testid="button-cta-final">
-                <a href="/api/login">Commencer l'essai gratuit (10 jours)</a>
+                <Link href="/register">{t.landing.cta}</Link>
               </Button>
               <p className="text-primary-foreground/70 text-sm mt-4">
-                Accès immédiat • Sans carte bancaire • Conforme Taxas 45.35
+                {t.landing.ctaSubtext}
               </p>
             </div>
           </div>
@@ -774,32 +772,32 @@ export default function LandingPage() {
                 <span className="font-semibold">MineralTax Swiss</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Outil SaaS privé pour la préparation des demandes de remboursement de la taxe sur les huiles minérales en Suisse.
+                {t.landing.footerTagline}
               </p>
               <p className="text-xs text-muted-foreground/70">
-                Ce site n'est pas affilié à l'administration fédérale suisse.
+                {t.landing.footerNotAffiliated}
               </p>
             </div>
             
             {/* Links */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm">Liens utiles</h4>
+              <h4 className="font-semibold text-sm">{t.landing.usefulLinks}</h4>
               <div className="flex flex-col gap-2 text-sm">
                 <Link href="/ressources" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-ressources-footer">
-                  {language === "fr" ? "Ressources" : language === "de" ? "Ressourcen" : language === "it" ? "Risorse" : "Resources"}
+                  {t.landing.resources}
                 </Link>
                 <Link href="/terms" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-terms-footer">
                   {t.nav.terms}
                 </Link>
                 <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-privacy-footer">
-                  {t.privacy?.title || "Confidentialité"}
+                  {t.landing.footerPrivacy}
                 </Link>
               </div>
             </div>
             
             {/* Official Links */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm">Liens officiels</h4>
+              <h4 className="font-semibold text-sm">{t.landing.officialLinks}</h4>
               <div className="flex flex-col gap-2 text-sm">
                 <a 
                   href="https://www.bazg.admin.ch/bazg/fr/home/actualites/forumd/fuer-fachleute/rueckerstattung-co2-abgabe-verbrauchssteuerplattform-taxas.html" 
@@ -808,7 +806,7 @@ export default function LandingPage() {
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   data-testid="link-taxas-footer"
                 >
-                  Plateforme Taxas (OFDF)
+                  {t.landing.taxasPlatform}
                 </a>
                 <a 
                   href="https://www.bazg.admin.ch/bazg/fr/home.html" 
@@ -826,7 +824,7 @@ export default function LandingPage() {
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   data-testid="link-chch-footer"
                 >
-                  ch.ch - Portail suisse
+                  {t.landing.swissPortal}
                 </a>
               </div>
             </div>
@@ -834,8 +832,8 @@ export default function LandingPage() {
           
           <div className="border-t pt-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-              <span>&copy; 2026 MineralTax Swiss. Tous droits réservés.</span>
-              <span>Hébergé sur infrastructure sécurisée • Connexion SSL/TLS</span>
+              <span>&copy; 2026 {t.landing.footerCopyright}</span>
+              <span>{t.landing.footerDisclaimer}</span>
             </div>
           </div>
         </div>
