@@ -83,6 +83,24 @@ server/
 - Webhook route registered before express.json() to receive raw Buffer
 - Success callback verifies payment and activates subscription
 
+### Dual Payment Options (Implemented 2026-01-18)
+Users can choose between two payment methods on the settings page:
+
+**Option 1: Card Subscription (Auto-renewal)**
+- Endpoint: `POST /api/checkout`
+- Mode: `subscription`
+- Payment methods: `card`
+- Automatic yearly renewal
+
+**Option 2: Twint / One-time Payment (Manual renewal)**
+- Endpoint: `POST /api/checkout/onetime`
+- Mode: `payment`
+- Payment methods: `twint`, `card`, `link`
+- Annual license with renewal reminder email
+- Important: Twint only works with one-time payments, not subscriptions
+
+Both options activate the same subscription status and grant full access to the app.
+
 ### Dual Authentication System (Implemented 2026-01-16)
 Supports both Replit Auth and local email/password authentication for Swiss hosting migration:
 
