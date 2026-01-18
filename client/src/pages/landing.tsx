@@ -203,6 +203,48 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <section className="py-12 bg-amber-50 dark:bg-amber-950/20" id="aide-agate">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold mb-2 text-amber-800 dark:text-amber-200">
+                {(t.landing as any).seoHelpTitle || "Aide : Login CH Agate Taxas - Problèmes fréquents"}
+              </h2>
+              <p className="text-amber-700 dark:text-amber-300">
+                {(t.landing as any).seoHelpSubtitle || "Vous n'arrivez pas à vous connecter au portail Agate ou à utiliser Taxas ? Vous n'êtes pas seul(e)."}
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="bg-background">
+                <CardContent className="p-5 space-y-2">
+                  <h3 className="font-semibold">{(t.landing as any).seoHelp1Title || "Problème de login Agate ?"}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {(t.landing as any).seoHelp1Desc || "Le portail ePortal/Agate peut être complexe. MineralTax vous permet de préparer vos données hors ligne."}
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-background">
+                <CardContent className="p-5 space-y-2">
+                  <h3 className="font-semibold">{(t.landing as any).seoHelp2Title || "Enregistrement Taxas bloqué ?"}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {(t.landing as any).seoHelp2Desc || "L'inscription sur Taxas nécessite plusieurs étapes. Utilisez MineralTax pour préparer vos données."}
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-background">
+                <CardContent className="p-5 space-y-2">
+                  <h3 className="font-semibold">{(t.landing as any).seoHelp3Title || "Formulaire 45.35 compliqué ?"}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {(t.landing as any).seoHelp3Desc || "MineralTax génère automatiquement un PDF conforme au formulaire 45.35."}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         <section className="py-20 bg-muted/30" id="comment-ca-marche">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
