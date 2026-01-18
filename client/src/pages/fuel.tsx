@@ -48,10 +48,10 @@ import {
 import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2, ChevronDown, FileSpreadsheet, HelpCircle } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { StatsBar } from "@/components/stats-bar";
 import { Progress } from "@/components/ui/progress";
 import type { Machine, FuelEntry } from "@shared/schema";
@@ -78,22 +78,22 @@ const fuelEntryFormSchema = z.object({
 
 type FuelEntryFormData = z.infer<typeof fuelEntryFormSchema>;
 
-function InfoTooltip({ content }: { content: string }) {
+function InfoPopover({ content }: { content: string }) {
   return (
-    <Tooltip delayDuration={0}>
-      <TooltipTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <button 
           type="button" 
           className="ml-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
-          onClick={(e) => e.preventDefault()}
+          onClick={(e) => e.stopPropagation()}
         >
           <HelpCircle className="h-4 w-4" />
         </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-md text-sm z-[100]">
+      </PopoverTrigger>
+      <PopoverContent side="top" className="max-w-xs text-sm z-[200] p-3">
         <p>{content}</p>
-      </TooltipContent>
-    </Tooltip>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -621,7 +621,7 @@ export default function FuelPage() {
                         <FormItem>
                           <FormLabel className="flex items-center">
                             {t.fuel.articleNumber}
-                            <InfoTooltip content={t.fuel.articleNumberTooltip} />
+                            <InfoPopover content={t.fuel.articleNumberTooltip} />
                           </FormLabel>
                           <FormControl>
                             <Input placeholder="1234" {...field} data-testid="input-article-number" />
@@ -637,7 +637,7 @@ export default function FuelPage() {
                         <FormItem>
                           <FormLabel className="flex items-center">
                             {t.fuel.warehouseNumber}
-                            <InfoTooltip content={t.fuel.warehouseNumberTooltip} />
+                            <InfoPopover content={t.fuel.warehouseNumberTooltip} />
                           </FormLabel>
                           <FormControl>
                             <Input placeholder="001" {...field} data-testid="input-warehouse-number" />
@@ -654,7 +654,7 @@ export default function FuelPage() {
                       <FormItem>
                         <FormLabel className="flex items-center">
                           {t.fuel.movementNumber}
-                          <InfoTooltip content={t.fuel.movementNumberTooltip} />
+                          <InfoPopover content={t.fuel.movementNumberTooltip} />
                         </FormLabel>
                         <FormControl>
                           <Input placeholder="MOV-2026-001" {...field} data-testid="input-movement-number" />
@@ -671,7 +671,7 @@ export default function FuelPage() {
                         <FormItem>
                           <FormLabel className="flex items-center">
                             {t.fuel.bdLabel}
-                            <InfoTooltip content={t.fuel.bdTooltip} />
+                            <InfoPopover content={t.fuel.bdTooltip} />
                           </FormLabel>
                           <FormControl>
                             <Input placeholder="ex: 01" {...field} data-testid="input-bd" />
@@ -687,7 +687,7 @@ export default function FuelPage() {
                         <FormItem>
                           <FormLabel className="flex items-center">
                             {t.fuel.statLabel}
-                            <InfoTooltip content={t.fuel.statTooltip} />
+                            <InfoPopover content={t.fuel.statTooltip} />
                           </FormLabel>
                           <FormControl>
                             <Input placeholder="ex: 2710" {...field} data-testid="input-stat" />
@@ -703,7 +703,7 @@ export default function FuelPage() {
                         <FormItem>
                           <FormLabel className="flex items-center">
                             {t.fuel.ciLabel}
-                            <InfoTooltip content={t.fuel.ciTooltip} />
+                            <InfoPopover content={t.fuel.ciTooltip} />
                           </FormLabel>
                           <FormControl>
                             <Input placeholder="ex: A1" {...field} data-testid="input-ci" />
