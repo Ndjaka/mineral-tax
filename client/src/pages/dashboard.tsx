@@ -20,6 +20,8 @@ import {
   Download,
   Receipt,
   BarChart3,
+  Camera,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Machine, FuelEntry, Report, Invoice } from "@shared/schema";
@@ -166,14 +168,14 @@ export default function DashboardPage() {
       icon: Truck,
     },
     {
-      title: t.dashboard.addFuelEntry,
-      href: "/fuel?action=add",
-      icon: Fuel,
+      title: t.dashboard.scanTicket || "Scanner un ticket",
+      href: "/fuel?action=scan",
+      icon: Camera,
     },
     {
-      title: t.dashboard.generateReport,
-      href: "/reports?action=generate",
-      icon: FileText,
+      title: t.dashboard.exportTaxasCsv || "Exporter CSV Taxas",
+      href: "/reports?action=export",
+      icon: FileSpreadsheet,
     },
   ];
 
