@@ -52,6 +52,47 @@ async function getOrCreateStripePrice(stripe: any): Promise<string> {
   return price.id;
 }
 
+async function getOrCreateOneTimePrice(stripe: any): Promise<string> {
+  const productName = "MineralTax Swiss - Licence Annuelle";
+  
+  const existingProducts = await stripe.products.search({
+    query: `name:'${productName}'`,
+  });
+  
+  let productId: string;
+  
+  if (existingProducts.data.length > 0) {
+    productId = existingProducts.data[0].id;
+  } else {
+    const product = await stripe.products.create({
+      name: productName,
+      description: "Licence annuelle MineralTax Swiss - Paiement unique (Twint, carte, virement)",
+    });
+    productId = product.id;
+  }
+  
+  const existingPrices = await stripe.prices.list({
+    product: productId,
+    active: true,
+  });
+  
+  const matchingPrice = existingPrices.data.find(
+    (p: any) => p.unit_amount === 25000 && p.currency === "chf" && !p.recurring
+  );
+  
+  if (matchingPrice) {
+    return matchingPrice.id;
+  }
+  
+  const price = await stripe.prices.create({
+    product: productId,
+    unit_amount: 25000,
+    currency: "chf",
+  });
+  
+  return price.id;
+}
+
 const SUPPORTED_LANGUAGES = ["fr", "de", "it", "en"] as const;
 type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 
@@ -680,6 +721,48 @@ export async function registerRoutes(
       res.json({ url: session.url });
     } catch (error) {
       console.error("Error creating checkout session:", error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  app.post("/api/checkout/onetime", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const dbUser = await storage.getUser(userId);
+      const email = dbUser?.email || `user-${userId}@mineraltax.ch`;
+      
+      const stripe = await getUncachableStripeClient();
+      const subscription = await storage.getOrCreateSubscription(userId);
+      
+      let customerId = subscription.stripeCustomerId;
+      
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email,
+          metadata: { userId },
+        });
+        customerId = customer.id;
+        await storage.updateStripeCustomerId(userId, customerId);
+      }
+      
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      
+      const priceId = await getOrCreateOneTimePrice(stripe);
+      
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["twint", "card", "link"],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: "payment",
+        success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&type=onetime`,
+        cancel_url: `${baseUrl}/settings`,
+        metadata: { userId, paymentType: "onetime" },
+        allow_promotion_codes: true,
+      });
+      
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Error creating one-time checkout session:", error);
       res.status(500).json({ message: "Failed to create checkout session" });
     }
   });

@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { User, Globe, CreditCard, Shield, ExternalLink, Loader2 } from "lucide-react";
+import { User, Globe, CreditCard, Shield, ExternalLink, Loader2, RefreshCw, Smartphone } from "lucide-react";
 
 export default function SettingsPage() {
   const { t, language, setLanguage } = useI18n();
@@ -43,8 +43,24 @@ export default function SettingsPage() {
     },
   });
 
+  const onetimeMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/checkout/onetime");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+  });
+
   const handleSubscribe = () => {
     checkoutMutation.mutate();
+  };
+
+  const handleOnetimePayment = () => {
+    onetimeMutation.mutate();
   };
 
   const userInitials = user
@@ -148,26 +164,79 @@ export default function SettingsPage() {
           </div>
 
           {subscription?.status !== "active" && (
-            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-lg">250 CHF</p>
-                  <p className="text-sm text-muted-foreground">{t.landing.perYear}</p>
+            <div className="space-y-4">
+              <p className="text-sm font-medium">{t.settings.choosePaymentMethod}</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border-2 border-primary/30 bg-primary/5 hover-elevate">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold">{t.settings.cardSubscription}</p>
+                      <p className="text-sm text-muted-foreground">{t.settings.cardSubscriptionDesc}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="secondary" className="text-xs">
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      {t.settings.autoRenewal}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-lg">250 CHF<span className="text-sm font-normal text-muted-foreground">/{t.landing.perYear}</span></p>
+                    <Button 
+                      onClick={handleSubscribe}
+                      disabled={checkoutMutation.isPending}
+                      data-testid="button-subscribe-card"
+                    >
+                      {checkoutMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          {t.settings.payWithCard}
+                          <ExternalLink className="h-4 w-4 ml-2" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-                <Button 
-                  onClick={handleSubscribe}
-                  disabled={checkoutMutation.isPending}
-                  data-testid="button-subscribe"
-                >
-                  {checkoutMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      {t.settings.subscribe}
-                      <ExternalLink className="h-4 w-4 ml-2" />
-                    </>
-                  )}
-                </Button>
+
+                <div className="p-4 rounded-lg border-2 border-orange-400/30 bg-orange-50/50 dark:bg-orange-950/20 hover-elevate">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-orange-400/20">
+                      <Smartphone className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold">{t.settings.twintPayment}</p>
+                      <p className="text-sm text-muted-foreground">{t.settings.twintPaymentDesc}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="outline" className="text-xs">
+                      {t.settings.manualRenewal}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-lg">250 CHF<span className="text-sm font-normal text-muted-foreground">/{t.landing.perYear}</span></p>
+                    <Button 
+                      variant="outline"
+                      onClick={handleOnetimePayment}
+                      disabled={onetimeMutation.isPending}
+                      data-testid="button-subscribe-twint"
+                    >
+                      {onetimeMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          {t.settings.payWithTwint}
+                          <ExternalLink className="h-4 w-4 ml-2" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
