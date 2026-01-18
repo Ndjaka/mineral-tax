@@ -50,13 +50,17 @@ function formatIdeNumber(value: string): string {
 
 function InfoTooltip({ content }: { content: string }) {
   return (
-    <Tooltip>
+    <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
-        <button type="button" className="ml-1 text-muted-foreground hover:text-foreground transition-colors">
+        <button 
+          type="button" 
+          className="ml-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
+          onClick={(e) => e.preventDefault()}
+        >
           <HelpCircle className="h-4 w-4" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs text-sm">
+      <TooltipContent side="top" className="max-w-md text-sm z-[100]">
         <p>{content}</p>
       </TooltipContent>
     </Tooltip>
