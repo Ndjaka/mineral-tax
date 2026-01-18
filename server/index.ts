@@ -7,6 +7,7 @@ import { createServer } from "http";
 import { registerLocalAuthRoutes } from "./localAuth";
 import { getStripeClient } from "./stripeClient";
 import { storage } from "./storage";
+import { sendWelcomeEmail } from "./emailService";
 
 const app = express();
 const httpServer = createServer(app);
@@ -61,6 +62,21 @@ app.post(
                 new Date(subscription.current_period_end * 1000)
               );
             }
+          }
+          
+          const customerEmail = session.customer_details?.email || session.customer_email;
+          const customerName = session.customer_details?.name || session.metadata?.customerName || "Client";
+          
+          if (customerEmail) {
+            const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+              ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+              : process.env.BASE_URL || 'https://mineraltax.ch';
+            
+            await sendWelcomeEmail({
+              to: customerEmail,
+              customerName: customerName,
+              dashboardUrl: `${baseUrl}/dashboard`
+            });
           }
         }
       }

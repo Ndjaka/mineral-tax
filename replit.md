@@ -113,13 +113,27 @@ Supports both Replit Auth and local email/password authentication for Swiss host
 - Same session infrastructure for seamless experience
 - See GUIDE_MIGRATION_HEBERGEUR_SUISSE.md for Swiss hosting deployment
 
-### Email Notifications (TODO)
-Email service (Resend) was proposed but user dismissed setup (2026-01-11). To enable email notifications later:
-1. Set up Resend connector in Replit OR provide RESEND_API_KEY as a secret
-2. Implement email templates for:
-   - J-1 trial reminder (24h before trial ends)
-   - Quarterly reminders (March, June, Sept, Dec) for subscribers
-3. Set up scheduled job system for sending notifications
+### Email Notifications (Implemented 2026-01-18)
+Email service uses Resend for transactional emails.
+
+**Configuration:**
+- Set `RESEND_API_KEY` as a secret to enable email sending
+- If not configured, emails are silently skipped (no errors)
+- From address: `noreply@mineraltax.ch` (requires domain verification in Resend)
+
+**Welcome Email (Active):**
+- Triggered on `checkout.session.completed` webhook after successful payment
+- Professional HTML template with:
+  - Personalized greeting (customer name from Stripe session)
+  - 3 onboarding steps (machines, scan tickets, export CSV)
+  - CTA button to dashboard
+  - Agate help section
+- File: `server/emailService.ts`
+
+**Email Templates (TODO):**
+- J-1 trial reminder (24h before trial ends)
+- Quarterly reminders (March, June, Sept, Dec) for subscribers
+- Requires scheduled job system implementation
 
 ## Development Commands
 - `npm run dev` - Start development server
