@@ -115,6 +115,8 @@ const machineFormSchema = z.object({
   licensePlate: z.string().optional(),
   plateColor: z.enum(plateColors).optional(),
   chassisNumber: z.string().optional(),
+  registrationNumber: z.string().optional(),
+  rcNumber: z.string().optional(),
   year: z.coerce.number().min(1900).max(2100).optional(),
   power: z.string().optional(),
   isEligible: z.boolean().default(true),
@@ -150,6 +152,8 @@ export default function FleetPage() {
       licensePlate: "",
       plateColor: "none",
       chassisNumber: "",
+      registrationNumber: "",
+      rcNumber: "",
       year: undefined,
       power: "",
       isEligible: true,
@@ -218,6 +222,8 @@ export default function FleetPage() {
         licensePlate: machine.licensePlate || "",
         plateColor: (machine.plateColor as typeof plateColors[number]) || "none",
         chassisNumber: machine.chassisNumber || "",
+        registrationNumber: machine.registrationNumber || "",
+        rcNumber: machine.rcNumber || "",
         year: machine.year || undefined,
         power: machine.power || "",
         isEligible: machine.isEligible,
@@ -233,6 +239,8 @@ export default function FleetPage() {
         licensePlate: "",
         plateColor: "none",
         chassisNumber: "",
+        registrationNumber: "",
+        rcNumber: "",
         year: undefined,
         power: "",
         isEligible: true,
@@ -603,7 +611,35 @@ export default function FleetPage() {
                   <FormItem>
                     <FormLabel>{t.fleet.chassisNumber}</FormLabel>
                     <FormControl>
-                      <Input {...field} data-testid="input-chassis-number" />
+                      <Input {...field} placeholder="e.g. FE724V2026TX001" data-testid="input-chassis-number" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="registrationNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.fleet.registrationNumber || "N° de matricule"}</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g. 405.122.889" data-testid="input-registration-number" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rcNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.fleet.rcNumber || "N° RC Taxas"}</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g. RC-BTP-2025-001" data-testid="input-rc-number" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

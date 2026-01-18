@@ -79,6 +79,8 @@ export const machines = pgTable("machines", {
   licensePlate: text("license_plate"),
   plateColor: plateColorEnum("plate_color").default("none"),
   chassisNumber: text("chassis_number"),
+  registrationNumber: text("registration_number"),
+  rcNumber: text("rc_number"),
   year: integer("year"),
   power: text("power"),
   isEligible: boolean("is_eligible").notNull().default(true),

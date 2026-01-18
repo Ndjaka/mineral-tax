@@ -1005,12 +1005,13 @@ function generateTaxasCsv(
 ): string {
   const lines: string[] = [];
   
-  lines.push("RC;N° article;N° entrepôt;Date mouvement;N° mouvement;Quantité de litres / kg;BD;Stat.;CI;Montant de l'impôt CHF");
+  lines.push("RC;N° matricule;N° châssis;N° article;N° entrepôt;Date mouvement;N° mouvement;Quantité de litres / kg;BD;Stat.;CI;Montant de l'impôt CHF");
   
-  const rcNumber = companyProfile?.rcNumber || "";
+  const companyRcNumber = companyProfile?.rcNumber || "";
   
   for (const entry of fuelEntries) {
     const machine = entry.machine || machines.find(m => m.id === entry.machineId);
+    const machineData = machine as any;
     const isEligible = machine?.isEligible ?? true;
     const volumeLiters = parseFloat(entry.volumeLiters.toString());
     const amount = isEligible ? calculateReimbursement(volumeLiters) : 0;
@@ -1022,8 +1023,14 @@ function generateTaxasCsv(
     
     const entryData = entry as any;
     
+    const rcNumber = machineData?.rcNumber || companyRcNumber;
+    const registrationNumber = machineData?.registrationNumber || "";
+    const chassisNumber = machineData?.chassisNumber || "";
+    
     lines.push([
       rcNumber,
+      registrationNumber,
+      chassisNumber,
       entryData.articleNumber || "",
       entryData.warehouseNumber || "",
       dateStr,
