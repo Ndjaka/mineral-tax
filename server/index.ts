@@ -4,6 +4,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 // DÉSACTIVÉ POUR INFOMANIAK - Utiliser auth locale uniquement
 // import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { getSession } from "./replit_integrations/auth/replitAuth";
 import { registerLocalAuthRoutes } from "./localAuth";
 import { getStripeClient } from "./stripeClient";
 import { storage } from "./storage";
@@ -215,6 +216,11 @@ app.use((req, res, next) => {
   // DÉSACTIVÉ POUR INFOMANIAK - Replit Auth non disponible
   // await setupAuth(app);
   // registerAuthRoutes(app);
+  
+  // Configuration de session pour l'authentification locale
+  app.set("trust proxy", 1);
+  app.use(getSession());
+  
   registerLocalAuthRoutes(app);
   
   await registerRoutes(httpServer, app);
