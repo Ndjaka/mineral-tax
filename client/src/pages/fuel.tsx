@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2, ChevronDown, FileSpreadsheet } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { StatsBar } from "@/components/stats-bar";
 import { Progress } from "@/components/ui/progress";
 import type { Machine, FuelEntry } from "@shared/schema";
 import { calculateReimbursement } from "@shared/schema";
@@ -289,7 +290,7 @@ export default function FuelPage() {
             {entries?.length || 0} {t.dashboard.recentEntries.toLowerCase()}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button 
             variant="outline" 
             disabled={isScanning}
@@ -322,6 +323,8 @@ export default function FuelPage() {
           </Button>
         </div>
       </div>
+
+      <StatsBar />
 
       {isScanning && (
         <Card>

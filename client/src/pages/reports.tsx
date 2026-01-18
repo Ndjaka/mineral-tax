@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/accordion";
 import type { Report } from "@shared/schema";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { StatsBar } from "@/components/stats-bar";
 
 type AuditFinding = {
   type: "error" | "warning";
@@ -227,6 +228,8 @@ export default function ReportsPage() {
           </Button>
         </div>
       </div>
+
+      <StatsBar />
 
       <Alert>
         <FileText className="h-4 w-4" />

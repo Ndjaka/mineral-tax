@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Truck, Search, AlertTriangle } from "lucide-react";
+import { StatsBar } from "@/components/stats-bar";
 import type { Machine } from "@shared/schema";
 
 const machineTypesEngins = [
@@ -327,6 +328,8 @@ export default function FleetPage() {
           {t.fleet.addMachine}
         </Button>
       </div>
+
+      <StatsBar />
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
