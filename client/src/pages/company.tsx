@@ -26,8 +26,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, MapPin, User, Landmark, Save, AlertCircle } from "lucide-react";
+import { Building2, MapPin, User, Landmark, Save, AlertCircle, HelpCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const swissCantons = [
   "AG", "AI", "AR", "BE", "BL", "BS", "FR", "GE", "GL", "GR",
@@ -35,9 +40,32 @@ const swissCantons = [
   "TI", "UR", "VD", "VS", "ZG", "ZH"
 ] as const;
 
+function formatIdeNumber(value: string): string {
+  const digits = value.replace(/[^0-9]/g, "");
+  if (digits.length === 0) return "";
+  if (digits.length <= 3) return `CHE-${digits}`;
+  if (digits.length <= 6) return `CHE-${digits.slice(0, 3)}.${digits.slice(3)}`;
+  return `CHE-${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}`;
+}
+
+function InfoTooltip({ content }: { content: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button type="button" className="ml-1 text-muted-foreground hover:text-foreground transition-colors">
+          <HelpCircle className="h-4 w-4" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs text-sm">
+        <p>{content}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 const companyFormSchema = z.object({
   companyName: z.string().min(1, "Required"),
-  ideNumber: z.string().optional(),
+  ideNumber: z.string().regex(/^(CHE-\d{3}\.\d{3}\.\d{3})?$/, "Format: CHE-000.000.000").optional().or(z.literal("")),
   rcNumber: z.string().optional(),
   taxSubjectNumber: z.string().optional(),
   attribution99: z.string().optional(),
@@ -205,9 +233,21 @@ export default function CompanyPage() {
                 name="ideNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t.company.ideNumber}</FormLabel>
+                    <FormLabel className="flex items-center">
+                      {t.company.ideNumber}
+                      <InfoTooltip content={t.company.ideTooltip} />
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="CHE-123.456.789" {...field} data-testid="input-ide-number" />
+                      <Input 
+                        placeholder="CHE-123.456.789" 
+                        {...field} 
+                        data-testid="input-ide-number"
+                        onChange={(e) => {
+                          const formatted = formatIdeNumber(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                        maxLength={15}
+                      />
                     </FormControl>
                     <FormDescription>{t.company.ideHelp}</FormDescription>
                     <FormMessage />
@@ -219,11 +259,13 @@ export default function CompanyPage() {
                 name="rcNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>N° RC (Registre du Commerce)</FormLabel>
+                    <FormLabel className="flex items-center">
+                      {t.company.rcNumberLabel}
+                      <InfoTooltip content={t.company.rcTooltip} />
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="CH-550-1234567-8" {...field} data-testid="input-rc-number" />
+                      <Input placeholder="12345678" {...field} data-testid="input-rc-number" />
                     </FormControl>
-                    <FormDescription>Numéro du Registre du Commerce pour Taxas</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -234,11 +276,13 @@ export default function CompanyPage() {
                   name="taxSubjectNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>N° assujetti à l'impôt</FormLabel>
+                      <FormLabel className="flex items-center">
+                        {t.company.taxSubjectLabel}
+                        <InfoTooltip content={t.company.taxSubjectTooltip} />
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="123456" {...field} data-testid="input-tax-subject-number" />
+                        <Input placeholder="CHE-123.456.789" {...field} data-testid="input-tax-subject-number" />
                       </FormControl>
-                      <FormDescription>Votre numéro fiscal Taxas (champ 5)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -248,11 +292,13 @@ export default function CompanyPage() {
                   name="attribution99"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Attribution 99</FormLabel>
+                      <FormLabel className="flex items-center">
+                        {t.company.attributionLabel}
+                        <InfoTooltip content={t.company.attributionTooltip} />
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="99" {...field} data-testid="input-attribution-99" />
+                        <Input placeholder="9501" {...field} data-testid="input-attribution-99" maxLength={4} />
                       </FormControl>
-                      <FormDescription>Code d'attribution (champ 6)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
