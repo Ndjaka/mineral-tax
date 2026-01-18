@@ -112,6 +112,10 @@ export default function LandingPage() {
                 <p className="text-xl text-muted-foreground max-w-lg">
                   {t.landing.heroSubtitle}
                 </p>
+
+                <p className="text-sm font-medium text-primary bg-primary/10 px-3 py-2 rounded-md inline-block">
+                  {t.landing.exclusiveClaim || "L'unique solution automatisée en Suisse pour le remboursement via Taxas."}
+                </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button size="lg" asChild data-testid="button-cta-primary">

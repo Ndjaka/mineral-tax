@@ -316,9 +316,8 @@ export default function FuelPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button 
-            variant="outline" 
             disabled={isScanning}
-            className="relative"
+            className="relative bg-primary hover:bg-primary/90"
             data-testid="button-scan-ticket"
           >
             <input
@@ -332,11 +331,11 @@ export default function FuelPage() {
             {isScanning ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {scanProgress}%
+                {t.fuel.ocrAnalyzing || "Analyse OFDF..."}
               </>
             ) : (
               <>
-                <Camera className="h-4 w-4 mr-2" />
+                <Camera className="h-5 w-5 mr-2" />
                 {t.fuel.scanTicket || "Scanner"}
               </>
             )}

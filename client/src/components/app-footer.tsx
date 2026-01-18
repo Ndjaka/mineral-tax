@@ -9,7 +9,7 @@ export function AppFooter() {
     fr: {
       copyright: "MineralTax Sàrl. Tous droits réservés.",
       hosted: "Hébergé en Suisse par Infomaniak",
-      lpd: "Données sécurisées (LPD)",
+      lpd: "Données traitées selon la LPD suisse",
       jurisdiction: "For juridique : Crissier, Suisse",
       disclaimer: "MineralTax n'est pas un service officiel de l'OFDF mais un outil d'aide à la préparation conforme aux formats fédéraux.",
       terms: "CGV",
@@ -19,7 +19,7 @@ export function AppFooter() {
     de: {
       copyright: "MineralTax Sàrl. Alle Rechte vorbehalten.",
       hosted: "Gehostet in der Schweiz bei Infomaniak",
-      lpd: "Gesicherte Daten (DSG)",
+      lpd: "Daten gemäss Schweizer DSG verarbeitet",
       jurisdiction: "Gerichtsstand: Crissier, Schweiz",
       disclaimer: "MineralTax ist kein offizieller Dienst des BAZG, sondern ein Hilfstool zur Vorbereitung gemäss den Bundesformaten.",
       terms: "AGB",
@@ -29,7 +29,7 @@ export function AppFooter() {
     it: {
       copyright: "MineralTax Sàrl. Tutti i diritti riservati.",
       hosted: "Ospitato in Svizzera da Infomaniak",
-      lpd: "Dati protetti (LPD)",
+      lpd: "Dati trattati secondo la LPD svizzera",
       jurisdiction: "Foro competente: Crissier, Svizzera",
       disclaimer: "MineralTax non è un servizio ufficiale dell'AFD ma uno strumento di preparazione conforme ai formati federali.",
       terms: "CGV",
@@ -39,7 +39,7 @@ export function AppFooter() {
     en: {
       copyright: "MineralTax Sàrl. All rights reserved.",
       hosted: "Hosted in Switzerland by Infomaniak",
-      lpd: "Secured data (FADP)",
+      lpd: "Data processed under Swiss FADP",
       jurisdiction: "Jurisdiction: Crissier, Switzerland",
       disclaimer: "MineralTax is not an official FOCBS service but a preparation tool compliant with federal formats.",
       terms: "Terms",

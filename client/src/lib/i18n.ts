@@ -73,6 +73,7 @@ export const translations = {
     landing: {
       heroTitle: "Récupérez votre remboursement sur les huiles minérales en 2 minutes",
       heroSubtitle: "Fini la saisie manuelle sur Agate. Notre IA scanne vos tickets et génère votre fichier Taxas (Formulaire 45.35) instantanément.",
+      exclusiveClaim: "L'unique solution automatisée en Suisse pour le remboursement via Taxas.",
       seoHelpTitle: "Aide : Login CH Agate Taxas - Problèmes fréquents",
       seoHelpSubtitle: "Vous n'arrivez pas à vous connecter au portail Agate ou à utiliser Taxas ? Vous n'êtes pas seul(e).",
       seoHelp1Title: "Problème de login Agate ?",
@@ -312,6 +313,7 @@ export const translations = {
       scanTicket: "Scanner ticket",
       scanComplete: "Scan terminé",
       scanningTicket: "Analyse du ticket en cours...",
+      ocrAnalyzing: "Analyse OFDF...",
       successAdd: "Entrée ajoutée avec succès",
       successUpdate: "Entrée mise à jour avec succès",
       successDelete: "Entrée supprimée avec succès",
@@ -615,6 +617,7 @@ export const translations = {
     landing: {
       heroTitle: "Agate Login Probleme? Hilfe bei Mineralölsteuerrückerstattung und Taxas Registrierung",
       heroSubtitle: "MineralTax ist die Rettungslösung für Schweizer Unternehmen, die Schwierigkeiten mit der Bundesverwaltung haben. Bereiten Sie Ihren Antrag auf Rückerstattung der Mineralölsteuer Landwirtschaft 2026 einfach vor.",
+      exclusiveClaim: "Die einzige automatisierte Lösung in der Schweiz für die Rückerstattung via Taxas.",
       seoHelpTitle: "Hilfe: Agate Login Probleme - Häufige Probleme",
       seoHelpSubtitle: "Können Sie sich nicht beim Agate-Portal anmelden oder Taxas verwenden? Sie sind nicht allein.",
       seoHelp1Title: "Agate Login Probleme?",
@@ -854,6 +857,7 @@ export const translations = {
       scanTicket: "Ticket scannen",
       scanComplete: "Scan abgeschlossen",
       scanningTicket: "Ticket wird analysiert...",
+      ocrAnalyzing: "BAZG-Analyse...",
       successAdd: "Eintrag erfolgreich hinzugefügt",
       successUpdate: "Eintrag erfolgreich aktualisiert",
       successDelete: "Eintrag erfolgreich gelöscht",
@@ -1157,6 +1161,7 @@ export const translations = {
     landing: {
       heroTitle: "Problemi con il portale Agate? Semplifica la registrazione Taxas e il modulo 45.35 dogana online",
       heroSubtitle: "MineralTax è la soluzione di riserva per le aziende svizzere che hanno difficoltà con l'amministrazione federale. Preparate la vostra richiesta di rimborso dell'imposta sugli oli minerali 2026 in modo semplice.",
+      exclusiveClaim: "L'unica soluzione automatizzata in Svizzera per il rimborso via Taxas.",
       seoHelpTitle: "Aiuto: Login Agate - Problemi frequenti",
       seoHelpSubtitle: "Non riuscite ad accedere al portale Agate o a usare Taxas? Non siete soli.",
       seoHelp1Title: "Problemi di login Agate?",
@@ -1396,6 +1401,7 @@ export const translations = {
       scanTicket: "Scansiona ticket",
       scanComplete: "Scansione completata",
       scanningTicket: "Analisi del ticket in corso...",
+      ocrAnalyzing: "Analisi AFD...",
       successAdd: "Voce aggiunta con successo",
       successUpdate: "Voce aggiornata con successo",
       successDelete: "Voce eliminata con successo",
@@ -1699,6 +1705,7 @@ export const translations = {
     landing: {
       heroTitle: "Simplified Mineral Oil Tax Declaration in Switzerland",
       heroSubtitle: "Save time on your reimbursement claims. MineralTax automatically prepares your reports compliant with Form 45.35 and the FOCBS Taxas platform.",
+      exclusiveClaim: "The only automated solution in Switzerland for reimbursement via Taxas.",
       cta: "Start Free Trial",
       ctaSecondary: "See how it works",
       ctaSubtext: "Instant access • No credit card • Taxas 45.35 compliant",
@@ -1930,6 +1937,7 @@ export const translations = {
       scanTicket: "Scan ticket",
       scanComplete: "Scan complete",
       scanningTicket: "Analyzing ticket...",
+      ocrAnalyzing: "FOCBS analysis...",
       successAdd: "Entry added successfully",
       successUpdate: "Entry updated successfully",
       successDelete: "Entry deleted successfully",
