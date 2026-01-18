@@ -49,9 +49,13 @@ export default function SettingsPage() {
       return response.json();
     },
     onSuccess: (data) => {
+      console.log("[Twint] Checkout response:", data);
       if (data.url) {
         window.location.href = data.url;
       }
+    },
+    onError: (error) => {
+      console.error("[Twint] Checkout error:", error);
     },
   });
 
