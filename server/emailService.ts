@@ -180,3 +180,130 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     return false;
   }
 }
+
+interface RenewalReminderEmailData {
+  to: string;
+  customerName: string;
+  expirationDate: string;
+  renewalUrl: string;
+  daysRemaining: number;
+}
+
+function generateRenewalReminderEmailHtml(customerName: string, expirationDate: string, renewalUrl: string, daysRemaining: number): string {
+  return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rappel de renouvellement MineralTax</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); border-radius: 12px 12px 0 0;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">
+                Rappel de renouvellement
+              </h1>
+              <p style="margin: 10px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">
+                Votre licence expire dans ${daysRemaining} jours
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+                Bonjour <strong>${customerName}</strong>,
+              </p>
+              
+              <p style="margin: 0 0 25px; color: #374151; font-size: 16px; line-height: 1.6;">
+                Votre licence MineralTax arrive à expiration le <strong style="color: #d97706;">${expirationDate}</strong>.
+              </p>
+              
+              <p style="margin: 0 0 25px; color: #374151; font-size: 16px; line-height: 1.6;">
+                Pour continuer à utiliser notre service et garantir l'export de vos rapports OFDF, nous vous invitons à renouveler votre abonnement.
+              </p>
+              
+              <!-- Benefits reminder -->
+              <div style="padding: 20px; background-color: #f0fdf4; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #059669;">
+                <p style="margin: 0 0 10px; color: #374151; font-weight: 600;">
+                  Avec MineralTax, vous continuez de profiter de :
+                </p>
+                <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 1.8;">
+                  <li>Scan automatique de vos tickets</li>
+                  <li>Export CSV compatible Taxas</li>
+                  <li>Calcul automatique des remboursements</li>
+                  <li>Support prioritaire</li>
+                </ul>
+              </div>
+              
+              <!-- CTA Button -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                <tr>
+                  <td align="center">
+                    <a href="${renewalUrl}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);">
+                      Renouveler maintenant - 250 CHF/an
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 0; color: #6b7280; font-size: 14px; text-align: center;">
+                Des questions ? Contactez-nous a support@mineraltax.ch
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                MineralTax Swiss - Remboursement simplifie de la taxe sur les huiles minerales
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                © ${new Date().getFullYear()} MineralTax. Tous droits reserves.
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+export async function sendRenewalReminderEmail(data: RenewalReminderEmailData): Promise<boolean> {
+  const client = getResendClient();
+  
+  if (!client) {
+    console.log('[Email] Skipping renewal reminder email - Resend not configured');
+    return false;
+  }
+  
+  try {
+    const html = generateRenewalReminderEmailHtml(data.customerName, data.expirationDate, data.renewalUrl, data.daysRemaining);
+    
+    const result = await client.emails.send({
+      from: 'MineralTax <noreply@mineraltax.ch>',
+      to: data.to,
+      subject: `Rappel: Votre licence expire dans ${data.daysRemaining} jours`,
+      html: html,
+    });
+    
+    console.log(`[Email] Renewal reminder sent successfully to ${data.to}`, result);
+    return true;
+  } catch (error) {
+    console.error('[Email] Failed to send renewal reminder:', error);
+    return false;
+  }
+}

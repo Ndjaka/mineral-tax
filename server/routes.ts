@@ -751,7 +751,6 @@ export async function registerRoutes(
       
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
-        payment_method_types: ["twint", "card", "link"],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "payment",
         success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&type=onetime`,
@@ -785,6 +784,17 @@ export async function registerRoutes(
         
         if (session.subscription) {
           await storage.updateStripeSubscriptionId(userId, session.subscription as string);
+        }
+        
+        // Set license period for one-time payments only (1 year from payment)
+        // Only apply to one-time payments, not subscriptions
+        if (session.mode === "payment" && !session.subscription) {
+          const paymentTimestamp = session.created ? session.created * 1000 : Date.now();
+          const periodStart = new Date(paymentTimestamp);
+          const periodEnd = new Date(paymentTimestamp);
+          periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+          await storage.updateSubscriptionPeriod(userId, periodStart, periodEnd);
+          console.log(`[License] One-time payment: Set expiration to ${periodEnd.toISOString()} for user ${userId}`);
         }
         
         // Create invoice if not already created for this session

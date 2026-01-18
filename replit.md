@@ -148,10 +148,24 @@ Email service uses Resend for transactional emails.
   - Agate help section
 - File: `server/emailService.ts`
 
+**Renewal Reminder Emails (Active):**
+- Triggered by scheduled job for one-time license holders only
+- Sent at 30, 7, and 1 days before license expiration
+- De-duplication: Database columns track sent dates (`renewalReminder30DaysSent`, `renewalReminder7DaysSent`, `renewalReminder1DaySent`)
+- Only targets licenses without stripeSubscriptionId (manual renewal required)
+- File: `server/scheduledJobs.ts`
+
+**Scheduled Jobs System (Implemented 2026-01-18):**
+- Starts 10 seconds after server launch
+- Runs every 24 hours to check for expiring licenses
+- Uses UTC day boundaries for consistent timezone handling
+- Filters only one-time licenses (no stripeSubscriptionId)
+- De-duplicates emails per user/days combination per day (persistent in database)
+- File: `server/scheduledJobs.ts`
+
 **Email Templates (TODO):**
 - J-1 trial reminder (24h before trial ends)
 - Quarterly reminders (March, June, Sept, Dec) for subscribers
-- Requires scheduled job system implementation
 
 ## Development Commands
 - `npm run dev` - Start development server

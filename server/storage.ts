@@ -49,8 +49,11 @@ export interface IStorage {
   updateSubscriptionStatus(userId: string, status: string): Promise<Subscription | undefined>;
   markTrialReminderSent(userId: string): Promise<void>;
   getTrialExpiringTomorrow(): Promise<Subscription[]>;
+  getLicensesExpiringInDays(days: number): Promise<(Subscription & { user?: User })[]>;
   getActiveSubscriptionsForQuarterlyReminder(): Promise<Subscription[]>;
   markQuarterlyReminderSent(userId: string): Promise<void>;
+  markRenewalReminderSent(userId: string, days: number): Promise<void>;
+  hasRenewalReminderBeenSent(subscription: Subscription, days: number): boolean;
   updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void>;
   updateStripeSubscriptionId(userId: string, stripeSubscriptionId: string): Promise<void>;
   updateSubscriptionPeriod(userId: string, periodStart: Date, periodEnd: Date): Promise<void>;
@@ -246,6 +249,36 @@ export class DatabaseStorage implements IStorage {
       );
   }
 
+  async getLicensesExpiringInDays(days: number): Promise<(Subscription & { user?: User })[]> {
+    const now = new Date();
+    now.setUTCHours(0, 0, 0, 0);
+    const targetDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    const nextDay = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000);
+    
+    const expiringSubscriptions = await db
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.status, "active"),
+          sql`${subscriptions.stripeSubscriptionId} IS NULL`,
+          gte(subscriptions.currentPeriodEnd, targetDate),
+          lte(subscriptions.currentPeriodEnd, nextDay)
+        )
+      );
+    
+    const results: (Subscription & { user?: User })[] = [];
+    for (const sub of expiringSubscriptions) {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, sub.userId));
+      results.push({ ...sub, user });
+    }
+    
+    return results;
+  }
+
   async getActiveSubscriptionsForQuarterlyReminder(): Promise<Subscription[]> {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -273,6 +306,38 @@ export class DatabaseStorage implements IStorage {
       .update(subscriptions)
       .set({ quarterlyReminderLastSent: new Date(), updatedAt: new Date() })
       .where(eq(subscriptions.userId, userId));
+  }
+
+  async markRenewalReminderSent(userId: string, days: number): Promise<void> {
+    const fieldMap: Record<number, any> = {
+      30: { renewalReminder30DaysSent: new Date() },
+      7: { renewalReminder7DaysSent: new Date() },
+      1: { renewalReminder1DaySent: new Date() },
+    };
+    const updateFields = fieldMap[days];
+    if (updateFields) {
+      await db
+        .update(subscriptions)
+        .set({ ...updateFields, updatedAt: new Date() })
+        .where(eq(subscriptions.userId, userId));
+    }
+  }
+
+  hasRenewalReminderBeenSent(subscription: Subscription, days: number): boolean {
+    const now = new Date();
+    now.setUTCHours(0, 0, 0, 0);
+    
+    let sentDate: Date | null = null;
+    if (days === 30) sentDate = subscription.renewalReminder30DaysSent;
+    else if (days === 7) sentDate = subscription.renewalReminder7DaysSent;
+    else if (days === 1) sentDate = subscription.renewalReminder1DaySent;
+    
+    if (!sentDate) return false;
+    
+    const sentDateNormalized = new Date(sentDate);
+    sentDateNormalized.setUTCHours(0, 0, 0, 0);
+    
+    return sentDateNormalized.getTime() === now.getTime();
   }
 
   async updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void> {

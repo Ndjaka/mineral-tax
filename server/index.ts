@@ -9,6 +9,7 @@ import { registerLocalAuthRoutes } from "./localAuth";
 import { getStripeClient } from "./stripeClient";
 import { storage } from "./storage";
 import { sendWelcomeEmail } from "./emailService";
+import { startScheduledJobs } from "./scheduledJobs";
 
 const app = express();
 const httpServer = createServer(app);
@@ -249,6 +250,7 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      startScheduledJobs();
     },
   );
 })();
