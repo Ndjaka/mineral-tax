@@ -74,15 +74,16 @@ function parseTicketData(text: string): OcrResult["extractedData"] {
   }
   
   const invoicePatterns = [
-    /(?:facture|rechnung|invoice|quittung|reçu|beleg)[:\s#]*(\w+[-/]?\d+)/i,
-    /(?:n°|nr\.?|no\.?)[:\s]*(\d{4,})/i,
-    /(?:ticket|bon)[:\s#]*(\d+)/i,
+    /(?:rechnung\s*nr|facture\s*n[°o]?|invoice\s*n[°o]?)[:\s#]*([A-Za-z0-9][-A-Za-z0-9./]*[A-Za-z0-9])/i,
+    /(?:facture|rechnung|invoice|quittung|reçu|beleg)[:\s#]*([A-Za-z0-9][-A-Za-z0-9./]*[A-Za-z0-9])/i,
+    /(?:n°|nr\.?|no\.?)[:\s]*([A-Za-z0-9][-A-Za-z0-9./]*[A-Za-z0-9])/i,
+    /(?:ticket|bon|beleg)[:\s#]*([A-Za-z0-9][-A-Za-z0-9./]*[A-Za-z0-9])/i,
   ];
   
   for (const pattern of invoicePatterns) {
     const match = text.match(pattern);
     if (match) {
-      result.invoiceNumber = match[1];
+      result.invoiceNumber = match[1].trim();
       break;
     }
   }
