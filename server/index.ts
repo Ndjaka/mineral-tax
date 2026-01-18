@@ -52,7 +52,87 @@ app.post(
           }
           if (session.subscription) {
             await storage.updateStripeSubscriptionId(userId, session.subscription);
+            
+            const subscription = await stripe.subscriptions.retrieve(session.subscription) as any;
+            if (subscription.current_period_end) {
+              await storage.updateSubscriptionPeriod(
+                userId, 
+                new Date(subscription.current_period_start * 1000),
+                new Date(subscription.current_period_end * 1000)
+              );
+            }
           }
+        }
+      }
+      
+      if (event.type === "invoice.payment_succeeded") {
+        const invoice = event.data.object as any;
+        const subscriptionId = invoice.subscription;
+        
+        if (subscriptionId && invoice.billing_reason === "subscription_cycle") {
+          console.log(`Subscription renewed: ${subscriptionId}`);
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
+          const user = await storage.findUserByStripeSubscriptionId(subscriptionId);
+          
+          if (user) {
+            await storage.updateSubscriptionStatus(user.id, "active");
+            await storage.updateSubscriptionPeriod(
+              user.id,
+              new Date(subscription.current_period_start * 1000),
+              new Date(subscription.current_period_end * 1000)
+            );
+            console.log(`Renewed subscription for user ${user.id} until ${new Date(subscription.current_period_end * 1000)}`);
+          }
+        }
+      }
+      
+      if (event.type === "invoice.payment_failed") {
+        const invoice = event.data.object as any;
+        const subscriptionId = invoice.subscription;
+        
+        if (subscriptionId) {
+          console.log(`Payment failed for subscription: ${subscriptionId}`);
+          const user = await storage.findUserByStripeSubscriptionId(subscriptionId);
+          
+          if (user) {
+            await storage.updateSubscriptionStatus(user.id, "inactive");
+            console.log(`Marked user ${user.id} as inactive due to payment failure`);
+          }
+        }
+      }
+      
+      if (event.type === "customer.subscription.deleted") {
+        const subscription = event.data.object as any;
+        const subscriptionId = subscription.id;
+        
+        console.log(`Subscription cancelled: ${subscriptionId}`);
+        const user = await storage.findUserByStripeSubscriptionId(subscriptionId);
+        
+        if (user) {
+          await storage.updateSubscriptionStatus(user.id, "cancelled");
+          console.log(`Marked user ${user.id} as cancelled`);
+        }
+      }
+      
+      if (event.type === "customer.subscription.updated") {
+        const subscription = event.data.object as any;
+        const subscriptionId = subscription.id;
+        
+        const user = await storage.findUserByStripeSubscriptionId(subscriptionId);
+        if (user) {
+          if (subscription.status === "active") {
+            await storage.updateSubscriptionStatus(user.id, "active");
+            await storage.updateSubscriptionPeriod(
+              user.id,
+              new Date(subscription.current_period_start * 1000),
+              new Date(subscription.current_period_end * 1000)
+            );
+          } else if (subscription.status === "past_due") {
+            await storage.updateSubscriptionStatus(user.id, "inactive");
+          } else if (subscription.status === "canceled" || subscription.status === "unpaid") {
+            await storage.updateSubscriptionStatus(user.id, "cancelled");
+          }
+          console.log(`Updated subscription status for user ${user.id}: ${subscription.status}`);
         }
       }
       

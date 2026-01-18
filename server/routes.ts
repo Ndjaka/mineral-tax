@@ -166,15 +166,29 @@ function getUserId(req: any): string {
   return req.session?.userId;
 }
 
+async function checkAndUpdateTrialStatus(subscription: any, userId: string): Promise<string> {
+  if (subscription.status === "trial" && subscription.trialEndsAt) {
+    const now = new Date();
+    const trialEnd = new Date(subscription.trialEndsAt);
+    if (now > trialEnd) {
+      await storage.updateSubscriptionStatus(userId, "trial_expired");
+      return "trial_expired";
+    }
+  }
+  return subscription.status;
+}
+
 async function checkSubscriptionAccess(userId: string): Promise<{ allowed: boolean; reason?: string }> {
   const subscription = await storage.getOrCreateSubscription(userId);
   const now = new Date();
   
-  if (subscription.status === "active") {
+  const effectiveStatus = await checkAndUpdateTrialStatus(subscription, userId);
+  
+  if (effectiveStatus === "active") {
     return { allowed: true };
   }
   
-  if (subscription.status === "trial" && subscription.trialEndsAt) {
+  if (effectiveStatus === "trial" && subscription.trialEndsAt) {
     const trialEnd = new Date(subscription.trialEndsAt);
     if (now <= trialEnd) {
       return { allowed: true };
@@ -794,11 +808,13 @@ export async function registerRoutes(
     const subscription = await storage.getOrCreateSubscription(userId);
     const now = new Date();
     
-    if (subscription.status === "active") {
+    const effectiveStatus = await checkAndUpdateTrialStatus(subscription, userId);
+    
+    if (effectiveStatus === "active") {
       return { allowed: true };
     }
     
-    if (subscription.status === "trial" && subscription.trialEndsAt) {
+    if (effectiveStatus === "trial" && subscription.trialEndsAt) {
       const trialEnd = new Date(subscription.trialEndsAt);
       if (now <= trialEnd) {
         return { allowed: true };

@@ -53,6 +53,8 @@ export interface IStorage {
   markQuarterlyReminderSent(userId: string): Promise<void>;
   updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void>;
   updateStripeSubscriptionId(userId: string, stripeSubscriptionId: string): Promise<void>;
+  updateSubscriptionPeriod(userId: string, periodStart: Date, periodEnd: Date): Promise<void>;
+  findUserByStripeSubscriptionId(stripeSubscriptionId: string): Promise<User | undefined>;
 
   getDashboardStats(userId: string): Promise<{
     totalMachines: number;
@@ -285,6 +287,33 @@ export class DatabaseStorage implements IStorage {
       .update(subscriptions)
       .set({ stripeSubscriptionId, updatedAt: new Date() })
       .where(eq(subscriptions.userId, userId));
+  }
+
+  async updateSubscriptionPeriod(userId: string, periodStart: Date, periodEnd: Date): Promise<void> {
+    await db
+      .update(subscriptions)
+      .set({ 
+        currentPeriodStart: periodStart, 
+        currentPeriodEnd: periodEnd, 
+        updatedAt: new Date() 
+      })
+      .where(eq(subscriptions.userId, userId));
+  }
+
+  async findUserByStripeSubscriptionId(stripeSubscriptionId: string): Promise<User | undefined> {
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));
+    
+    if (!subscription) return undefined;
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, subscription.userId));
+    
+    return user;
   }
 
   async getDashboardStats(userId: string): Promise<{
