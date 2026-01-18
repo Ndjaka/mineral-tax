@@ -753,6 +753,7 @@ export async function registerRoutes(
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "payment",
+        payment_method_types: ['card', 'twint'],
         success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&type=onetime`,
         cancel_url: `${baseUrl}/settings`,
         metadata: { userId, paymentType: "onetime" },
