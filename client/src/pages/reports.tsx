@@ -27,7 +27,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, FileText, Download, Calendar, Loader2, HelpCircle, FileSpreadsheet, ExternalLink, Key, Building, AppWindow, ShieldCheck, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, FileText, Download, Calendar, Loader2, HelpCircle, FileSpreadsheet, ExternalLink, Key, Building, AppWindow, ShieldCheck, AlertTriangle, CheckCircle2, XCircle, LogIn, Upload, Lightbulb } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import type { Report } from "@shared/schema";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -337,6 +343,94 @@ export default function ReportsPage() {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Guide d'importation Agate - Collapsible */}
+      {reports && reports.length > 0 && (
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="agate-guide" className="border rounded-lg px-4">
+            <AccordionTrigger className="hover:no-underline" data-testid="accordion-agate-guide">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="h-4 w-4 text-primary" />
+                <span className="font-medium">{t.reports.agateGuideTitle}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4 py-2">
+                {/* Étape 1 */}
+                <div className="flex gap-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <LogIn className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-muted-foreground">1</span>
+                      <h4 className="font-medium">{t.reports.agateStep1Title}</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t.reports.agateStep1Desc}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => window.open("https://www.agate.ch", "_blank")}
+                      data-testid="button-open-agate"
+                    >
+                      {t.reports.agateStep1Button}
+                      <ExternalLink className="h-3 w-3 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Étape 2 */}
+                <div className="flex gap-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <AppWindow className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-muted-foreground">2</span>
+                      <h4 className="font-medium">{t.reports.agateStep2Title}</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t.reports.agateStep2Desc}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Étape 3 */}
+                <div className="flex gap-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <Upload className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-muted-foreground">3</span>
+                      <h4 className="font-medium">{t.reports.agateStep3Title}</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t.reports.agateStep3Desc}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Conseil technique */}
+                <div className="flex gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg mt-4">
+                  <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                      {t.reports.agateTipTitle}
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      {t.reports.agateTipDesc}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setAuditResult(null); }}>
