@@ -45,8 +45,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2, ChevronDown, FileSpreadsheet } from "lucide-react";
+import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2, ChevronDown, FileSpreadsheet, HelpCircle } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { StatsBar } from "@/components/stats-bar";
 import { Progress } from "@/components/ui/progress";
 import type { Machine, FuelEntry } from "@shared/schema";
@@ -72,6 +77,21 @@ const fuelEntryFormSchema = z.object({
 });
 
 type FuelEntryFormData = z.infer<typeof fuelEntryFormSchema>;
+
+function InfoTooltip({ content }: { content: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button type="button" className="ml-1 text-muted-foreground hover:text-foreground transition-colors">
+          <HelpCircle className="h-4 w-4" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs text-sm">
+        <p>{content}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 export default function FuelPage() {
   const { t } = useI18n();
@@ -583,7 +603,7 @@ export default function FuelPage() {
                   <Button variant="outline" type="button" className="w-full justify-between">
                     <div className="flex items-center gap-2">
                       <FileSpreadsheet className="h-4 w-4" />
-                      <span>Champs Taxas (optionnel)</span>
+                      <span>{t.fuel.taxasFieldsTitle}</span>
                     </div>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
@@ -595,7 +615,10 @@ export default function FuelPage() {
                       name="articleNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>N° article</FormLabel>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.articleNumber}
+                            <InfoTooltip content={t.fuel.articleNumberTooltip} />
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="1234" {...field} data-testid="input-article-number" />
                           </FormControl>
@@ -608,7 +631,10 @@ export default function FuelPage() {
                       name="warehouseNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>N° entrepôt</FormLabel>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.warehouseNumber}
+                            <InfoTooltip content={t.fuel.warehouseNumberTooltip} />
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="001" {...field} data-testid="input-warehouse-number" />
                           </FormControl>
@@ -622,7 +648,10 @@ export default function FuelPage() {
                     name="movementNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>N° mouvement</FormLabel>
+                        <FormLabel className="flex items-center">
+                          {t.fuel.movementNumber}
+                          <InfoTooltip content={t.fuel.movementNumberTooltip} />
+                        </FormLabel>
                         <FormControl>
                           <Input placeholder="MOV-2026-001" {...field} data-testid="input-movement-number" />
                         </FormControl>
@@ -636,7 +665,10 @@ export default function FuelPage() {
                       name="bd"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>BD</FormLabel>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.bdLabel}
+                            <InfoTooltip content={t.fuel.bdTooltip} />
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="" {...field} data-testid="input-bd" />
                           </FormControl>
@@ -649,7 +681,10 @@ export default function FuelPage() {
                       name="stat"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Stat.</FormLabel>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.statLabel}
+                            <InfoTooltip content={t.fuel.statTooltip} />
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="" {...field} data-testid="input-stat" />
                           </FormControl>
@@ -662,7 +697,10 @@ export default function FuelPage() {
                       name="ci"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>CI</FormLabel>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.ciLabel}
+                            <InfoTooltip content={t.fuel.ciTooltip} />
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="" {...field} data-testid="input-ci" />
                           </FormControl>
