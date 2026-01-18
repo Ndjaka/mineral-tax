@@ -38,6 +38,9 @@ const swissCantons = [
 const companyFormSchema = z.object({
   companyName: z.string().min(1, "Required"),
   ideNumber: z.string().optional(),
+  rcNumber: z.string().optional(),
+  taxSubjectNumber: z.string().optional(),
+  attribution99: z.string().optional(),
   street: z.string().optional(),
   postalCode: z.string().optional(),
   city: z.string().optional(),
@@ -58,6 +61,9 @@ interface CompanyProfile {
   userId: string;
   companyName: string;
   ideNumber?: string | null;
+  rcNumber?: string | null;
+  taxSubjectNumber?: string | null;
+  attribution99?: string | null;
   street?: string | null;
   postalCode?: string | null;
   city?: string | null;
@@ -84,6 +90,9 @@ export default function CompanyPage() {
     defaultValues: {
       companyName: "",
       ideNumber: "",
+      rcNumber: "",
+      taxSubjectNumber: "",
+      attribution99: "",
       street: "",
       postalCode: "",
       city: "",
@@ -103,6 +112,9 @@ export default function CompanyPage() {
       form.reset({
         companyName: profile.companyName || "",
         ideNumber: profile.ideNumber || "",
+        rcNumber: profile.rcNumber || "",
+        taxSubjectNumber: profile.taxSubjectNumber || "",
+        attribution99: profile.attribution99 || "",
         street: profile.street || "",
         postalCode: profile.postalCode || "",
         city: profile.city || "",
@@ -202,6 +214,50 @@ export default function CompanyPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="rcNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>N° RC (Registre du Commerce)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="CH-550-1234567-8" {...field} data-testid="input-rc-number" />
+                    </FormControl>
+                    <FormDescription>Numéro du Registre du Commerce pour Taxas</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="taxSubjectNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>N° assujetti à l'impôt</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123456" {...field} data-testid="input-tax-subject-number" />
+                      </FormControl>
+                      <FormDescription>Votre numéro fiscal Taxas (champ 5)</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="attribution99"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Attribution 99</FormLabel>
+                      <FormControl>
+                        <Input placeholder="99" {...field} data-testid="input-attribution-99" />
+                      </FormControl>
+                      <FormDescription>Code d'attribution (champ 6)</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </CardContent>
           </Card>
 

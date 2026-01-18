@@ -126,6 +126,10 @@ CREATE TABLE company_profiles (
     bank_name TEXT,
     iban TEXT,
     bic TEXT,
+    -- Champs Taxas OFDF
+    rc_number TEXT,              -- Numéro RC (Registre du Commerce)
+    tax_subject_number TEXT,     -- Numéro d'assujetti à l'impôt
+    attribution_99 TEXT,         -- Attribution 99
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -164,6 +168,13 @@ CREATE TABLE fuel_entries (
     volume_liters REAL NOT NULL,
     engine_hours REAL,
     fuel_type fuel_type NOT NULL DEFAULT 'diesel',
+    -- Champs Taxas OFDF Form 45.35
+    article_number TEXT,         -- N° article
+    warehouse_number TEXT,       -- N° entrepôt
+    movement_number TEXT,        -- N° mouvement
+    bd TEXT,                     -- BD (code)
+    stat TEXT,                   -- Stat.
+    ci TEXT,                     -- CI
     notes TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );

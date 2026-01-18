@@ -867,7 +867,30 @@ export async function registerRoutes(
         new Date(report.periodEnd)
       );
 
-      const csvContent = generateTaxasCsv(report, details.machines, details.fuelEntries);
+      const companyProfile = await storage.getCompanyProfile(userId);
+      
+      const missingFields: string[] = [];
+      if (!companyProfile?.rcNumber) {
+        missingFields.push("N° RC (Registre du Commerce)");
+      }
+      
+      const entriesWithMissingFields = details.fuelEntries.filter((entry: any) => {
+        return !entry.articleNumber || !entry.warehouseNumber;
+      });
+      
+      if (entriesWithMissingFields.length > 0) {
+        missingFields.push(`${entriesWithMissingFields.length} entrée(s) sans N° article ou N° entrepôt`);
+      }
+      
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          message: "Champs Taxas manquants pour l'export",
+          code: "TAXAS_FIELDS_MISSING",
+          missingFields
+        });
+      }
+      
+      const csvContent = generateTaxasCsv(report, details.machines, details.fuelEntries, companyProfile);
       
       const fiscalYear = new Date().getFullYear() - 1;
       const filename = `MineralTax_Export_${fiscalYear}_${report.id}.csv`;
@@ -951,73 +974,51 @@ const TAXAS_ACTIVITY_CODES: Record<string, string> = {
   other_taxas: "AUTRE",
 };
 
+function formatSwissDate(date: Date): string {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
 function generateTaxasCsv(
   report: any,
   machines: Machine[],
-  fuelEntries: (FuelEntry & { machine?: Machine })[]
+  fuelEntries: (FuelEntry & { machine?: Machine })[],
+  companyProfile?: any
 ): string {
   const lines: string[] = [];
   
-  lines.push("# MineralTax Swiss - Export Taxas OFDF");
-  lines.push("# Format compatible avec l'application Taxas (bazg.admin.ch)");
-  lines.push("# Période: " + new Date(report.periodStart).toISOString().split('T')[0] + " - " + new Date(report.periodEnd).toISOString().split('T')[0]);
-  lines.push("");
-  lines.push("Date;Invoice_Number;Machine_Name;Machine_Type;Taxas_Activity;Chassis_VIN;Volume_Liters;Fuel_Type;Eligible;Rate_CHF;Amount_CHF");
+  lines.push("RC;N° article;N° entrepôt;Date mouvement;N° mouvement;Quantité de litres / kg;BD;Stat.;CI;Montant de l'impôt CHF");
+  
+  const rcNumber = companyProfile?.rcNumber || "";
   
   for (const entry of fuelEntries) {
     const machine = entry.machine || machines.find(m => m.id === entry.machineId);
     const isEligible = machine?.isEligible ?? true;
     const volumeLiters = parseFloat(entry.volumeLiters.toString());
-    const rate = REIMBURSEMENT_RATE_CHF_PER_LITER;
     const amount = isEligible ? calculateReimbursement(volumeLiters) : 0;
     
     const invoiceDate = entry.invoiceDate ? new Date(entry.invoiceDate) : null;
     const dateStr = invoiceDate && !isNaN(invoiceDate.getTime()) 
-      ? invoiceDate.toISOString().split('T')[0] 
+      ? formatSwissDate(invoiceDate)
       : "";
     
-    let machineType = machine?.type 
-      ? (OFDF_MACHINE_TYPES[machine.type] || OFDF_MACHINE_TYPES.other) 
-      : OFDF_MACHINE_TYPES.other;
-    
-    if (machine?.type === "other" && machine.customType) {
-      machineType = `Autre - ${machine.customType}`;
-    }
-    
-    const taxasActivity = (machine as any)?.taxasActivity 
-      ? (TAXAS_ACTIVITY_CODES[(machine as any).taxasActivity] || TAXAS_ACTIVITY_CODES.other_taxas)
-      : TAXAS_ACTIVITY_CODES.construction;
+    const entryData = entry as any;
     
     lines.push([
+      rcNumber,
+      entryData.articleNumber || "",
+      entryData.warehouseNumber || "",
       dateStr,
-      entry.invoiceNumber || "",
-      machine?.name || "",
-      machineType,
-      taxasActivity,
-      machine?.chassisNumber || "",
+      entryData.movementNumber || entry.invoiceNumber || "",
       volumeLiters.toFixed(2),
-      entry.fuelType || "diesel",
-      isEligible ? "1" : "0",
-      rate.toFixed(4),
+      entryData.bd || "",
+      entryData.stat || "",
+      entryData.ci || "",
       amount.toFixed(2)
     ].join(";"));
   }
-  
-  lines.push("");
-  lines.push("# Récapitulatif");
-  lines.push("Total_Volume_Liters;Eligible_Volume_Liters;Reimbursement_Amount_CHF");
-  lines.push([
-    parseFloat(report.totalVolumeLiters).toFixed(2),
-    parseFloat(report.eligibleVolumeLiters).toFixed(2),
-    parseFloat(report.reimbursementAmount).toFixed(2)
-  ].join(";"));
-  
-  lines.push("");
-  lines.push("# Instructions Taxas:");
-  lines.push("# 1. Connectez-vous à ePortal (eportal.admin.ch)");
-  lines.push("# 2. Accédez à Taxas > Remboursement huiles minérales");
-  lines.push("# 3. Importez ce fichier CSV ou saisissez manuellement");
-  lines.push("# Taux remboursement OFDF: 0.3405 CHF/L");
   
   return lines.join("\n");
 }

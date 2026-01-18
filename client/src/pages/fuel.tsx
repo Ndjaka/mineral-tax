@@ -45,7 +45,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2, ChevronDown, FileSpreadsheet } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Progress } from "@/components/ui/progress";
 import type { Machine, FuelEntry } from "@shared/schema";
 import { calculateReimbursement } from "@shared/schema";
@@ -60,6 +61,12 @@ const fuelEntryFormSchema = z.object({
   volumeLiters: z.coerce.number().positive(),
   engineHours: z.coerce.number().nonnegative().optional(),
   fuelType: z.enum(fuelTypes).default("diesel"),
+  articleNumber: z.string().optional(),
+  warehouseNumber: z.string().optional(),
+  movementNumber: z.string().optional(),
+  bd: z.string().optional(),
+  stat: z.string().optional(),
+  ci: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -84,6 +91,12 @@ export default function FuelPage() {
       volumeLiters: undefined,
       engineHours: undefined,
       fuelType: "diesel",
+      articleNumber: "",
+      warehouseNumber: "",
+      movementNumber: "",
+      bd: "",
+      stat: "",
+      ci: "",
       notes: "",
     },
   });
@@ -161,6 +174,12 @@ export default function FuelPage() {
         volumeLiters: entry.volumeLiters,
         engineHours: entry.engineHours || undefined,
         fuelType: entry.fuelType as typeof fuelTypes[number],
+        articleNumber: (entry as any).articleNumber || "",
+        warehouseNumber: (entry as any).warehouseNumber || "",
+        movementNumber: (entry as any).movementNumber || "",
+        bd: (entry as any).bd || "",
+        stat: (entry as any).stat || "",
+        ci: (entry as any).ci || "",
         notes: entry.notes || "",
       });
     } else {
@@ -172,6 +191,12 @@ export default function FuelPage() {
         volumeLiters: undefined,
         engineHours: undefined,
         fuelType: "diesel",
+        articleNumber: "",
+        warehouseNumber: "",
+        movementNumber: "",
+        bd: "",
+        stat: "",
+        ci: "",
         notes: "",
       });
     }
@@ -549,6 +574,102 @@ export default function FuelPage() {
                   </FormItem>
                 )}
               />
+
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" type="button" className="w-full justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-4 w-4" />
+                      <span>Champs Taxas (optionnel)</span>
+                    </div>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="articleNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>N° article</FormLabel>
+                          <FormControl>
+                            <Input placeholder="1234" {...field} data-testid="input-article-number" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="warehouseNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>N° entrepôt</FormLabel>
+                          <FormControl>
+                            <Input placeholder="001" {...field} data-testid="input-warehouse-number" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="movementNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>N° mouvement</FormLabel>
+                        <FormControl>
+                          <Input placeholder="MOV-2026-001" {...field} data-testid="input-movement-number" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="bd"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>BD</FormLabel>
+                          <FormControl>
+                            <Input placeholder="" {...field} data-testid="input-bd" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="stat"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stat.</FormLabel>
+                          <FormControl>
+                            <Input placeholder="" {...field} data-testid="input-stat" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="ci"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CI</FormLabel>
+                          <FormControl>
+                            <Input placeholder="" {...field} data-testid="input-ci" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
 
               <FormField
                 control={form.control}
