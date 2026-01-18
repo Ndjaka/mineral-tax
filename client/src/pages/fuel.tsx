@@ -86,7 +86,7 @@ function InfoTooltip({ content }: { content: string }) {
           <HelpCircle className="h-4 w-4" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs text-sm">
+      <TooltipContent side="top" className="max-w-sm text-sm">
         <p>{content}</p>
       </TooltipContent>
     </Tooltip>
@@ -670,7 +670,7 @@ export default function FuelPage() {
                             <InfoTooltip content={t.fuel.bdTooltip} />
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="" {...field} data-testid="input-bd" />
+                            <Input placeholder="ex: 01" {...field} data-testid="input-bd" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -686,7 +686,7 @@ export default function FuelPage() {
                             <InfoTooltip content={t.fuel.statTooltip} />
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="" {...field} data-testid="input-stat" />
+                            <Input placeholder="ex: 2710" {...field} data-testid="input-stat" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -702,7 +702,7 @@ export default function FuelPage() {
                             <InfoTooltip content={t.fuel.ciTooltip} />
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="" {...field} data-testid="input-ci" />
+                            <Input placeholder="ex: A1" {...field} data-testid="input-ci" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
