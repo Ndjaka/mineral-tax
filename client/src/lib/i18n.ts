@@ -50,6 +50,7 @@ export const translations = {
       settings: "Paramètres",
       subscription: "Abonnement",
       terms: "Conditions Générales",
+      howItWorks: "Comment ça marche",
     },
     auth: {
       login: "Connexion",
@@ -603,6 +604,7 @@ export const translations = {
       settings: "Einstellungen",
       subscription: "Abonnement",
       terms: "Allgemeine Geschäftsbedingungen",
+      howItWorks: "So funktioniert es",
     },
     auth: {
       login: "Anmeldung",
@@ -1156,6 +1158,7 @@ export const translations = {
       settings: "Impostazioni",
       subscription: "Abbonamento",
       terms: "Condizioni Generali",
+      howItWorks: "Come funziona",
     },
     auth: {
       login: "Accesso",
@@ -1709,6 +1712,7 @@ export const translations = {
       settings: "Settings",
       subscription: "Subscription",
       terms: "Terms and Conditions",
+      howItWorks: "How it works",
     },
     auth: {
       login: "Login",

@@ -26,6 +26,7 @@ import {
   CreditCard,
   Send,
   Building2,
+  HelpCircle,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -43,6 +44,7 @@ export function AppSidebar() {
     { title: t.company.title, url: "/company", icon: Building2 },
     { title: t.nav.subscription, url: "/subscription", icon: CreditCard },
     { title: t.nav.settings, url: "/settings", icon: Settings },
+    { title: t.nav.howItWorks, url: "/comment-ca-marche", icon: HelpCircle },
     { title: t.nav.terms, url: "/terms", icon: ScrollText },
   ];
 
