@@ -164,9 +164,13 @@ export function registerAuthRoutes(app: Express): void {
       const verificationToken = await createEmailVerificationToken(user.id);
       const verificationUrl = `${getBaseUrl()}/verify-email?token=${verificationToken}`;
 
-      await sendVerificationEmail(email, user.firstName || "", verificationUrl);
+      console.log(`[Auth] Resending verification email to ${email}`);
+      console.log(`[Auth] Verification URL: ${verificationUrl}`);
+      
+      const emailSent = await sendVerificationEmail(email, user.firstName || "", verificationUrl);
+      console.log(`[Auth] Email sent result: ${emailSent}`);
 
-      res.json({ message: "Un nouveau lien de verification a ete envoye" });
+      res.json({ message: "Un nouveau lien de verification a ete envoye", emailSent });
     } catch (error) {
       console.error("Resend verification error:", error);
       res.status(500).json({ message: "Erreur lors de l'envoi" });
