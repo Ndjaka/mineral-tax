@@ -60,7 +60,8 @@ export function requireVerifiedEmail(req: Request, res: Response, next: NextFunc
   if (!req.user) {
     return res.status(401).json({ message: "Authentification requise" });
   }
-  if (!req.user.emailVerified) {
+  const skipVerification = process.env.SKIP_EMAIL_VERIFICATION === "true";
+  if (!skipVerification && !req.user.emailVerified) {
     return res.status(403).json({ message: "Veuillez verifier votre email avant de continuer" });
   }
   return next();
@@ -85,16 +86,30 @@ export function registerAuthRoutes(app: Express): void {
       }
 
       const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+      const skipVerification = process.env.SKIP_EMAIL_VERIFICATION === "true";
 
       const [newUser] = await db.insert(users).values({
         email: email.toLowerCase(),
         passwordHash,
         authProvider: "local",
         passwordSet: true,
-        emailVerified: false,
+        emailVerified: skipVerification ? true : false,
+        emailVerifiedAt: skipVerification ? new Date() : null,
         firstName: firstName || null,
         lastName: lastName || null,
       }).returning();
+
+      if (skipVerification) {
+        console.log(`[Auth] SKIP_EMAIL_VERIFICATION enabled - account auto-verified for ${email}`);
+        const session = await lucia.createSession(newUser.id, {});
+        const sessionCookie = lucia.createSessionCookie(session.id);
+        res.cookie(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+        return res.status(201).json({ 
+          message: "Compte cree et verifie automatiquement (mode developpement).",
+          emailSent: false,
+          autoVerified: true
+        });
+      }
 
       const verificationToken = await createEmailVerificationToken(newUser.id);
       const verificationUrl = `${getBaseUrl()}/verify-email?token=${verificationToken}`;

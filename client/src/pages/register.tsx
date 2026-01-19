@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Loader2, CheckCircle2, XCircle, Mail } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 export default function RegisterPage() {
   const { t } = useI18n();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
@@ -59,12 +60,23 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await apiRequest("POST", "/api/auth/register", {
+      const response = await apiRequest("POST", "/api/auth/register", {
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
       });
+      const data = await response.json();
+      
+      if (data.autoVerified) {
+        toast({
+          title: "Compte cree",
+          description: "Vous etes maintenant connecte (mode developpement)",
+        });
+        window.location.href = "/dashboard";
+        return;
+      }
+      
       setRegisteredEmail(formData.email);
       setRegistrationSuccess(true);
     } catch (error: any) {
