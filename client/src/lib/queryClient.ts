@@ -1,9 +1,35 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+class ApiError extends Error {
+  status: number;
+  emailNotVerified?: boolean;
+  email?: string;
+
+  constructor(status: number, message: string, data?: { emailNotVerified?: boolean; email?: string }) {
+    super(message);
+    this.status = status;
+    this.emailNotVerified = data?.emailNotVerified;
+    this.email = data?.email;
+  }
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const text = await res.text();
+    let message = text || res.statusText;
+    let data: { emailNotVerified?: boolean; email?: string } | undefined;
+    
+    try {
+      const json = JSON.parse(text);
+      message = json.message || message;
+      data = {
+        emailNotVerified: json.emailNotVerified,
+        email: json.email
+      };
+    } catch {
+    }
+    
+    throw new ApiError(res.status, message, data);
   }
 }
 
