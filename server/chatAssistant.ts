@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "sk-dummy-key-for-dev",
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
@@ -97,7 +97,7 @@ export async function getChatResponse(userMessage: string, conversationHistory: 
 }
 
 export async function streamChatResponse(
-  userMessage: string, 
+  userMessage: string,
   conversationHistory: { role: "user" | "assistant"; content: string }[],
   onChunk: (chunk: string) => void
 ): Promise<string> {
