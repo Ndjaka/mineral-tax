@@ -10,8 +10,16 @@ function getResendClient(): Resend | null {
   
   if (!resendClient) {
     resendClient = new Resend(process.env.RESEND_API_KEY);
+    console.log('[Email] Resend client initialized');
   }
   return resendClient;
+}
+
+function getFromAddress(): string {
+  if (process.env.NODE_ENV === 'production' && process.env.EMAIL_FROM) {
+    return process.env.EMAIL_FROM;
+  }
+  return 'MineralTax <onboarding@resend.dev>';
 }
 
 interface WelcomeEmailData {
@@ -167,9 +175,9 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     const html = generateWelcomeEmailHtml(data.customerName, data.dashboardUrl);
     
     const result = await client.emails.send({
-      from: 'MineralTax <noreply@mineraltax.ch>',
+      from: getFromAddress(),
       to: data.to,
-      subject: 'Bienvenue chez MineralTax - Votre accès est prêt',
+      subject: 'Bienvenue chez MineralTax - Votre acces est pret',
       html: html,
     });
     
@@ -294,7 +302,7 @@ export async function sendRenewalReminderEmail(data: RenewalReminderEmailData): 
     const html = generateRenewalReminderEmailHtml(data.customerName, data.expirationDate, data.renewalUrl, data.daysRemaining);
     
     const result = await client.emails.send({
-      from: 'MineralTax <noreply@mineraltax.ch>',
+      from: getFromAddress(),
       to: data.to,
       subject: `Rappel: Votre licence expire dans ${data.daysRemaining} jours`,
       html: html,
@@ -400,14 +408,18 @@ export async function sendVerificationEmail(to: string, firstName: string, verif
   try {
     const html = generateVerificationEmailHtml(firstName, verificationUrl);
     
+    console.log(`[Email] Attempting to send verification email to ${to}`);
+    const fromAddress = getFromAddress();
+    console.log(`[Email] Using from address: ${fromAddress}`);
+    
     const result = await client.emails.send({
-      from: 'MineralTax <noreply@mineraltax.ch>',
+      from: fromAddress,
       to: to,
       subject: 'Verifiez votre email - MineralTax',
       html: html,
     });
     
-    console.log(`[Email] Verification email sent successfully to ${to}`, result);
+    console.log(`[Email] Verification email sent successfully to ${to}`, JSON.stringify(result));
     return true;
   } catch (error) {
     console.error('[Email] Failed to send verification email:', error);
@@ -509,7 +521,7 @@ export async function sendPasswordResetEmail(to: string, firstName: string, rese
     const html = generatePasswordResetEmailHtml(firstName, resetUrl);
     
     const result = await client.emails.send({
-      from: 'MineralTax <noreply@mineraltax.ch>',
+      from: getFromAddress(),
       to: to,
       subject: 'Reinitialisation de votre mot de passe - MineralTax',
       html: html,
