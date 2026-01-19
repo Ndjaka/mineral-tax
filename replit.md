@@ -69,6 +69,7 @@ server/
 - `DATABASE_URL` - PostgreSQL connection
 - `SESSION_SECRET` - Session encryption
 - `STRIPE_WEBHOOK_SECRET` - (optional) Stripe webhook signature verification
+- `SKIP_EMAIL_VERIFICATION` - (development only) Set to "true" to bypass email verification
 
 ### Subscription & Trial System
 - **10-day free trial** for new users
