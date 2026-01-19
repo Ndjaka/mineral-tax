@@ -36,6 +36,9 @@ import MachinesEligiblesPage from "@/pages/seo/machines-eligibles";
 import TauxRemboursementPage from "@/pages/seo/taux-remboursement";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
+import VerifyEmailPage from "@/pages/verify-email";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -169,6 +172,18 @@ function AppContent() {
 
   if (location === "/register" && !user) {
     return <RegisterPage />;
+  }
+
+  if (location.startsWith("/verify-email")) {
+    return <VerifyEmailPage />;
+  }
+
+  if (location === "/forgot-password" && !user) {
+    return <ForgotPasswordPage />;
+  }
+
+  if (location.startsWith("/reset-password") && !user) {
+    return <ResetPasswordPage />;
   }
 
   if (isLoading) {

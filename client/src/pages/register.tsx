@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -9,14 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Loader2, CheckCircle2, XCircle, Mail } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function RegisterPage() {
   const { t } = useI18n();
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -40,7 +41,7 @@ export default function RegisterPage() {
     if (!passwordValid) {
       toast({
         title: "Mot de passe invalide",
-        description: "Le mot de passe doit contenir au moins 12 caractères",
+        description: "Le mot de passe doit contenir au moins 12 caracteres",
         variant: "destructive",
       });
       return;
@@ -58,18 +59,14 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await apiRequest("POST", "/api/auth/local/register", {
+      await apiRequest("POST", "/api/auth/register", {
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      toast({
-        title: "Compte créé",
-        description: "Bienvenue sur MineralTax ! Votre essai gratuit de 10 jours commence maintenant.",
-      });
-      setLocation("/dashboard");
+      setRegisteredEmail(formData.email);
+      setRegistrationSuccess(true);
     } catch (error: any) {
       toast({
         title: "Erreur d'inscription",
@@ -80,6 +77,73 @@ export default function RegisterPage() {
       setIsLoading(false);
     }
   };
+
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <Link href="/">
+                <div className="flex items-center gap-3 cursor-pointer">
+                  <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-lg">MT</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-sm">{t.common.appName}</span>
+                    <span className="text-xs text-muted-foreground hidden sm:block">{t.common.tagline}</span>
+                  </div>
+                </div>
+              </Link>
+              
+              <div className="flex items-center gap-2">
+                <LanguageSelector />
+                <ThemeToggle />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center pt-16 pb-8 px-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
+              </div>
+              <CardTitle className="text-2xl">Verifiez votre email</CardTitle>
+              <CardDescription>
+                Un email de verification a ete envoye
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                Nous avons envoye un email de verification a <strong>{registeredEmail}</strong>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Cliquez sur le lien dans l'email pour activer votre compte. Le lien expire dans 24 heures.
+              </p>
+              <Alert className="text-left">
+                <AlertDescription className="text-sm">
+                  Vous ne trouvez pas l'email ? Verifiez votre dossier spam ou{" "}
+                  <Link href="/login" className="text-primary hover:underline">
+                    retournez a la connexion
+                  </Link>{" "}
+                  pour renvoyer l'email.
+                </AlertDescription>
+              </Alert>
+              <div className="pt-4">
+                <Link href="/login">
+                  <Button variant="outline" className="w-full" data-testid="button-back-to-login">
+                    Retour a la connexion
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

@@ -9,14 +9,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function LoginPage() {
   const { t } = useI18n();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -25,23 +29,48 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setEmailNotVerified(false);
 
     try {
-      await apiRequest("POST", "/api/auth/local/login", formData);
+      await apiRequest("POST", "/api/auth/login", formData);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
-        title: "Connexion réussie",
+        title: "Connexion reussie",
         description: "Bienvenue sur MineralTax",
       });
       setLocation("/dashboard");
     } catch (error: any) {
+      if (error.emailNotVerified) {
+        setEmailNotVerified(true);
+        setUnverifiedEmail(error.email || formData.email);
+      } else {
+        toast({
+          title: "Erreur de connexion",
+          description: error.message || "Email ou mot de passe incorrect",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    try {
+      await apiRequest("POST", "/api/auth/resend-verification", { email: unverifiedEmail });
       toast({
-        title: "Erreur de connexion",
-        description: error.message || "Email ou mot de passe incorrect",
+        title: "Email envoye",
+        description: "Un nouveau lien de verification a ete envoye a votre adresse email",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'envoyer l'email",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsResending(false);
     }
   };
 
@@ -79,6 +108,26 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {emailNotVerified && (
+              <Alert className="mb-4 border-amber-500 bg-amber-50 dark:bg-amber-950">
+                <Mail className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800 dark:text-amber-200">
+                  <p className="font-medium mb-2">Email non verifie</p>
+                  <p className="text-sm mb-3">Veuillez verifier votre email avant de vous connecter. Consultez votre boite de reception.</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleResendVerification}
+                    disabled={isResending}
+                    data-testid="button-resend-verification"
+                  >
+                    {isResending && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    Renvoyer l'email de verification
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">{t.auth?.email || "Email"}</Label>
@@ -94,7 +143,12 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">{t.auth?.password || "Mot de passe"}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t.auth?.password || "Mot de passe"}</Label>
+                  <Link href="/forgot-password" className="text-xs text-primary hover:underline" data-testid="link-forgot-password">
+                    Mot de passe oublie ?
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   type="password"
@@ -116,7 +170,7 @@ export default function LoginPage() {
               <p className="text-sm text-muted-foreground">
                 {t.auth?.noAccount || "Pas encore de compte ?"}{" "}
                 <Link href="/register" className="text-primary hover:underline" data-testid="link-register">
-                  {t.auth?.createAccount || "Créer un compte"}
+                  {t.auth?.createAccount || "Creer un compte"}
                 </Link>
               </p>
             </div>
