@@ -123,11 +123,11 @@ const translations = {
 };
 
 const steps = [
-  { image: fleetImage, icon: Truck, color: "bg-blue-500" },
-  { image: fuelImage, icon: Fuel, color: "bg-green-500" },
-  { image: calculationImage, icon: Calculator, color: "bg-amber-500" },
-  { image: reportImage, icon: FileText, color: "bg-purple-500" },
-  { image: taxasImage, icon: Building2, color: "bg-red-500" },
+  { image: fleetImage, icon: Truck, color: "bg-primary" },
+  { image: fuelImage, icon: Fuel, color: "bg-primary/80" },
+  { image: calculationImage, icon: Calculator, color: "bg-accent-foreground" },
+  { image: reportImage, icon: FileText, color: "bg-muted-foreground" },
+  { image: taxasImage, icon: Building2, color: "bg-destructive" },
 ];
 
 export default function HowItWorks() {
@@ -140,13 +140,13 @@ export default function HowItWorks() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-12 max-w-6xl">
         <div className="text-center mb-16">
-          <Badge variant="secondary" className="mb-4">
+          <Badge variant="secondary" className="mb-4" data-testid="badge-rate">
             {t.rate}: {t.rateValue}
           </Badge>
-          <h1 className="text-4xl font-bold mb-4" data-testid="text-how-it-works-title">
+          <h1 className="text-3xl font-semibold mb-4" data-testid="text-how-it-works-title">
             {t.title}
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-how-it-works-subtitle">
             {t.subtitle}
           </p>
         </div>
@@ -163,7 +163,7 @@ export default function HowItWorks() {
             return (
               <div
                 key={stepKey}
-                className={`flex flex-col ${isEven ? "lg:flex-row" : "lg:flex-row-reverse"} gap-8 items-center`}
+                className={`flex flex-col flex-wrap ${isEven ? "lg:flex-row" : "lg:flex-row-reverse"} gap-8 items-center`}
                 data-testid={`section-${stepKey}`}
               >
                 <div className="w-full lg:w-1/2">
@@ -172,32 +172,33 @@ export default function HowItWorks() {
                       src={step.image}
                       alt={t[titleKey] as string}
                       className="w-full h-auto object-cover"
+                      data-testid={`img-${stepKey}`}
                     />
                   </Card>
                 </div>
 
                 <div className="w-full lg:w-1/2 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-full ${step.color} text-white`}>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className={`p-3 rounded-full ${step.color} text-primary-foreground`}>
                       <Icon className="h-6 w-6" />
                     </div>
-                    <Badge variant="outline" className="text-lg px-3 py-1">
+                    <Badge variant="outline" className="text-lg px-3 py-1" data-testid={`badge-${stepKey}-number`}>
                       {index + 1}
                     </Badge>
                   </div>
 
-                  <h2 className="text-2xl font-bold">
+                  <h2 className="text-xl font-medium" data-testid={`text-${stepKey}-title`}>
                     {t[titleKey] as string}
                   </h2>
 
-                  <p className="text-muted-foreground text-lg">
+                  <p className="text-muted-foreground text-base" data-testid={`text-${stepKey}-desc`}>
                     {t[descKey] as string}
                   </p>
 
                   <ul className="space-y-2">
                     {(t[featuresKey] as string[]).map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                      <li key={i} className="flex items-center gap-2" data-testid={`feature-${stepKey}-${i}`}>
+                        <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -210,8 +211,8 @@ export default function HowItWorks() {
 
         <Card className="mt-20 bg-primary/5 border-primary/20">
           <CardContent className="p-8 text-center">
-            <h2 className="text-3xl font-bold mb-2">{t.ctaTitle}</h2>
-            <p className="text-muted-foreground mb-6">{t.ctaSubtitle}</p>
+            <h2 className="text-xl font-medium mb-2" data-testid="text-cta-title">{t.ctaTitle}</h2>
+            <p className="text-muted-foreground mb-6" data-testid="text-cta-subtitle">{t.ctaSubtitle}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
                 <Button size="lg" className="gap-2" data-testid="button-cta-register">
