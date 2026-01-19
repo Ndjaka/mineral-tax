@@ -39,6 +39,7 @@ import RegisterPage from "@/pages/register";
 import VerifyEmailPage from "@/pages/verify-email";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
+import HowItWorksPage from "@/pages/how-it-works";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -102,6 +103,7 @@ function AuthenticatedRouter() {
         <Route path="/guide-export" component={GuideExportPage} />
         <Route path="/cgv" component={CGVPage} />
         <Route path="/confidentialite" component={ConfidentialitePage} />
+        <Route path="/comment-ca-marche" component={HowItWorksPage} />
         <Route component={NotFound} />
       </Switch>
     </AuthenticatedLayout>
@@ -164,6 +166,10 @@ function AppContent() {
 
   if (location === "/confidentialite" && !user) {
     return <ConfidentialitePage />;
+  }
+
+  if (location === "/comment-ca-marche" && !user) {
+    return <HowItWorksPage />;
   }
 
   if (location === "/login" && !user) {
