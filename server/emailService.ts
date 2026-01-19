@@ -16,8 +16,10 @@ function getResendClient(): Resend | null {
 }
 
 function getFromAddress(): string {
-  if (process.env.NODE_ENV === 'production' && process.env.EMAIL_FROM) {
-    return process.env.EMAIL_FROM;
+  // In production, use support@mineraltax.ch (requires Resend domain verification)
+  // In development, use Resend's test address which works without domain verification
+  if (process.env.NODE_ENV === 'production') {
+    return 'MineralTax <support@mineraltax.ch>';
   }
   return 'MineralTax <onboarding@resend.dev>';
 }
