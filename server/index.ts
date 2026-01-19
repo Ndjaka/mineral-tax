@@ -1,11 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-// DÉSACTIVÉ POUR INFOMANIAK - Utiliser auth locale uniquement
-// import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
-import { getSession } from "./replit_integrations/auth/replitAuth";
-import { registerLocalAuthRoutes } from "./localAuth";
+import { authMiddleware, registerAuthRoutes } from "./auth/routes";
 import { getStripeClient } from "./stripeClient";
 import { storage } from "./storage";
 import { sendWelcomeEmail } from "./emailService";
@@ -214,15 +212,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // DÉSACTIVÉ POUR INFOMANIAK - Replit Auth non disponible
-  // await setupAuth(app);
-  // registerAuthRoutes(app);
-  
-  // Configuration de session pour l'authentification locale
   app.set("trust proxy", 1);
-  app.use(getSession());
+  app.use(cookieParser());
   
-  registerLocalAuthRoutes(app);
+  app.use(authMiddleware);
+  
+  registerAuthRoutes(app);
   
   await registerRoutes(httpServer, app);
 

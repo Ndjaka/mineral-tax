@@ -307,3 +307,218 @@ export async function sendRenewalReminderEmail(data: RenewalReminderEmailData): 
     return false;
   }
 }
+
+function generateVerificationEmailHtml(firstName: string, verificationUrl: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifiez votre email - MineralTax</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #003366 0%, #0055a4 100%); border-radius: 12px 12px 0 0;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">
+                Verifiez votre email
+              </h1>
+              <p style="margin: 10px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">
+                Une derniere etape pour activer votre compte
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+                Bonjour <strong>${firstName || 'cher client'}</strong>,
+              </p>
+              
+              <p style="margin: 0 0 25px; color: #374151; font-size: 16px; line-height: 1.6;">
+                Merci de vous etre inscrit sur MineralTax. Pour activer votre compte et acceder a toutes les fonctionnalites, veuillez verifier votre adresse email.
+              </p>
+              
+              <!-- CTA Button -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                <tr>
+                  <td align="center">
+                    <a href="${verificationUrl}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);">
+                      Verifier mon email
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 0 0 15px; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                Ce lien expire dans <strong>24 heures</strong>. Si vous n'avez pas cree de compte sur MineralTax, vous pouvez ignorer cet email.
+              </p>
+              
+              <p style="margin: 0; color: #9ca3af; font-size: 12px; line-height: 1.5;">
+                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+                <span style="color: #6b7280; word-break: break-all;">${verificationUrl}</span>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                MineralTax Swiss - Remboursement simplifie de la taxe sur les huiles minerales
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                © ${new Date().getFullYear()} MineralTax. Tous droits reserves.
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+export async function sendVerificationEmail(to: string, firstName: string, verificationUrl: string): Promise<boolean> {
+  const client = getResendClient();
+  
+  if (!client) {
+    console.log('[Email] Skipping verification email - Resend not configured');
+    return false;
+  }
+  
+  try {
+    const html = generateVerificationEmailHtml(firstName, verificationUrl);
+    
+    const result = await client.emails.send({
+      from: 'MineralTax <noreply@mineraltax.ch>',
+      to: to,
+      subject: 'Verifiez votre email - MineralTax',
+      html: html,
+    });
+    
+    console.log(`[Email] Verification email sent successfully to ${to}`, result);
+    return true;
+  } catch (error) {
+    console.error('[Email] Failed to send verification email:', error);
+    return false;
+  }
+}
+
+function generatePasswordResetEmailHtml(firstName: string, resetUrl: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reinitialisation du mot de passe - MineralTax</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); border-radius: 12px 12px 0 0;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">
+                Reinitialisation du mot de passe
+              </h1>
+              <p style="margin: 10px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">
+                Vous avez demande un nouveau mot de passe
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+                Bonjour <strong>${firstName || 'cher client'}</strong>,
+              </p>
+              
+              <p style="margin: 0 0 25px; color: #374151; font-size: 16px; line-height: 1.6;">
+                Nous avons recu une demande de reinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
+              </p>
+              
+              <!-- CTA Button -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                <tr>
+                  <td align="center">
+                    <a href="${resetUrl}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #003366 0%, #0055a4 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(0, 51, 102, 0.3);">
+                      Reinitialiser mon mot de passe
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 0 0 15px; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                Ce lien expire dans <strong>1 heure</strong>. Si vous n'avez pas fait cette demande, vous pouvez ignorer cet email en toute securite.
+              </p>
+              
+              <div style="padding: 15px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <p style="margin: 0; color: #991b1b; font-size: 14px;">
+                  <strong>Conseil de securite :</strong> Ne partagez jamais ce lien avec personne. MineralTax ne vous demandera jamais votre mot de passe par email.
+                </p>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                MineralTax Swiss - Remboursement simplifie de la taxe sur les huiles minerales
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                © ${new Date().getFullYear()} MineralTax. Tous droits reserves.
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+export async function sendPasswordResetEmail(to: string, firstName: string, resetUrl: string): Promise<boolean> {
+  const client = getResendClient();
+  
+  if (!client) {
+    console.log('[Email] Skipping password reset email - Resend not configured');
+    return false;
+  }
+  
+  try {
+    const html = generatePasswordResetEmailHtml(firstName, resetUrl);
+    
+    const result = await client.emails.send({
+      from: 'MineralTax <noreply@mineraltax.ch>',
+      to: to,
+      subject: 'Reinitialisation de votre mot de passe - MineralTax',
+      html: html,
+    });
+    
+    console.log(`[Email] Password reset email sent successfully to ${to}`, result);
+    return true;
+  } catch (error) {
+    console.error('[Email] Failed to send password reset email:', error);
+    return false;
+  }
+}
