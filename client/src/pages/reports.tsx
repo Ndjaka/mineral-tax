@@ -151,11 +151,13 @@ export default function ReportsPage() {
   });
 
   const auditMutation = useMutation({
-    mutationFn: (data: ReportFormData) =>
-      apiRequest("POST", "/api/reports/audit", {
+    mutationFn: async (data: ReportFormData): Promise<AuditResult> => {
+      const response = await apiRequest("POST", "/api/reports/audit", {
         periodStart: new Date(data.periodStart).toISOString(),
         periodEnd: new Date(data.periodEnd).toISOString(),
-      }),
+      });
+      return response.json();
+    },
     onSuccess: (result: AuditResult) => {
       setAuditResult(result);
       if (result.isValid) {
