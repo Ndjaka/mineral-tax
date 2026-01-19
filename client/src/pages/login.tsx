@@ -12,6 +12,7 @@ import { Link } from "wouter";
 import { Loader2, Mail } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AUTH_USER_QUERY_KEY } from "@/hooks/use-auth";
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -33,7 +34,8 @@ export default function LoginPage() {
 
     try {
       await apiRequest("POST", "/api/auth/login", formData);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: AUTH_USER_QUERY_KEY });
+
       toast({
         title: "Connexion reussie",
         description: "Bienvenue sur MineralTax",
@@ -90,7 +92,7 @@ export default function LoginPage() {
                 </div>
               </div>
             </Link>
-            
+
             <div className="flex items-center gap-2">
               <LanguageSelector />
               <ThemeToggle />
@@ -114,8 +116,8 @@ export default function LoginPage() {
                 <AlertDescription className="text-amber-800 dark:text-amber-200">
                   <p className="font-medium mb-2">Email non verifie</p>
                   <p className="text-sm mb-3">Veuillez verifier votre email avant de vous connecter. Consultez votre boite de reception.</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={handleResendVerification}
                     disabled={isResending}

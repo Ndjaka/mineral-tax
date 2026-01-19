@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { Loader2, CheckCircle2, XCircle, Mail } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AUTH_USER_QUERY_KEY } from "@/hooks/use-auth";
 
 export default function RegisterPage() {
   const { t } = useI18n();
@@ -38,7 +39,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!passwordValid) {
       toast({
         title: "Mot de passe invalide",
@@ -67,7 +68,7 @@ export default function RegisterPage() {
         lastName: formData.lastName || undefined,
       });
       const data = await response.json();
-      
+
       if (data.autoVerified) {
         toast({
           title: "Compte cree",
@@ -76,7 +77,7 @@ export default function RegisterPage() {
         window.location.href = "/dashboard";
         return;
       }
-      
+
       setRegisteredEmail(formData.email);
       setRegistrationSuccess(true);
     } catch (error: any) {
@@ -107,7 +108,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
               </Link>
-              
+
               <div className="flex items-center gap-2">
                 <LanguageSelector />
                 <ThemeToggle />
@@ -173,7 +174,7 @@ export default function RegisterPage() {
                 </div>
               </div>
             </Link>
-            
+
             <div className="flex items-center gap-2">
               <LanguageSelector />
               <ThemeToggle />
@@ -278,9 +279,9 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isLoading || !passwordValid || !passwordsMatch}
                 data-testid="button-register-submit"
               >

@@ -25,7 +25,7 @@ declare module "express-serve-static-core" {
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const sessionId = req.cookies[lucia.sessionCookieName];
-  
+
   if (!sessionId) {
     req.user = undefined;
     req.sessionId = undefined;
@@ -33,12 +33,12 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   }
 
   const { session, user } = await lucia.validateSession(sessionId);
-  
+
   if (session && session.fresh) {
     const sessionCookie = lucia.createSessionCookie(session.id);
     res.cookie(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
   }
-  
+
   if (!session) {
     const blankCookie = lucia.createBlankSessionCookie();
     res.cookie(blankCookie.name, blankCookie.value, blankCookie.attributes);
@@ -72,9 +72,9 @@ export function registerAuthRoutes(app: Express): void {
     try {
       const validation = registerUserSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
-          message: "Donnees invalides", 
-          errors: validation.error.errors 
+        return res.status(400).json({
+          message: "Donnees invalides",
+          errors: validation.error.errors
         });
       }
 
@@ -104,10 +104,18 @@ export function registerAuthRoutes(app: Express): void {
         const session = await lucia.createSession(newUser.id, {});
         const sessionCookie = lucia.createSessionCookie(session.id);
         res.cookie(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
-        return res.status(201).json({ 
+        return res.status(201).json({
           message: "Compte cree et verifie automatiquement (mode developpement).",
           emailSent: false,
-          autoVerified: true
+          autoVerified: true,
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            profileImageUrl: newUser.profileImageUrl,
+            emailVerified: newUser.emailVerified
+          }
         });
       }
 
@@ -116,7 +124,7 @@ export function registerAuthRoutes(app: Express): void {
 
       await sendVerificationEmail(email, firstName || "", verificationUrl);
 
-      res.status(201).json({ 
+      res.status(201).json({
         message: "Compte cree. Veuillez verifier votre email pour activer votre compte.",
         emailSent: true
       });
@@ -129,21 +137,21 @@ export function registerAuthRoutes(app: Express): void {
   app.post("/api/auth/verify-email", async (req: Request, res: Response) => {
     try {
       const { token } = req.body;
-      
+
       if (!token || typeof token !== "string") {
         return res.status(400).json({ message: "Token invalide" });
       }
 
       const userId = await verifyEmailToken(token);
-      
+
       if (!userId) {
         return res.status(400).json({ message: "Le lien de verification est invalide ou a expire" });
       }
 
       await db.update(users)
-        .set({ 
-          emailVerified: true, 
-          emailVerifiedAt: new Date() 
+        .set({
+          emailVerified: true,
+          emailVerifiedAt: new Date()
         })
         .where(eq(users.id, userId));
 
@@ -161,13 +169,13 @@ export function registerAuthRoutes(app: Express): void {
   app.post("/api/auth/resend-verification", async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
-      
+
       if (!email || typeof email !== "string") {
         return res.status(400).json({ message: "Email requis" });
       }
 
       const [user] = await db.select().from(users).where(eq(users.email, email.toLowerCase()));
-      
+
       if (!user) {
         return res.json({ message: "Si un compte existe avec cet email, un nouveau lien a ete envoye" });
       }
@@ -181,7 +189,7 @@ export function registerAuthRoutes(app: Express): void {
 
       console.log(`[Auth] Resending verification email to ${email}`);
       console.log(`[Auth] Verification URL: ${verificationUrl}`);
-      
+
       const emailSent = await sendVerificationEmail(email, user.firstName || "", verificationUrl);
       console.log(`[Auth] Email sent result: ${emailSent}`);
 
@@ -196,16 +204,16 @@ export function registerAuthRoutes(app: Express): void {
     try {
       const validation = loginUserSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
-          message: "Donnees invalides", 
-          errors: validation.error.errors 
+        return res.status(400).json({
+          message: "Donnees invalides",
+          errors: validation.error.errors
         });
       }
 
       const { email, password } = validation.data;
 
       const [user] = await db.select().from(users).where(eq(users.email, email.toLowerCase()));
-      
+
       if (!user || !user.passwordHash) {
         return res.status(401).json({ message: "Email ou mot de passe incorrect" });
       }
@@ -216,7 +224,7 @@ export function registerAuthRoutes(app: Express): void {
       }
 
       if (!user.emailVerified) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "Veuillez verifier votre email avant de vous connecter",
           emailNotVerified: true,
           email: user.email
@@ -227,7 +235,7 @@ export function registerAuthRoutes(app: Express): void {
       const sessionCookie = lucia.createSessionCookie(session.id);
       res.cookie(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
 
-      res.json({ 
+      res.json({
         id: user.id,
         email: user.email,
         firstName: user.firstName,
@@ -246,10 +254,10 @@ export function registerAuthRoutes(app: Express): void {
       if (req.sessionId) {
         await lucia.invalidateSession(req.sessionId);
       }
-      
+
       const blankCookie = lucia.createBlankSessionCookie();
       res.cookie(blankCookie.name, blankCookie.value, blankCookie.attributes);
-      
+
       res.json({ message: "Deconnecte avec succes" });
     } catch (error) {
       console.error("Logout error:", error);
@@ -261,9 +269,9 @@ export function registerAuthRoutes(app: Express): void {
     if (!req.user) {
       return res.status(401).json({ message: "Non authentifie" });
     }
-    
+
     const [user] = await db.select().from(users).where(eq(users.id, req.user.id));
-    
+
     if (!user) {
       return res.status(401).json({ message: "Utilisateur non trouve" });
     }
@@ -282,16 +290,16 @@ export function registerAuthRoutes(app: Express): void {
     try {
       const validation = resetPasswordRequestSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
-          message: "Email invalide", 
-          errors: validation.error.errors 
+        return res.status(400).json({
+          message: "Email invalide",
+          errors: validation.error.errors
         });
       }
 
       const { email } = validation.data;
 
       const [user] = await db.select().from(users).where(eq(users.email, email.toLowerCase()));
-      
+
       res.json({ message: "Si un compte existe avec cet email, un lien de reinitialisation a ete envoye" });
 
       if (user && user.passwordHash) {
@@ -309,16 +317,16 @@ export function registerAuthRoutes(app: Express): void {
     try {
       const validation = resetPasswordSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
-          message: "Donnees invalides", 
-          errors: validation.error.errors 
+        return res.status(400).json({
+          message: "Donnees invalides",
+          errors: validation.error.errors
         });
       }
 
       const { token, password } = validation.data;
 
       const userId = await verifyPasswordResetToken(token);
-      
+
       if (!userId) {
         return res.status(400).json({ message: "Le lien de reinitialisation est invalide ou a expire" });
       }
@@ -326,7 +334,7 @@ export function registerAuthRoutes(app: Express): void {
       const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
       await db.update(users)
-        .set({ 
+        .set({
           passwordHash,
           passwordSet: true,
           updatedAt: new Date()
