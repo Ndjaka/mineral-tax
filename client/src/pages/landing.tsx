@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -13,10 +13,38 @@ import { calculateReimbursement } from "@shared/schema";
 export default function LandingPage() {
   const { t, language } = useI18n();
   const [volumeLiters, setVolumeLiters] = useState(20000);
-  
+
   const calculatedReimbursement = useMemo(() => {
     return calculateReimbursement(volumeLiters);
   }, [volumeLiters]);
+
+  // Handle hash navigation on page load or hash change
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        // Remove the # and find the element
+        const id = hash.substring(1);
+        const element = document.getElementById(id);
+        if (element) {
+          // Small delay to ensure page is fully rendered
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 100);
+        }
+      }
+    };
+
+    // Check hash on mount
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-CH", {
@@ -54,7 +82,7 @@ export default function LandingPage() {
     },
   ];
 
-  
+
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
@@ -69,7 +97,7 @@ export default function LandingPage() {
                 <span className="text-xs text-muted-foreground hidden sm:block">{t.common.tagline}</span>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <LanguageSelector />
               <ThemeToggle />
@@ -88,9 +116,9 @@ export default function LandingPage() {
             <p className="text-xs text-muted-foreground text-center">
               <span className="opacity-70">{t.landing.disclaimerTool}</span>
               {" • "}
-              <a 
-                href="https://www.bazg.admin.ch/bazg/fr/home.html" 
-                target="_blank" 
+              <a
+                href="https://www.bazg.admin.ch/bazg/fr/home.html"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
               >
@@ -108,7 +136,7 @@ export default function LandingPage() {
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
                   {t.landing.heroTitle}
                 </h1>
-                
+
                 <p className="text-xl text-muted-foreground max-w-lg">
                   {t.landing.heroSubtitle}
                 </p>
@@ -116,7 +144,7 @@ export default function LandingPage() {
                 <p className="text-sm font-medium text-primary bg-primary/10 px-3 py-2 rounded-md inline-block">
                   {t.landing.exclusiveClaim || "L'unique solution automatisée en Suisse pour le remboursement via Taxas."}
                 </p>
-                
+
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button size="lg" asChild data-testid="button-cta-primary">
                     <Link href="/register">{t.landing.cta}</Link>
@@ -125,7 +153,7 @@ export default function LandingPage() {
                     <a href="#comment-ca-marche">{t.landing.ctaSecondary}</a>
                   </Button>
                 </div>
-                
+
                 <p className="text-sm text-muted-foreground">
                   {t.landing.ctaSubtext}
                 </p>
@@ -162,7 +190,7 @@ export default function LandingPage() {
                           {formatNumber(volumeLiters)} L
                         </p>
                       </div>
-                      
+
                       <Slider
                         value={[volumeLiters]}
                         onValueChange={(value) => setVolumeLiters(value[0])}
@@ -172,14 +200,14 @@ export default function LandingPage() {
                         className="py-4"
                         data-testid="slider-volume"
                       />
-                      
+
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>1'000 L</span>
                         <span>100'000 L</span>
                       </div>
-                      
+
                       <div className="h-px bg-border" />
-                      
+
                       <div className="text-center space-y-2">
                         <p className="text-sm text-muted-foreground">
                           {t.landing.sliderResult || "Vous pouvez récupérer"}
@@ -191,7 +219,7 @@ export default function LandingPage() {
                           {t.landing.sliderRate || "Taux OFDF: 0.3405 CHF/L"}
                         </p>
                       </div>
-                      
+
                       <Button className="w-full" size="lg" asChild>
                         <a href="/api/login" data-testid="button-cta-calculator">
                           {t.landing.sliderCta || "Commencer gratuitement"}
@@ -199,7 +227,7 @@ export default function LandingPage() {
                       </Button>
                     </CardContent>
                   </Card>
-                  
+
                   <div className="absolute -z-10 -top-4 -right-4 w-full h-full bg-primary/10 rounded-lg" />
                 </div>
               </div>
@@ -217,7 +245,7 @@ export default function LandingPage() {
                 {(t.landing as any).seoHelpSubtitle || "Vous n'arrivez pas à vous connecter au portail Agate ou à utiliser Taxas ? Vous n'êtes pas seul(e)."}
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="bg-background">
                 <CardContent className="p-5 space-y-2">
@@ -227,7 +255,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-background">
                 <CardContent className="p-5 space-y-2">
                   <h3 className="font-semibold">{(t.landing as any).seoHelp2Title || "Enregistrement Taxas bloqué ?"}</h3>
@@ -236,7 +264,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-background">
                 <CardContent className="p-5 space-y-2">
                   <h3 className="font-semibold">{(t.landing as any).seoHelp3Title || "Formulaire 45.35 compliqué ?"}</h3>
@@ -257,7 +285,7 @@ export default function LandingPage() {
                 {t.landing.howItWorksSubtitle}
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
@@ -268,7 +296,7 @@ export default function LandingPage() {
                   {t.landing.step1Desc}
                 </p>
               </div>
-              
+
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
                   2
@@ -278,7 +306,7 @@ export default function LandingPage() {
                   {t.landing.step2Desc}
                 </p>
               </div>
-              
+
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
                   3
@@ -300,7 +328,7 @@ export default function LandingPage() {
                 {t.landing.forWhoSubtitle}
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-3">
@@ -310,7 +338,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-3">
                   <h3 className="text-lg font-semibold">{t.landing.forWho2Title}</h3>
@@ -319,7 +347,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-3">
                   <h3 className="text-lg font-semibold">{t.landing.forWho3Title}</h3>
@@ -328,7 +356,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-3">
                   <h3 className="text-lg font-semibold">{t.landing.forWho4Title}</h3>
@@ -349,7 +377,7 @@ export default function LandingPage() {
                 {t.landing.whatIsTaxSubtitle}
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-4">
@@ -362,7 +390,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-4">
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -374,7 +402,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-4">
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -386,7 +414,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover-elevate transition-all duration-200">
                 <CardContent className="p-6 space-y-4">
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -410,7 +438,7 @@ export default function LandingPage() {
                 {t.landing.howTaxWorksSubtitle}
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-6">
               {features.map((feature, index) => (
                 <Card key={index} className="hover-elevate transition-all duration-200">
@@ -435,7 +463,7 @@ export default function LandingPage() {
                 {t.landing.howToClaimSubtitle}
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
@@ -446,7 +474,7 @@ export default function LandingPage() {
                   {t.landing.claimStep1Desc}
                 </p>
               </div>
-              
+
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
                   2
@@ -456,7 +484,7 @@ export default function LandingPage() {
                   {t.landing.claimStep2Desc}
                 </p>
               </div>
-              
+
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
                   3
@@ -482,7 +510,7 @@ export default function LandingPage() {
                 {t.landing.ofdfSubtitle || "MineralTax génère des fichiers conformes aux exigences de l'OFDF. Vos données transitent en toute sécurité vers ePortal et Taxas."}
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="text-center">
                 <CardContent className="p-6 space-y-4">
@@ -495,7 +523,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="text-center">
                 <CardContent className="p-6 space-y-4">
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
@@ -507,7 +535,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="text-center">
                 <CardContent className="p-6 space-y-4">
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
@@ -520,7 +548,7 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
             </div>
-            
+
             <div className="mt-8 text-center">
               <p className="text-sm text-muted-foreground">
                 {t.landing.ofdfNote || "MineralTax ne transmet pas directement vos données à l'administration. Vous gardez le contrôle total de vos soumissions."}
@@ -560,7 +588,7 @@ export default function LandingPage() {
                   </li>
                 </ul>
               </div>
-              
+
               <Card className="bg-card border-2">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
@@ -606,7 +634,7 @@ export default function LandingPage() {
                 {t.landing.trustSubtitle}
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="hover-elevate">
                 <CardContent className="p-6 text-center space-y-3">
@@ -619,7 +647,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover-elevate">
                 <CardContent className="p-6 text-center space-y-3">
                   <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto">
@@ -631,7 +659,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover-elevate">
                 <CardContent className="p-6 text-center space-y-3">
                   <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto">
@@ -643,7 +671,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover-elevate">
                 <CardContent className="p-6 text-center space-y-3">
                   <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
@@ -667,9 +695,9 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <Button variant="outline" asChild>
-                  <a 
-                    href="https://www.bazg.admin.ch/bazg/fr/home/actualites/forumd/fuer-fachleute/rueckerstattung-co2-abgabe-verbrauchssteuerplattform-taxas.html" 
-                    target="_blank" 
+                  <a
+                    href="https://www.bazg.admin.ch/bazg/fr/home/actualites/forumd/fuer-fachleute/rueckerstattung-co2-abgabe-verbrauchssteuerplattform-taxas.html"
+                    target="_blank"
                     rel="noopener noreferrer"
                     data-testid="link-taxas-official"
                   >
@@ -688,13 +716,13 @@ export default function LandingPage() {
               <CardContent className="p-8 md:p-12">
                 <div className="space-y-6">
                   <p className="text-lg text-primary-foreground/80">{t.landing.pricingSubtitle}</p>
-                  
+
                   <div className="py-4">
                     <span className="text-5xl md:text-6xl font-bold">250</span>
                     <span className="text-2xl ml-2">CHF</span>
                     <p className="text-primary-foreground/80 mt-2">{t.landing.pricingPeriod}</p>
                   </div>
-                  
+
                   <ul className="space-y-3 text-primary-foreground/90 text-left max-w-md mx-auto">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
@@ -721,12 +749,12 @@ export default function LandingPage() {
                       <span>{t.landing.pricingFeature6}</span>
                     </li>
                   </ul>
-                  
+
                   <p className="text-sm text-primary-foreground/70">{t.landing.pricingTrial}</p>
-                  
+
                   <div className="pt-4">
-                    <Button 
-                      size="lg" 
+                    <Button
+                      size="lg"
                       variant="secondary"
                       asChild
                       data-testid="button-subscribe"
@@ -745,7 +773,7 @@ export default function LandingPage() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">{t.landing.faqTitle}</h2>
             </div>
-            
+
             <div className="space-y-6">
               <Card>
                 <CardContent className="p-6">
@@ -755,7 +783,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold mb-2">{t.landing.faq2Question}</h3>
@@ -764,7 +792,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold mb-2">{t.landing.faq3Question}</h3>
@@ -773,7 +801,7 @@ export default function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold mb-2">{t.landing.faq4Question}</h3>
@@ -824,7 +852,7 @@ export default function LandingPage() {
                 {t.landing.footerNotAffiliated}
               </p>
             </div>
-            
+
             {/* Links */}
             <div className="space-y-4">
               <h4 className="font-semibold text-sm">{t.landing.usefulLinks}</h4>
@@ -840,32 +868,32 @@ export default function LandingPage() {
                 </Link>
               </div>
             </div>
-            
+
             {/* Official Links */}
             <div className="space-y-4">
               <h4 className="font-semibold text-sm">{t.landing.officialLinks}</h4>
               <div className="flex flex-col gap-2 text-sm">
-                <a 
-                  href="https://www.bazg.admin.ch/bazg/fr/home/actualites/forumd/fuer-fachleute/rueckerstattung-co2-abgabe-verbrauchssteuerplattform-taxas.html" 
-                  target="_blank" 
+                <a
+                  href="https://www.bazg.admin.ch/bazg/fr/home/actualites/forumd/fuer-fachleute/rueckerstattung-co2-abgabe-verbrauchssteuerplattform-taxas.html"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   data-testid="link-taxas-footer"
                 >
                   {t.landing.taxasPlatform}
                 </a>
-                <a 
-                  href="https://www.bazg.admin.ch/bazg/fr/home.html" 
-                  target="_blank" 
+                <a
+                  href="https://www.bazg.admin.ch/bazg/fr/home.html"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   data-testid="link-ofdf-footer"
                 >
                   OFDF / BAZG / AFD / FOCBS
                 </a>
-                <a 
-                  href="https://www.ch.ch" 
-                  target="_blank" 
+                <a
+                  href="https://www.ch.ch"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   data-testid="link-chch-footer"
@@ -875,7 +903,7 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="border-t pt-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
               <span>&copy; 2026 {t.landing.footerCopyright}</span>

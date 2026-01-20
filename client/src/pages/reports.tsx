@@ -114,11 +114,22 @@ export default function ReportsPage() {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to download");
+
+      // Récupérer le nom du fichier depuis l'en-tête Content-Disposition
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = `report-${reportId}.pdf`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          filename = match[1];
+        }
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `report-${reportId}.pdf`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -139,7 +150,7 @@ export default function ReportsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `mineraltax-data-${reportId}.csv`;
+      a.download = `export_mineraltax_${new Date().getFullYear()}_directives_OFDF.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -163,9 +174,9 @@ export default function ReportsPage() {
       if (result.isValid) {
         toast({ title: t.reports.auditSuccess || "Audit réussi - Aucune erreur détectée" });
       } else {
-        toast({ 
-          title: t.reports.auditErrors || "Erreurs détectées dans vos données", 
-          variant: "destructive" 
+        toast({
+          title: t.reports.auditErrors || "Erreurs détectées dans vos données",
+          variant: "destructive"
         });
       }
     },
@@ -285,7 +296,7 @@ export default function ReportsPage() {
                         {formatNumber(report.eligibleVolumeLiters)} L
                       </p>
                     </div>
-                    
+
                     <div className="text-left sm:text-right">
                       <p className="text-xs sm:text-sm text-muted-foreground">{t.reports.reimbursementAmount}</p>
                       <p className="text-lg sm:text-xl font-bold text-primary font-mono">
@@ -452,11 +463,11 @@ export default function ReportsPage() {
                   <FormItem>
                     <FormLabel>{t.reports.periodStart} *</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field} 
+                      <Input
+                        type="date"
+                        {...field}
                         onChange={(e) => { field.onChange(e); setAuditResult(null); }}
-                        data-testid="input-period-start" 
+                        data-testid="input-period-start"
                       />
                     </FormControl>
                     <FormMessage />
@@ -471,11 +482,11 @@ export default function ReportsPage() {
                   <FormItem>
                     <FormLabel>{t.reports.periodEnd} *</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field} 
+                      <Input
+                        type="date"
+                        {...field}
                         onChange={(e) => { field.onChange(e); setAuditResult(null); }}
-                        data-testid="input-period-end" 
+                        data-testid="input-period-end"
                       />
                     </FormControl>
                     <FormMessage />
@@ -522,12 +533,12 @@ export default function ReportsPage() {
                         <XCircle className="h-5 w-5 text-destructive" />
                       )}
                       <span className="font-medium">
-                        {auditResult.isValid 
-                          ? (t.reports.auditPassed || "Données conformes") 
+                        {auditResult.isValid
+                          ? (t.reports.auditPassed || "Données conformes")
                           : (t.reports.auditFailed || "Corrections requises")}
                       </span>
                     </div>
-                    
+
                     <div className="text-xs text-muted-foreground">
                       {t.reports.auditSummary || "Résumé"}: {auditResult.summary.entriesAnalyzed} {t.fuel.title || "entrées"}, {auditResult.summary.machinesChecked} {t.fleet.title || "machines"}
                     </div>
@@ -537,11 +548,10 @@ export default function ReportsPage() {
                         {auditResult.findings.map((finding, idx) => (
                           <div
                             key={idx}
-                            className={`flex items-start gap-2 text-sm p-2 rounded ${
-                              finding.type === "error" 
-                                ? "bg-destructive/20 text-destructive" 
-                                : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"
-                            }`}
+                            className={`flex items-start gap-2 text-sm p-2 rounded ${finding.type === "error"
+                              ? "bg-destructive/20 text-destructive"
+                              : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"
+                              }`}
                           >
                             {finding.type === "error" ? (
                               <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -635,6 +645,13 @@ export default function ReportsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Footer OFDF */}
+      <div className="mt-8 flex justify-end">
+        <p className="text-xs text-muted-foreground italic">
+          Fichiers générés selon les directives officielles de l'OFDF
+        </p>
+      </div>
     </div>
   );
 }

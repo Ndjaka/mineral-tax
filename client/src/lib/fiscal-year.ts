@@ -14,6 +14,5 @@ export function isUrgentPeriod(): boolean {
 
 export function getExportFilename(clientName: string): string {
   const fiscalYear = getFiscalYear();
-  const safeName = clientName.replace(/[^a-zA-Z0-9]/g, '_') || 'Client';
-  return `MineralTax_Export_${fiscalYear}_${safeName}.csv`;
+  return `export_mineraltax_${fiscalYear}_directives_OFDF.csv`;
 }

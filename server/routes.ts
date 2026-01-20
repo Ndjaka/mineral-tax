@@ -10,13 +10,13 @@ import { streamChatResponse } from "./chatAssistant";
 
 async function getOrCreateStripePrice(stripe: any): Promise<string> {
   const productName = "MineralTax Swiss - Abonnement Annuel";
-  
+
   const existingProducts = await stripe.products.search({
     query: `name:'${productName}'`,
   });
-  
+
   let productId: string;
-  
+
   if (existingProducts.data.length > 0) {
     productId = existingProducts.data[0].id;
   } else {
@@ -26,39 +26,39 @@ async function getOrCreateStripePrice(stripe: any): Promise<string> {
     });
     productId = product.id;
   }
-  
+
   const existingPrices = await stripe.prices.list({
     product: productId,
     active: true,
   });
-  
+
   const matchingPrice = existingPrices.data.find(
     (p: any) => p.unit_amount === 25000 && p.currency === "chf" && p.recurring?.interval === "year"
   );
-  
+
   if (matchingPrice) {
     return matchingPrice.id;
   }
-  
+
   const price = await stripe.prices.create({
     product: productId,
     unit_amount: 25000,
     currency: "chf",
     recurring: { interval: "year" },
   });
-  
+
   return price.id;
 }
 
 async function getOrCreateOneTimePrice(stripe: any): Promise<string> {
   const productName = "MineralTax Swiss - Licence Annuelle";
-  
+
   const existingProducts = await stripe.products.search({
     query: `name:'${productName}'`,
   });
-  
+
   let productId: string;
-  
+
   if (existingProducts.data.length > 0) {
     productId = existingProducts.data[0].id;
   } else {
@@ -68,26 +68,26 @@ async function getOrCreateOneTimePrice(stripe: any): Promise<string> {
     });
     productId = product.id;
   }
-  
+
   const existingPrices = await stripe.prices.list({
     product: productId,
     active: true,
   });
-  
+
   const matchingPrice = existingPrices.data.find(
     (p: any) => p.unit_amount === 25000 && p.currency === "chf" && !p.recurring
   );
-  
+
   if (matchingPrice) {
     return matchingPrice.id;
   }
-  
+
   const price = await stripe.prices.create({
     product: productId,
     unit_amount: 25000,
     currency: "chf",
   });
-  
+
   return price.id;
 }
 
@@ -129,7 +129,7 @@ async function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
     // Invoice info
     doc.y = 140;
     doc.fontSize(10).fillColor("#333333");
-    
+
     // Invoice number and date box
     doc.rect(leftMargin, 130, 250, 60).stroke(lineColor);
     doc.font("Helvetica-Bold").text("Numéro de facture:", leftMargin + 10, 140);
@@ -155,7 +155,7 @@ async function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
     doc.rect(leftMargin, tableY, pageWidth, rowHeight).fill("#f0f0f0");
     doc.rect(leftMargin, tableY, pageWidth, rowHeight).stroke(lineColor);
     doc.rect(leftMargin, tableY, colWidths[0], rowHeight).stroke(lineColor);
-    
+
     doc.fillColor("#000000").font("Helvetica-Bold").fontSize(10);
     doc.text("Description", leftMargin + 10, tableY + 8);
     doc.text("Montant", leftMargin + colWidths[0] + 10, tableY + 8, { width: colWidths[1] - 20, align: "right" });
@@ -164,7 +164,7 @@ async function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
     const contentY = tableY + rowHeight;
     doc.rect(leftMargin, contentY, pageWidth, rowHeight).stroke(lineColor);
     doc.rect(leftMargin, contentY, colWidths[0], rowHeight).stroke(lineColor);
-    
+
     doc.font("Helvetica").fillColor("#000000");
     doc.text("Abonnement annuel MineralTax - Accès illimité", leftMargin + 10, contentY + 8);
     doc.text(`CHF ${formatNumber(invoice.amountPaid)}`, leftMargin + colWidths[0] + 10, contentY + 8, { width: colWidths[1] - 20, align: "right" });
@@ -174,7 +174,7 @@ async function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
       const promoY = contentY + rowHeight;
       doc.rect(leftMargin, promoY, pageWidth, rowHeight).stroke(lineColor);
       doc.rect(leftMargin, promoY, colWidths[0], rowHeight).stroke(lineColor);
-      
+
       doc.fillColor("#16a34a").font("Helvetica-Oblique");
       doc.text(`Code promo appliqué: ${invoice.promoCodeUsed}`, leftMargin + 10, promoY + 8);
       doc.fillColor("#000000").font("Helvetica");
@@ -184,7 +184,7 @@ async function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
     const totalY = invoice.promoCodeUsed ? contentY + rowHeight * 2 : contentY + rowHeight;
     doc.rect(leftMargin, totalY, pageWidth, rowHeight + 5).fill("#003366");
     doc.rect(leftMargin, totalY, pageWidth, rowHeight + 5).stroke(lineColor);
-    
+
     doc.font("Helvetica-Bold").fillColor("#ffffff").fontSize(11);
     doc.text("TOTAL", leftMargin + 10, totalY + 9);
     doc.text(`CHF ${formatNumber(invoice.amountPaid)}`, leftMargin + colWidths[0] + 10, totalY + 9, { width: colWidths[1] - 20, align: "right" });
@@ -219,20 +219,20 @@ async function checkAndUpdateTrialStatus(subscription: any, userId: string): Pro
 async function checkSubscriptionAccess(userId: string): Promise<{ allowed: boolean; reason?: string }> {
   const subscription = await storage.getOrCreateSubscription(userId);
   const now = new Date();
-  
+
   const effectiveStatus = await checkAndUpdateTrialStatus(subscription, userId);
-  
+
   if (effectiveStatus === "active") {
     return { allowed: true };
   }
-  
+
   if (effectiveStatus === "trial" && subscription.trialEndsAt) {
     const trialEnd = new Date(subscription.trialEndsAt);
     if (now <= trialEnd) {
       return { allowed: true };
     }
   }
-  
+
   return { allowed: false, reason: "subscription_required" };
 }
 
@@ -302,16 +302,16 @@ export async function registerRoutes(
       const userId = getUserId(req);
       console.log("Creating machine for user:", userId);
       console.log("Request body:", req.body);
-      
+
       const accessCheck = await checkSubscriptionAccess(userId);
       console.log("Subscription access check:", accessCheck);
       if (!accessCheck.allowed) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "Subscription required to add machines",
-          code: accessCheck.reason 
+          code: accessCheck.reason
         });
       }
-      
+
       const data = insertMachineSchema.parse({ ...req.body, userId });
       console.log("Parsed machine data:", data);
       const machine = await storage.createMachine(data);
@@ -387,22 +387,22 @@ export async function registerRoutes(
   app.post("/api/fuel-entries", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
-      
+
       const accessCheck = await checkSubscriptionAccess(userId);
       if (!accessCheck.allowed) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "Subscription required to add fuel entries",
-          code: accessCheck.reason 
+          code: accessCheck.reason
         });
       }
-      
+
       let invoiceDate: Date;
       try {
         invoiceDate = parseDate(req.body.invoiceDate);
       } catch (err) {
         return res.status(400).json({ message: "Invalid date format. Use ISO 8601 format." });
       }
-      
+
       const data = insertFuelEntrySchema.parse({
         ...req.body,
         userId,
@@ -424,7 +424,7 @@ export async function registerRoutes(
   app.patch("/api/fuel-entries/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
-      
+
       let invoiceDate: Date | undefined;
       if (req.body.invoiceDate) {
         try {
@@ -433,7 +433,7 @@ export async function registerRoutes(
           return res.status(400).json({ message: "Invalid date format. Use ISO 8601 format." });
         }
       }
-      
+
       const updateData = {
         ...req.body,
         invoiceDate,
@@ -479,15 +479,15 @@ export async function registerRoutes(
   app.post("/api/reports", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
-      
+
       const accessCheck = await checkSubscriptionAccess(userId);
       if (!accessCheck.allowed) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "Subscription required to generate reports",
-          code: accessCheck.reason 
+          code: accessCheck.reason
         });
       }
-      
+
       const { periodStart, periodEnd, language } = req.body;
 
       const validatedLanguage = languageSchema.safeParse(language);
@@ -532,7 +532,7 @@ export async function registerRoutes(
     try {
       const userId = getUserId(req);
       const { periodStart, periodEnd } = req.body;
-      
+
       let startDate: Date;
       let endDate: Date;
       try {
@@ -541,17 +541,17 @@ export async function registerRoutes(
       } catch (err) {
         return res.status(400).json({ message: "Invalid date format. Use ISO 8601 format." });
       }
-      
+
       const fuelEntries = await storage.getFuelEntries(userId);
       const machines = await storage.getMachines(userId);
-      
+
       const entriesInPeriod = fuelEntries.filter(entry => {
         const entryDate = new Date(entry.invoiceDate);
         return entryDate >= startDate && entryDate <= endDate;
       });
-      
+
       const findings: { type: "error" | "warning"; code: string; message: string; details?: any }[] = [];
-      
+
       const invoiceGroups = new Map<string, typeof entriesInPeriod>();
       entriesInPeriod.forEach(entry => {
         if (entry.invoiceNumber) {
@@ -561,7 +561,7 @@ export async function registerRoutes(
           invoiceGroups.set(key, group);
         }
       });
-      
+
       invoiceGroups.forEach((entries, key) => {
         if (entries.length > 1) {
           const machine = machines.find(m => m.id === entries[0].machineId);
@@ -577,13 +577,13 @@ export async function registerRoutes(
           });
         }
       });
-      
+
       const machineVolumes = new Map<string, number>();
       entriesInPeriod.forEach(entry => {
         const current = machineVolumes.get(entry.machineId) || 0;
         machineVolumes.set(entry.machineId, current + Number(entry.volumeLiters));
       });
-      
+
       machineVolumes.forEach((totalVolume, machineId) => {
         const machine = machines.find(m => m.id === machineId);
         if (totalVolume > 50000) {
@@ -598,7 +598,7 @@ export async function registerRoutes(
           });
         }
       });
-      
+
       entriesInPeriod.forEach(entry => {
         if (Number(entry.volumeLiters) <= 0) {
           findings.push({
@@ -612,8 +612,8 @@ export async function registerRoutes(
           });
         }
       });
-      
-      const machinesWithoutTaxas = machines.filter(m => 
+
+      const machinesWithoutTaxas = machines.filter(m =>
         m.isEligible && !m.taxasActivity
       );
       machinesWithoutTaxas.forEach(machine => {
@@ -627,7 +627,7 @@ export async function registerRoutes(
           },
         });
       });
-      
+
       const auditResult = {
         periodStart: startDate.toISOString(),
         periodEnd: endDate.toISOString(),
@@ -640,7 +640,7 @@ export async function registerRoutes(
         findings,
         isValid: findings.filter(f => f.type === "error").length === 0,
       };
-      
+
       res.json(auditResult);
     } catch (error) {
       console.error("Error running audit:", error);
@@ -652,11 +652,11 @@ export async function registerRoutes(
     try {
       const userId = getUserId(req);
       const subscription = await storage.getOrCreateSubscription(userId);
-      
+
       const now = new Date();
       let effectiveStatus = subscription.status;
       let trialDaysRemaining = 0;
-      
+
       if (subscription.status === "trial" && subscription.trialEndsAt) {
         const trialEnd = new Date(subscription.trialEndsAt);
         if (now > trialEnd) {
@@ -666,7 +666,7 @@ export async function registerRoutes(
           trialDaysRemaining = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
         }
       }
-      
+
       res.json({
         ...subscription,
         status: effectiveStatus,
@@ -685,12 +685,12 @@ export async function registerRoutes(
       // Récupérer l'email depuis la base de données (auth locale)
       const dbUser = await storage.getUser(userId);
       const email = dbUser?.email || `user-${userId}@mineraltax.ch`;
-      
+
       const stripe = await getUncachableStripeClient();
       const subscription = await storage.getOrCreateSubscription(userId);
-      
+
       let customerId = subscription.stripeCustomerId;
-      
+
       if (!customerId) {
         const customer = await stripe.customers.create({
           email,
@@ -699,11 +699,11 @@ export async function registerRoutes(
         customerId = customer.id;
         await storage.updateStripeCustomerId(userId, customerId);
       }
-      
+
       const baseUrl = `${req.protocol}://${req.get("host")}`;
-      
+
       const priceId = await getOrCreateStripePrice(stripe);
-      
+
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ["card"],
@@ -714,7 +714,7 @@ export async function registerRoutes(
         metadata: { userId },
         allow_promotion_codes: true,
       });
-      
+
       res.json({ url: session.url });
     } catch (error) {
       console.error("Error creating checkout session:", error);
@@ -727,12 +727,12 @@ export async function registerRoutes(
       const userId = getUserId(req);
       const dbUser = await storage.getUser(userId);
       const email = dbUser?.email || `user-${userId}@mineraltax.ch`;
-      
+
       const stripe = await getUncachableStripeClient();
       const subscription = await storage.getOrCreateSubscription(userId);
-      
+
       let customerId = subscription.stripeCustomerId;
-      
+
       if (!customerId) {
         const customer = await stripe.customers.create({
           email,
@@ -741,11 +741,11 @@ export async function registerRoutes(
         customerId = customer.id;
         await storage.updateStripeCustomerId(userId, customerId);
       }
-      
+
       const baseUrl = `${req.protocol}://${req.get("host")}`;
-      
+
       const priceId = await getOrCreateOneTimePrice(stripe);
-      
+
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
@@ -756,7 +756,7 @@ export async function registerRoutes(
         metadata: { userId, paymentType: "onetime" },
         allow_promotion_codes: true,
       });
-      
+
       res.json({ url: session.url });
     } catch (error) {
       console.error("Error creating one-time checkout session:", error);
@@ -770,20 +770,20 @@ export async function registerRoutes(
       if (!session_id || typeof session_id !== "string") {
         return res.status(400).json({ message: "Missing session_id" });
       }
-      
+
       const stripe = await getUncachableStripeClient();
       const session = await stripe.checkout.sessions.retrieve(session_id, {
         expand: ['total_details.breakdown']
       });
-      
+
       if (session.payment_status === "paid" && session.metadata?.userId) {
         const userId = session.metadata.userId;
         await storage.updateSubscriptionStatus(userId, "active");
-        
+
         if (session.subscription) {
           await storage.updateStripeSubscriptionId(userId, session.subscription as string);
         }
-        
+
         // Set license period for one-time payments only (1 year from payment)
         // Only apply to one-time payments, not subscriptions
         if (session.mode === "payment" && !session.subscription) {
@@ -794,15 +794,15 @@ export async function registerRoutes(
           await storage.updateSubscriptionPeriod(userId, periodStart, periodEnd);
           console.log(`[License] One-time payment: Set expiration to ${periodEnd.toISOString()} for user ${userId}`);
         }
-        
+
         // Create invoice if not already created for this session
         const existingInvoices = await storage.getInvoices(userId);
         const alreadyCreated = existingInvoices.some(inv => inv.stripeSessionId === session_id);
-        
+
         if (!alreadyCreated) {
           const invoiceNumber = await storage.getNextInvoiceNumber();
           const amountPaid = (session.amount_total || 25000) / 100; // Convert from cents
-          
+
           // Check if promo code was used
           let promoCodeUsed: string | undefined;
           if (session.total_details?.breakdown?.discounts?.length) {
@@ -816,7 +816,7 @@ export async function registerRoutes(
               }
             }
           }
-          
+
           await storage.createInvoice({
             userId,
             invoiceNumber,
@@ -828,7 +828,7 @@ export async function registerRoutes(
           console.log(`[Invoice] Created ${invoiceNumber} for user ${userId}`);
         }
       }
-      
+
       res.json({ success: true, status: session.payment_status });
     } catch (error) {
       console.error("Error verifying checkout:", error);
@@ -879,13 +879,13 @@ export async function registerRoutes(
     try {
       const userId = getUserId(req);
       const invoice = await storage.getInvoice(req.params.id, userId);
-      
+
       if (!invoice) {
         return res.status(404).json({ message: "Invoice not found" });
       }
-      
+
       const pdfBuffer = await generateInvoicePdf(invoice);
-      
+
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${invoice.invoiceNumber}.pdf"`);
       res.send(pdfBuffer);
@@ -898,51 +898,58 @@ export async function registerRoutes(
   async function checkExportAllowed(userId: string): Promise<{ allowed: boolean; reason?: string }> {
     const subscription = await storage.getOrCreateSubscription(userId);
     const now = new Date();
-    
+
     const effectiveStatus = await checkAndUpdateTrialStatus(subscription, userId);
-    
+
     if (effectiveStatus === "active") {
       return { allowed: true };
     }
-    
+
     if (effectiveStatus === "trial" && subscription.trialEndsAt) {
       const trialEnd = new Date(subscription.trialEndsAt);
       if (now <= trialEnd) {
         return { allowed: true };
       }
     }
-    
+
     return { allowed: false, reason: "subscription_required" };
   }
 
   app.get("/api/reports/:id/pdf", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
-      
+
       const exportCheck = await checkExportAllowed(userId);
       if (!exportCheck.allowed) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "Subscription required to export reports",
-          code: exportCheck.reason 
+          code: exportCheck.reason
         });
       }
-      
+
       const report = await storage.getReport(req.params.id, userId);
-      
+
       if (!report) {
         return res.status(404).json({ message: "Report not found" });
       }
 
       const details = await storage.getReportDetails(
-        userId, 
-        new Date(report.periodStart), 
+        userId,
+        new Date(report.periodStart),
         new Date(report.periodEnd)
       );
 
+      // Récupérer le profil de l'entreprise pour le nom du fichier
+      const companyProfile = await storage.getCompanyProfile(userId);
+      const companyName = companyProfile?.companyName || "entreprise";
+      const safeCompanyName = companyName.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüçÀÂÄÉÈÊËÏÎÔÙÛÜÇ]/g, '_').replace(/_+/g, '_');
+      const currentYear = new Date().getFullYear();
+      const pdfFilename = `${safeCompanyName}_mineraltax${currentYear}.pdf`;
+
       const pdfBuffer = await generatePdf(report, details.machines, details.fuelEntries);
-      
+
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="mineraltax-report-${report.id}.pdf"`);
+      res.setHeader("Content-Disposition", `attachment; filename="${pdfFilename}"`);
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -953,42 +960,44 @@ export async function registerRoutes(
   app.get("/api/reports/:id/csv", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
-      
+
       const exportCheck = await checkExportAllowed(userId);
       if (!exportCheck.allowed) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "Subscription required to export reports",
-          code: exportCheck.reason 
+          code: exportCheck.reason
         });
       }
-      
+
       const report = await storage.getReport(req.params.id, userId);
-      
+
       if (!report) {
         return res.status(404).json({ message: "Report not found" });
       }
 
       const details = await storage.getReportDetails(
-        userId, 
-        new Date(report.periodStart), 
+        userId,
+        new Date(report.periodStart),
         new Date(report.periodEnd)
       );
 
       const companyProfile = await storage.getCompanyProfile(userId);
-      
+
       const missingFields: string[] = [];
-      if (!companyProfile?.rcNumber) {
-        missingFields.push("N° RC (Registre du Commerce)");
-      }
-      
-      const entriesWithMissingFields = details.fuelEntries.filter((entry: any) => {
-        return !entry.articleNumber || !entry.warehouseNumber;
-      });
-      
-      if (entriesWithMissingFields.length > 0) {
-        missingFields.push(`${entriesWithMissingFields.length} entrée(s) sans N° article ou N° entrepôt`);
-      }
-      
+      // TEMPORAIREMENT DÉSACTIVÉ: validation du profil entreprise
+      // if (!companyProfile?.rcNumber) {
+      //   missingFields.push("N° RC (Registre du Commerce)");
+      // }
+
+      // TEMPORAIREMENT DÉSACTIVÉ: validation des champs Taxas
+      // const entriesWithMissingFields = details.fuelEntries.filter((entry: any) => {
+      //   return !entry.articleNumber || !entry.warehouseNumber;
+      // });
+
+      // if (entriesWithMissingFields.length > 0) {
+      //   missingFields.push(`${entriesWithMissingFields.length} entrée(s) sans N° article ou N° entrepôt`);
+      // }
+
       if (missingFields.length > 0) {
         return res.status(400).json({
           message: "Champs Taxas manquants pour l'export",
@@ -996,12 +1005,12 @@ export async function registerRoutes(
           missingFields
         });
       }
-      
+
       const csvContent = generateTaxasCsv(report, details.machines, details.fuelEntries, companyProfile);
-      
-      const fiscalYear = new Date().getFullYear() - 1;
-      const filename = `MineralTax_Export_${fiscalYear}_${report.id}.csv`;
-      
+
+      const fiscalYear = new Date().getFullYear();
+      const filename = `export_mineraltax_${fiscalYear}_directives_OFDF.csv`;
+
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
       res.send(csvContent);
@@ -1095,29 +1104,29 @@ function generateTaxasCsv(
   companyProfile?: any
 ): string {
   const lines: string[] = [];
-  
+
   lines.push("RC;N° matricule;N° châssis;N° article;N° entrepôt;Date mouvement;N° mouvement;Quantité de litres / kg;BD;Stat.;CI;Montant de l'impôt CHF");
-  
+
   const companyRcNumber = companyProfile?.rcNumber || "";
-  
+
   for (const entry of fuelEntries) {
     const machine = entry.machine || machines.find(m => m.id === entry.machineId);
     const machineData = machine as any;
     const isEligible = machine?.isEligible ?? true;
     const volumeLiters = parseFloat(entry.volumeLiters.toString());
     const amount = isEligible ? calculateReimbursement(volumeLiters) : 0;
-    
+
     const invoiceDate = entry.invoiceDate ? new Date(entry.invoiceDate) : null;
-    const dateStr = invoiceDate && !isNaN(invoiceDate.getTime()) 
+    const dateStr = invoiceDate && !isNaN(invoiceDate.getTime())
       ? formatSwissDate(invoiceDate)
       : "";
-    
+
     const entryData = entry as any;
-    
+
     const rcNumber = machineData?.rcNumber || companyRcNumber;
     const registrationNumber = machineData?.registrationNumber || "";
     const chassisNumber = machineData?.chassisNumber || "";
-    
+
     lines.push([
       rcNumber,
       registrationNumber,
@@ -1133,18 +1142,18 @@ function generateTaxasCsv(
       amount.toFixed(2)
     ].join(";"));
   }
-  
+
   return lines.join("\n");
 }
 
 async function generatePdf(
-  report: any, 
-  machines: Machine[], 
+  report: any,
+  machines: Machine[],
   fuelEntries: (FuelEntry & { machine?: Machine })[]
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const lang = (report.language || "fr") as SupportedLanguage;
-    
+
     const translations: Record<SupportedLanguage, Record<string, string>> = {
       fr: {
         title: "Demande de remboursement de l'impôt sur les huiles minérales",
@@ -1326,7 +1335,7 @@ async function generatePdf(
     doc.text(t.reportTitle, leftMargin, 55, { align: "center", width: pageWidth });
     doc.fontSize(10).fillColor("#666666").font("Helvetica");
     doc.text(t.generatedBy, leftMargin, 80, { align: "center", width: pageWidth });
-    
+
     doc.moveDown(2);
     doc.y = 130;
 
@@ -1356,24 +1365,24 @@ async function generatePdf(
         doc.rect(leftMargin, y, tableWidth, rowHeight).fill(headerBg);
       }
       doc.rect(leftMargin, y, tableWidth, rowHeight).stroke(lineColor);
-      
+
       let x = leftMargin;
       cols.forEach((text, i) => {
         doc.rect(x, y, colWidths[i], rowHeight).stroke(lineColor);
-        
+
         if (isHeader || isBold) {
           doc.font("Helvetica-Bold");
         } else {
           doc.font("Helvetica");
         }
-        
+
         const align = i >= 3 ? "right" : "left";
         const padding = align === "right" ? 5 : 5;
         doc.fillColor("#000000").fontSize(8);
-        doc.text(text, x + padding, y + 5, { 
-          width: colWidths[i] - 10, 
+        doc.text(text, x + padding, y + 5, {
+          width: colWidths[i] - 10,
           align,
-          lineBreak: false 
+          lineBreak: false
         });
         x += colWidths[i];
       });
@@ -1391,7 +1400,7 @@ async function generatePdf(
         const reimbursement = calculateReimbursement(liters);
         totalLiters += liters;
         totalReimbursement += reimbursement;
-        
+
         drawTableRow(tableY, [
           machine.name.substring(0, 20),
           (machine.chassisNumber || "-").substring(0, 22),
@@ -1405,7 +1414,7 @@ async function generatePdf(
 
     doc.rect(leftMargin, tableY, tableWidth, rowHeight + 4).fill("#003366");
     doc.rect(leftMargin, tableY, tableWidth, rowHeight + 4).stroke(lineColor);
-    
+
     let x = leftMargin;
     doc.font("Helvetica-Bold").fillColor("#ffffff").fontSize(9);
     doc.text(t.total, x + 5, tableY + 6, { width: colWidths[0] + colWidths[1] + colWidths[2] - 10 });
