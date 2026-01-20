@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -10,13 +10,63 @@ import { Link } from "wouter";
 
 import { calculateReimbursement } from "@shared/schema";
 
+// Custom hook for debouncing values
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Custom hook for scroll animations
+function useScrollAnimation() {
+  const ref = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, isVisible };
+}
+
 export default function LandingPage() {
   const { t, language } = useI18n();
   const [volumeLiters, setVolumeLiters] = useState(20000);
+  const [showStickyCTA, setShowStickyCTA] = useState(false);
+
+  // Debounce volume for better performance
+  const debouncedVolume = useDebouncedValue(volumeLiters, 150);
 
   const calculatedReimbursement = useMemo(() => {
-    return calculateReimbursement(volumeLiters);
-  }, [volumeLiters]);
+    return calculateReimbursement(debouncedVolume);
+  }, [debouncedVolume]);
+
+
+  // Handle sticky CTA on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowStickyCTA(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Handle hash navigation on page load or hash change
   useEffect(() => {
@@ -29,7 +79,15 @@ export default function LandingPage() {
         if (element) {
           // Small delay to ensure page is fully rendered
           setTimeout(() => {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Scroll with offset to account for fixed header
+            const headerOffset = 80;
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
           }, 100);
         }
       }
@@ -108,6 +166,18 @@ export default function LandingPage() {
           </div>
         </div>
       </header>
+
+      {/* Sticky CTA - appears after scrolling */}
+      {showStickyCTA && (
+        <div className="fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-b shadow-sm animate-in slide-in-from-top duration-300">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p className="text-sm font-medium">Prêt à simplifier vos déclarations ?</p>
+            <Button asChild size="sm">
+              <Link href="/register">Commencer gratuitement</Link>
+            </Button>
+          </div>
+        </div>
+      )}
 
       <main className="pt-16">
         {/* Subtle Disclaimer Banner - integrated with site design */}
@@ -232,6 +302,63 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Statistics Section */}
+        <section className="py-16 bg-gradient-to-b from-background to-muted/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">En chiffres</h2>
+              <p className="text-lg text-muted-foreground">
+                Résultats concrets et temps économisé
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <Card className="text-center hover-elevate transition-all duration-200">
+                <CardContent className="p-6">
+                  <div className="mb-2">
+                    <span className="text-4xl font-bold text-primary">6'810</span>
+                    <span className="text-2xl font-semibold text-primary ml-1">CHF</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Remboursement moyen*</p>
+                </CardContent>
+              </Card>
+
+              <Card className="text-center hover-elevate transition-all duration-200">
+                <CardContent className="p-6">
+                  <div className="mb-2">
+                    <span className="text-4xl font-bold text-green-600 dark:text-green-500">95</span>
+                    <span className="text-2xl font-semibold text-green-600 dark:text-green-500 ml-1">%</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Taux de conformité</p>
+                </CardContent>
+              </Card>
+
+              <Card className="text-center hover-elevate transition-all duration-200">
+                <CardContent className="p-6">
+                  <div className="mb-2">
+                    <span className="text-4xl font-bold text-blue-600 dark:text-blue-500">3</span>
+                    <span className="text-2xl font-semibold text-blue-600 dark:text-blue-500 ml-1">h</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Temps économisé</p>
+                </CardContent>
+              </Card>
+
+              <Card className="text-center hover-elevate transition-all duration-200">
+                <CardContent className="p-6">
+                  <div className="mb-2">
+                    <span className="text-4xl font-bold text-amber-600 dark:text-amber-500">50+</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Entreprises actives</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center mt-6">
+              * Basé sur une consommation annuelle moyenne de 20'000 litres au taux OFDF de 0.3405 CHF/L
+            </p>
           </div>
         </section>
 
