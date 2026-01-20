@@ -1,0 +1,435 @@
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
+import { Link } from "wouter";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import {
+  Truck,
+  Fuel,
+  FileText,
+  TrendingUp,
+  Plus,
+  Calculator,
+  CheckCircle,
+  Download,
+  Receipt,
+  BarChart3,
+  Camera,
+  FileSpreadsheet,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { Machine, FuelEntry, Report, Invoice } from "@shared/schema";
+import { calculateReimbursement } from "@shared/schema";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+interface DashboardStats {
+  totalMachines: number;
+  totalFuelEntries: number;
+  totalVolume: number;
+  eligibleVolume: number;
+  estimatedReimbursement: number;
+  pendingReports: number;
+}
+
+interface FuelTrend {
+  month: string;
+  volume: number;
+  reimbursement: number;
+}
+
+export default function DashboardPage() {
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    
+    if (sessionId) {
+      fetch(`/api/checkout/success?session_id=${sessionId}`, { credentials: "include" })
+        .then(res => {
+          if (!res.ok) throw new Error("Verification failed");
+          return res.json();
+        })
+        .then(data => {
+          if (data.success && data.status === "paid") {
+            toast({
+              title: t.subscription.congratulations,
+              description: t.subscription.subscriptionActiveMessage,
+              duration: 10000,
+            });
+            queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
+          }
+        })
+        .catch((err) => {
+          console.error("Payment verification error:", err);
+          toast({
+            title: t.common.error,
+            description: "Erreur de vérification du paiement",
+            variant: "destructive",
+          });
+        })
+        .finally(() => {
+          window.history.replaceState({}, "", "/dashboard");
+        });
+    }
+  }, []);
+
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
+    queryKey: ["/api/dashboard/stats"],
+  });
+
+  const { data: recentEntries, isLoading: entriesLoading } = useQuery<(FuelEntry & { machine: Machine })[]>({
+    queryKey: ["/api/fuel-entries", { limit: 5 }],
+  });
+
+  const { data: subscription } = useQuery<{
+    status: string;
+    trialDaysRemaining: number;
+  }>({
+    queryKey: ["/api/subscription"],
+  });
+
+  const { data: invoices } = useQuery<Invoice[]>({
+    queryKey: ["/api/invoices"],
+    enabled: subscription?.status === "active",
+  });
+
+  const { data: trends, isLoading: trendsLoading } = useQuery<FuelTrend[]>({
+    queryKey: ["/api/dashboard/trends"],
+  });
+
+  const downloadInvoice = (invoiceId: string) => {
+    window.open(`/api/invoices/${invoiceId}/pdf`, "_blank");
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("de-CH", {
+      style: "currency",
+      currency: "CHF",
+    }).format(amount);
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat("de-CH").format(num);
+  };
+
+  const summaryCards = [
+    {
+      title: t.dashboard.totalReimbursement,
+      value: stats ? formatCurrency(stats.estimatedReimbursement) : "-",
+      icon: TrendingUp,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
+    {
+      title: t.dashboard.activeMachines,
+      value: stats?.totalMachines ?? "-",
+      icon: Truck,
+      color: "text-chart-2",
+      bgColor: "bg-chart-2/10",
+    },
+    {
+      title: t.reports.eligibleVolume,
+      value: stats ? `${formatNumber(stats.eligibleVolume)} L` : "-",
+      icon: Fuel,
+      color: "text-chart-3",
+      bgColor: "bg-chart-3/10",
+    },
+    {
+      title: t.dashboard.pendingClaims,
+      value: stats?.pendingReports ?? "-",
+      icon: FileText,
+      color: "text-chart-4",
+      bgColor: "bg-chart-4/10",
+    },
+  ];
+
+  const quickActions = [
+    {
+      title: t.dashboard.addMachine,
+      href: "/fleet?action=add",
+      icon: Truck,
+    },
+    {
+      title: t.dashboard.scanTicket || "Scanner un ticket",
+      href: "/fuel?action=scan",
+      icon: Camera,
+    },
+    {
+      title: t.dashboard.exportTaxasCsv || "Exporter CSV Taxas",
+      href: "/reports?action=export",
+      icon: FileSpreadsheet,
+    },
+  ];
+
+  return (
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-dashboard-title">
+            {t.dashboard.welcome}, {user?.firstName || "User"}
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">{t.dashboard.summary}</p>
+        </div>
+      </div>
+
+      {subscription?.status === "active" && (
+        <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800" data-testid="alert-subscription-active">
+          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="text-green-800 dark:text-green-200 flex items-center justify-between flex-wrap gap-2">
+            <span>
+              <span className="font-semibold">{t.subscription.congratulations}</span>{" "}
+              {t.subscription.subscriptionActiveMessage}
+            </span>
+            {invoices && invoices.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-white dark:bg-green-900 border-green-300 dark:border-green-700"
+                onClick={() => downloadInvoice(invoices[0].id)}
+                data-testid="button-download-invoice"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {t.common.downloadInvoice || "Télécharger ma facture"}
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {summaryCards.map((card, index) => (
+          <Card key={index}>
+            <CardContent className="p-6">
+              {statsLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-32" />
+                </div>
+              ) : (
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">{card.title}</p>
+                    <p className="text-2xl font-bold font-mono" data-testid={`text-stat-${index}`}>
+                      {card.value}
+                    </p>
+                  </div>
+                  <div className={`p-2 rounded-lg ${card.bgColor}`}>
+                    <card.icon className={`h-5 w-5 ${card.color}`} />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {trends && trends.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg">
+                {t.dashboard.consumptionTrends || "Évolution des consommations"}
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {trendsLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <div className="h-64" data-testid="chart-fuel-trends">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={trends.map((t) => ({
+                      ...t,
+                      monthLabel: new Date(t.month + "-01").toLocaleDateString("fr-CH", {
+                        month: "short",
+                        year: "2-digit",
+                      }),
+                    }))}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis
+                      dataKey="monthLabel"
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                      tickFormatter={(v) => `${v} L`}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                      tickFormatter={(v) => `${v} CHF`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(value: number, name: string) => [
+                        name === "volume"
+                          ? `${formatNumber(value)} L`
+                          : formatCurrency(value),
+                        name === "volume" ? "Volume" : "Remboursement",
+                      ]}
+                    />
+                    <Area
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="volume"
+                      stroke="hsl(var(--chart-2))"
+                      fill="hsl(var(--chart-2))"
+                      fillOpacity={0.3}
+                      name="volume"
+                    />
+                    <Area
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="reimbursement"
+                      stroke="hsl(var(--primary))"
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.2}
+                      name="reimbursement"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            <div className="flex justify-center gap-6 mt-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-chart-2" />
+                <span className="text-muted-foreground">Volume (L)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary" />
+                <span className="text-muted-foreground">Remboursement (CHF)</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
+            <CardTitle className="text-lg">{t.dashboard.recentEntries}</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/fuel">{t.common.view}</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {entriesLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : recentEntries && recentEntries.length > 0 ? (
+              <div className="space-y-3">
+                {recentEntries.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    data-testid={`fuel-entry-${entry.id}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Fuel className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{entry.machine?.name || "-"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(entry.invoiceDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono font-medium">{formatNumber(entry.volumeLiters)} L</p>
+                      <p className="text-xs text-primary font-mono">
+                        {formatCurrency(calculateReimbursement(entry.volumeLiters))}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Fuel className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>{t.common.noData}</p>
+                <Button variant="ghost" asChild className="mt-2">
+                  <Link href="/fuel?action=add">{t.fuel.addEntry}</Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{t.dashboard.quickActions}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {quickActions.map((action, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                className="w-full justify-start gap-3"
+                asChild
+                data-testid={`button-quick-action-${index}`}
+              >
+                <Link href={action.href}>
+                  <action.icon className="h-4 w-4" />
+                  {action.title}
+                </Link>
+              </Button>
+            ))}
+          </CardContent>
+
+          <CardContent className="pt-0">
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Calculator className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{t.reports.rate}</p>
+                    <p className="text-xl font-bold text-primary font-mono">
+                      0.3405 CHF/L
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

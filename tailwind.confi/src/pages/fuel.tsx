@@ -1,0 +1,787 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { useI18n } from "@/lib/i18n";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2, ChevronDown, FileSpreadsheet, HelpCircle } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { StatsBar } from "@/components/stats-bar";
+import { Progress } from "@/components/ui/progress";
+import type { Machine, FuelEntry } from "@shared/schema";
+import { calculateReimbursement } from "@shared/schema";
+import { extractTextFromImage } from "@/lib/ocr";
+
+const fuelTypes = ["diesel", "gasoline", "biodiesel"] as const;
+
+const fuelEntryFormSchema = z.object({
+  machineId: z.string().min(1),
+  invoiceDate: z.string().min(1),
+  invoiceNumber: z.string().optional(),
+  volumeLiters: z.coerce.number().positive(),
+  engineHours: z.coerce.number().nonnegative().optional(),
+  fuelType: z.enum(fuelTypes).default("diesel"),
+  articleNumber: z.string().optional(),
+  warehouseNumber: z.string().optional(),
+  movementNumber: z.string().optional(),
+  bd: z.string().optional(),
+  stat: z.string().optional(),
+  ci: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type FuelEntryFormData = z.infer<typeof fuelEntryFormSchema>;
+
+function InfoPopover({ content }: { content: string }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button 
+          type="button" 
+          className="ml-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <HelpCircle className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" className="max-w-xs text-sm z-[200] p-3">
+        <p>{content}</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export default function FuelPage() {
+  const { t } = useI18n();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<FuelEntry | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<FuelEntry | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+
+  const form = useForm<FuelEntryFormData>({
+    resolver: zodResolver(fuelEntryFormSchema),
+    defaultValues: {
+      machineId: "",
+      invoiceDate: new Date().toISOString().split("T")[0],
+      invoiceNumber: "",
+      volumeLiters: undefined,
+      engineHours: undefined,
+      fuelType: "diesel",
+      articleNumber: "",
+      warehouseNumber: "",
+      movementNumber: "",
+      bd: "",
+      stat: "",
+      ci: "",
+      notes: "",
+    },
+  });
+
+  const volumeValue = form.watch("volumeLiters");
+  const calculatedReimbursement = volumeValue
+    ? calculateReimbursement(volumeValue).toFixed(2)
+    : "0.00";
+
+  const { data: machines } = useQuery<Machine[]>({
+    queryKey: ["/api/machines"],
+  });
+
+  const { data: entries, isLoading } = useQuery<(FuelEntry & { machine?: Machine })[]>({
+    queryKey: ["/api/fuel-entries"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: FuelEntryFormData) => apiRequest("POST", "/api/fuel-entries", {
+      ...data,
+      invoiceDate: new Date(data.invoiceDate).toISOString(),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/fuel-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({ title: t.fuel.successAdd });
+      handleCloseDialog();
+    },
+    onError: (error: any) => {
+      if (error?.message?.includes("403") || error?.code === "subscription_required") {
+        toast({ title: t.subscription.subscriptionRequired, variant: "destructive" });
+        setLocation("/subscription");
+      } else {
+        toast({ title: t.common.error, variant: "destructive" });
+      }
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FuelEntryFormData }) =>
+      apiRequest("PATCH", `/api/fuel-entries/${id}`, {
+        ...data,
+        invoiceDate: new Date(data.invoiceDate).toISOString(),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/fuel-entries"] });
+      toast({ title: t.fuel.successUpdate });
+      handleCloseDialog();
+    },
+    onError: () => {
+      toast({ title: t.common.error, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/fuel-entries/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/fuel-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({ title: t.fuel.successDelete });
+      setDeletingEntry(null);
+    },
+    onError: () => {
+      toast({ title: t.common.error, variant: "destructive" });
+    },
+  });
+
+  const handleOpenDialog = (entry?: FuelEntry) => {
+    if (entry) {
+      setEditingEntry(entry);
+      form.reset({
+        machineId: entry.machineId,
+        invoiceDate: new Date(entry.invoiceDate).toISOString().split("T")[0],
+        invoiceNumber: entry.invoiceNumber || "",
+        volumeLiters: entry.volumeLiters,
+        engineHours: entry.engineHours || undefined,
+        fuelType: entry.fuelType as typeof fuelTypes[number],
+        articleNumber: (entry as any).articleNumber || "",
+        warehouseNumber: (entry as any).warehouseNumber || "",
+        movementNumber: (entry as any).movementNumber || "",
+        bd: (entry as any).bd || "",
+        stat: (entry as any).stat || "",
+        ci: (entry as any).ci || "",
+        notes: entry.notes || "",
+      });
+    } else {
+      setEditingEntry(null);
+      form.reset({
+        machineId: "",
+        invoiceDate: new Date().toISOString().split("T")[0],
+        invoiceNumber: "",
+        volumeLiters: undefined,
+        engineHours: undefined,
+        fuelType: "diesel",
+        articleNumber: "",
+        warehouseNumber: "",
+        movementNumber: "",
+        bd: "",
+        stat: "",
+        ci: "",
+        notes: "",
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingEntry(null);
+    form.reset();
+  };
+
+  const onSubmit = (data: FuelEntryFormData) => {
+    if (editingEntry) {
+      updateMutation.mutate({ id: editingEntry.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("de-CH", {
+      style: "currency",
+      currency: "CHF",
+    }).format(amount);
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat("de-CH").format(num);
+  };
+
+  const getFuelTypeLabel = (type: string) => {
+    return t.fuel.fuelTypes[type as keyof typeof t.fuel.fuelTypes] || type;
+  };
+
+  const allMachines = machines || [];
+
+  const handleScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    setScanProgress(0);
+
+    try {
+      const result = await extractTextFromImage(file, (progress) => {
+        setScanProgress(progress);
+      });
+
+      handleOpenDialog();
+
+      if (result.extractedData.volume) {
+        form.setValue("volumeLiters", result.extractedData.volume);
+      }
+      if (result.extractedData.date) {
+        form.setValue("invoiceDate", result.extractedData.date);
+      }
+      if (result.extractedData.invoiceNumber) {
+        form.setValue("invoiceNumber", result.extractedData.invoiceNumber);
+      }
+
+      toast({
+        title: t.fuel.scanComplete || "Scan terminé",
+        description: result.extractedData.volume 
+          ? `${result.extractedData.volume} L détecté` 
+          : "Vérifiez les données extraites",
+      });
+    } catch (error) {
+      console.error("OCR error:", error);
+      toast({
+        title: t.common.error,
+        description: "Impossible de lire le ticket",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScanning(false);
+      setScanProgress(0);
+      event.target.value = "";
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-fuel-title">
+            {t.fuel.title}
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
+            {entries?.length || 0} {t.dashboard.recentEntries.toLowerCase()}
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button 
+            disabled={isScanning}
+            className="relative bg-primary hover:bg-primary/90"
+            data-testid="button-scan-ticket"
+          >
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleScan}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              disabled={isScanning}
+            />
+            {isScanning ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {t.fuel.ocrAnalyzing || "Analyse OFDF..."}
+              </>
+            ) : (
+              <>
+                <Camera className="h-5 w-5 mr-2" />
+                {t.fuel.scanTicket || "Scanner"}
+              </>
+            )}
+          </Button>
+          <Button onClick={() => handleOpenDialog()} data-testid="button-add-fuel-entry">
+            <Plus className="h-4 w-4 mr-2" />
+            {t.fuel.addEntry}
+          </Button>
+        </div>
+      </div>
+
+      <StatsBar />
+
+      {isScanning && (
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div className="flex-1">
+                <p className="text-sm font-medium mb-2">
+                  {t.fuel.scanningTicket || "Analyse du ticket en cours..."}
+                </p>
+                <Progress value={scanProgress} className="h-2" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-32 mb-2" />
+                <Skeleton className="h-4 w-24" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : entries && entries.length > 0 ? (
+        <div className="space-y-4">
+          {entries.map((entry) => {
+            const machine = machines?.find((m) => m.id === entry.machineId);
+            const reimbursement = calculateReimbursement(entry.volumeLiters);
+            
+            return (
+              <Card key={entry.id} className="hover-elevate" data-testid={`card-fuel-entry-${entry.id}`}>
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-primary/10">
+                        <Fuel className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{machine?.name || "-"}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>{new Date(entry.invoiceDate).toLocaleDateString()}</span>
+                          {entry.invoiceNumber && (
+                            <>
+                              <span>•</span>
+                              <span>{entry.invoiceNumber}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                      <div className="text-left sm:text-right">
+                        <p className="text-xl sm:text-2xl font-bold font-mono">
+                          {formatNumber(entry.volumeLiters)} L
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {getFuelTypeLabel(entry.fuelType)}
+                        </p>
+                      </div>
+                      
+                      <div className="text-left sm:text-right">
+                        <p className="text-lg sm:text-xl font-bold text-primary font-mono">
+                          {formatCurrency(reimbursement)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t.fuel.calculatedReimbursement}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2 ml-auto">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleOpenDialog(entry)}
+                          data-testid={`button-edit-fuel-${entry.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setDeletingEntry(entry)}
+                          data-testid={`button-delete-fuel-${entry.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {entry.notes && (
+                    <p className="mt-3 text-sm text-muted-foreground border-t pt-3">
+                      {entry.notes}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Fuel className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <h3 className="font-medium mb-2">{t.common.noData}</h3>
+            <p className="text-muted-foreground text-sm mb-4">
+              {t.fuel.emptyDescription || "Commencez par saisir vos consommations de carburant"}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingEntry ? t.fuel.editEntry : t.fuel.addEntry}
+            </DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="machineId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.fuel.selectMachine} *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-machine">
+                          <SelectValue placeholder={t.fuel.selectMachine} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {allMachines.map((machine) => (
+                          <SelectItem key={machine.id} value={machine.id}>
+                            {machine.name}
+                            {!machine.isEligible && (
+                              <span className="ml-2 text-xs text-muted-foreground">(non éligible)</span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="invoiceDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fuel.invoiceDate} *</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} data-testid="input-invoice-date" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="invoiceNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fuel.invoiceNumber}</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-invoice-number" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="volumeLiters"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fuel.volume} *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-volume"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="engineHours"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fuel.engineHours}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-engine-hours"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="fuelType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.fuel.fuelType}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-fuel-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {fuelTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {getFuelTypeLabel(type)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" type="button" className="w-full justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-4 w-4" />
+                      <span>{t.fuel.taxasFieldsTitle}</span>
+                    </div>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="articleNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.articleNumber}
+                            <InfoPopover content={t.fuel.articleNumberTooltip} />
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="1234" {...field} data-testid="input-article-number" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="warehouseNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.warehouseNumber}
+                            <InfoPopover content={t.fuel.warehouseNumberTooltip} />
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="001" {...field} data-testid="input-warehouse-number" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="movementNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center">
+                          {t.fuel.movementNumber}
+                          <InfoPopover content={t.fuel.movementNumberTooltip} />
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="MOV-2026-001" {...field} data-testid="input-movement-number" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="bd"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.bdLabel}
+                            <InfoPopover content={t.fuel.bdTooltip} />
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="ex: 01" {...field} data-testid="input-bd" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="stat"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.statLabel}
+                            <InfoPopover content={t.fuel.statTooltip} />
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="ex: 2710" {...field} data-testid="input-stat" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="ci"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            {t.fuel.ciLabel}
+                            <InfoPopover content={t.fuel.ciTooltip} />
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="ex: A1" {...field} data-testid="input-ci" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.fuel.notes}</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} data-testid="input-notes" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calculator className="h-5 w-5 text-primary" />
+                      <span className="font-medium">{t.fuel.calculatedReimbursement}</span>
+                    </div>
+                    <span className="text-2xl font-bold text-primary font-mono">
+                      CHF {calculatedReimbursement}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {t.reports.rate}: 0.3405 CHF/L
+                  </p>
+                </CardContent>
+              </Card>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                  {t.common.cancel}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  data-testid="button-save-fuel-entry"
+                >
+                  {t.common.save}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deletingEntry} onOpenChange={() => setDeletingEntry(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.common.confirm}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.fleet.deleteConfirm}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingEntry && deleteMutation.mutate(deletingEntry.id)}
+              className="bg-destructive text-destructive-foreground"
+            >
+              {t.common.delete}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
