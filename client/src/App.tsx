@@ -104,6 +104,7 @@ function AuthenticatedRouter() {
         <Route path="/cgv" component={CGVPage} />
         <Route path="/confidentialite" component={ConfidentialitePage} />
         <Route path="/comment-ca-marche" component={HowItWorksPage} />
+        <Route path="/how-it-works" component={HowItWorksPage} />
         <Route component={NotFound} />
       </Switch>
     </AuthenticatedLayout>
@@ -169,6 +170,10 @@ function AppContent() {
   }
 
   if (location === "/comment-ca-marche" && !user) {
+    return <HowItWorksPage />;
+  }
+
+  if (location === "/how-it-works" && !user) {
     return <HowItWorksPage />;
   }
 

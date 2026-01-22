@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { ArrowRight, CheckCircle2, Truck, Fuel, Calculator, FileText, Building2 } from "lucide-react";
+import { AppFooter } from "@/components/app-footer";
 
 import fleetImage from "@assets/generated_images/fleet_registration_illustration.png";
 import fuelImage from "@assets/generated_images/fuel_ticket_scanning_illustration.png";
@@ -137,101 +138,132 @@ export default function HowItWorks() {
   const stepKeys = ["step1", "step2", "step3", "step4", "step5"] as const;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-12 max-w-6xl">
-        <div className="text-center mb-16">
-          <Badge variant="secondary" className="mb-4" data-testid="badge-rate">
-            {t.rate}: {t.rateValue}
-          </Badge>
-          <h1 className="text-3xl font-semibold mb-4" data-testid="text-how-it-works-title">
-            {t.title}
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-how-it-works-subtitle">
-            {t.subtitle}
-          </p>
-        </div>
+    <>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-12 max-w-6xl">
+          <div className="text-center mb-16">
+            <Badge variant="secondary" className="mb-4" data-testid="badge-rate">
+              {t.rate}: {t.rateValue}
+            </Badge>
+            <h1 className="text-3xl font-semibold mb-4" data-testid="text-how-it-works-title">
+              {t.title}
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-how-it-works-subtitle">
+              {t.subtitle}
+            </p>
+          </div>
 
-        <div className="space-y-16">
-          {stepKeys.map((stepKey, index) => {
-            const step = steps[index];
-            const Icon = step.icon;
-            const titleKey = `${stepKey}Title` as keyof typeof t;
-            const descKey = `${stepKey}Desc` as keyof typeof t;
-            const featuresKey = `${stepKey}Features` as keyof typeof t;
-            const isEven = index % 2 === 0;
+          <div className="space-y-16">
+            {stepKeys.map((stepKey, index) => {
+              const step = steps[index];
+              const Icon = step.icon;
+              const titleKey = `${stepKey}Title` as keyof typeof t;
+              const descKey = `${stepKey}Desc` as keyof typeof t;
+              const featuresKey = `${stepKey}Features` as keyof typeof t;
+              const isEven = index % 2 === 0;
 
-            return (
-              <div
-                key={stepKey}
-                className={`flex flex-col flex-wrap ${isEven ? "lg:flex-row" : "lg:flex-row-reverse"} gap-8 items-center`}
-                data-testid={`section-${stepKey}`}
-              >
-                <div className="w-full lg:w-1/2">
-                  <Card className="overflow-hidden">
-                    <img
-                      src={step.image}
-                      alt={t[titleKey] as string}
-                      className="w-full h-auto object-cover"
-                      loading="lazy"
-                      width="800"
-                      height="600"
-                      data-testid={`img-${stepKey}`}
-                    />
-                  </Card>
-                </div>
-
-                <div className="w-full lg:w-1/2 space-y-4">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <div className={`p-3 rounded-full ${step.color} text-primary-foreground`}>
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    <Badge variant="outline" className="text-lg px-3 py-1" data-testid={`badge-${stepKey}-number`}>
-                      {index + 1}
-                    </Badge>
+              return (
+                <div
+                  key={stepKey}
+                  className={`flex flex-col flex-wrap ${isEven ? "lg:flex-row" : "lg:flex-row-reverse"} gap-8 items-center`}
+                  data-testid={`section-${stepKey}`}
+                >
+                  <div className="w-full lg:w-1/2">
+                    <Card className="overflow-hidden">
+                      <img
+                        src={step.image}
+                        alt={t[titleKey] as string}
+                        className="w-full h-auto object-cover"
+                        loading="lazy"
+                        width="800"
+                        height="600"
+                        data-testid={`img-${stepKey}`}
+                      />
+                    </Card>
                   </div>
 
-                  <h2 className="text-xl font-medium" data-testid={`text-${stepKey}-title`}>
-                    {t[titleKey] as string}
-                  </h2>
+                  <div className="w-full lg:w-1/2 space-y-4">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className={`p-3 rounded-full ${step.color} text-primary-foreground`}>
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <Badge variant="outline" className="text-lg px-3 py-1" data-testid={`badge-${stepKey}-number`}>
+                        {index + 1}
+                      </Badge>
+                    </div>
 
-                  <p className="text-muted-foreground text-base" data-testid={`text-${stepKey}-desc`}>
-                    {t[descKey] as string}
-                  </p>
+                    <h2 className="text-xl font-medium" data-testid={`text-${stepKey}-title`}>
+                      {t[titleKey] as string}
+                    </h2>
 
-                  <ul className="space-y-2">
-                    {(t[featuresKey] as string[]).map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2" data-testid={`feature-${stepKey}-${i}`}>
-                        <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+                    <p className="text-muted-foreground text-base" data-testid={`text-${stepKey}-desc`}>
+                      {t[descKey] as string}
+                    </p>
+
+                    <ul className="space-y-2">
+                      {(t[featuresKey] as string[]).map((feature, i) => (
+                        <li key={i} className="flex items-center gap-2" data-testid={`feature-${stepKey}-${i}`}>
+                          <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+
+          <Card className="mt-20 bg-primary/5 border-primary/20">
+            <CardContent className="p-8 text-center">
+              <h2 className="text-xl font-medium mb-2" data-testid="text-cta-title">{t.ctaTitle}</h2>
+              <p className="text-muted-foreground mb-6" data-testid="text-cta-subtitle">{t.ctaSubtitle}</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/register">
+                  <Button size="lg" className="gap-2" data-testid="button-cta-register">
+                    {t.ctaButton}
+                    <ArrowRight className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button size="lg" variant="outline" data-testid="button-cta-login">
+                    {t.ctaLogin}
+                  </Button>
+                </Link>
               </div>
-            );
-          })}
+            </CardContent>
+          </Card>
         </div>
 
-        <Card className="mt-20 bg-primary/5 border-primary/20">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-xl font-medium mb-2" data-testid="text-cta-title">{t.ctaTitle}</h2>
-            <p className="text-muted-foreground mb-6" data-testid="text-cta-subtitle">{t.ctaSubtitle}</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register">
-                <Button size="lg" className="gap-2" data-testid="button-cta-register">
-                  {t.ctaButton}
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button size="lg" variant="outline" data-testid="button-cta-login">
-                  {t.ctaLogin}
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Legal Source Footer */}
+        <div className="mt-16 pt-8 border-t">
+          <p className="text-center text-sm text-muted-foreground">
+            {language === 'fr' && (
+              <>
+                <strong>Source légale :</strong> Règlement 09 de l'OFDF (vigueur 01.01.2026) – Remboursement de l'impôt sur les huiles minérales pour l'agriculture
+              </>
+            )}
+            {language === 'de' && (
+              <>
+                <strong>Rechtsgrundlage:</strong> Verordnung 09 des BAZG (in Kraft seit 01.01.2026) – Rückerstattung der Mineralölsteuer für die Landwirtschaft
+              </>
+            )}
+            {language === 'it' && (
+              <>
+                <strong>Fonte legale:</strong> Regolamento 09 dell'AFD (in vigore dal 01.01.2026) – Rimborso dell'imposta sugli oli minerali per l'agricoltura
+              </>
+            )}
+            {language === 'en' && (
+              <>
+                <strong>Legal source:</strong> Regulation 09 of FOCBS (effective 01.01.2026) – Mineral oil tax reimbursement for agriculture
+              </>
+            )}
+          </p>
+        </div>
       </div>
-    </div>
+
+      {/* Main App Footer with LinkedIn */}
+      <AppFooter />
+    </>
   );
 }
