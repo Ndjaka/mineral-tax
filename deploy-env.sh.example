@@ -1,0 +1,71 @@
+#!/bin/bash
+# Script pour déployer le fichier .env sur le serveur Infomaniak
+# 
+# IMPORTANT : Copiez ce fichier vers deploy-env.sh et configurez votre mot de passe
+# cp deploy-env.sh.example deploy-env.sh
+# nano deploy-env.sh  # Ajouter votre mot de passe
+
+# Configuration
+REMOTE_HOST="57-106659.ssh.hosting-ik.com"
+REMOTE_USER="N89UEvW6WcN_Mineraltax"
+REMOTE_PATH="sites/mineraltax.ch"
+
+# ⚠️ CONFIGURER VOTRE MOT DE PASSE ICI (ou utiliser une variable d'environnement)
+# Option 1 : Définir directement (NON RECOMMANDÉ si vous commitez ce fichier)
+# export SSHPASS='votre_mot_de_passe'
+
+# Option 2 : Utiliser une variable d'environnement (RECOMMANDÉ)
+# Ajoutez dans votre ~/.zshrc ou ~/.bashrc :
+# export INFOMANIAK_SSH_PASSWORD='votre_mot_de_passe'
+if [ -z "$SSHPASS" ]; then
+    if [ -n "$INFOMANIAK_SSH_PASSWORD" ]; then
+        export SSHPASS="$INFOMANIAK_SSH_PASSWORD"
+    else
+        echo "❌ Erreur : Mot de passe SSH non configuré"
+        echo ""
+        echo "Configurez le mot de passe de l'une des façons suivantes :"
+        echo ""
+        echo "Option 1 : Variable d'environnement dans ce script"
+        echo "  Éditez deploy-env.sh et définissez :"
+        echo "  export SSHPASS='votre_mot_de_passe'"
+        echo ""
+        echo "Option 2 : Variable d'environnement globale (recommandé)"
+        echo "  Ajoutez dans ~/.zshrc :"
+        echo "  export INFOMANIAK_SSH_PASSWORD='votre_mot_de_passe'"
+        echo "  Puis : source ~/.zshrc"
+        echo ""
+        echo "Option 3 : Passer le mot de passe en ligne de commande"
+        echo "  SSHPASS='votre_mot_de_passe' ./deploy-env.sh"
+        exit 1
+    fi
+fi
+
+echo "🔐 Transfert du fichier .env vers le serveur..."
+
+# Vérifier que le fichier .env existe
+if [ ! -f ".env" ]; then
+    echo "❌ Erreur : fichier .env introuvable"
+    exit 1
+fi
+
+# Transférer le .env
+sshpass -e rsync -avz \
+  -e "ssh -o StrictHostKeyChecking=no" \
+  .env \
+  ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/.env
+
+if [ $? -eq 0 ]; then
+    echo "✅ Fichier .env transféré avec succès"
+    echo ""
+    echo "🔄 Redémarrage de l'application pour charger les nouvelles variables..."
+    
+    # Redémarrer l'application pour charger les nouvelles variables
+    sshpass -e ssh -o StrictHostKeyChecking=no \
+      ${REMOTE_USER}@${REMOTE_HOST} \
+      "cd ${REMOTE_PATH} && ./node_modules/.bin/pm2 restart mineraltax" || true
+    
+    echo "✅ Application redémarrée"
+else
+    echo "❌ Erreur lors du transfert"
+    exit 1
+fi
