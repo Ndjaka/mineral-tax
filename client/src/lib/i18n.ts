@@ -214,6 +214,14 @@ export const translations = {
       swissPortal: "ch.ch - Portail suisse",
       footerTagline: "Outil SaaS privé pour la préparation des demandes de remboursement de la taxe sur les huiles minérales en Suisse.",
       footerNotAffiliated: "Ce site n'est pas affilié à l'administration fédérale suisse.",
+      // Statistics section
+      statsTitle: "En chiffres",
+      statsSubtitle: "Résultats concrets et temps économisé",
+      statsReimbursement: "Remboursement moyen*",
+      statsConformity: "Taux de conformité",
+      statsTimeSaved: "Temps économisé",
+      statsCompanies: "Entreprises actives",
+      statsNote: "* Basé sur une consommation annuelle moyenne de 20'000 litres au taux OFDF de 0.3405 CHF/L",
     },
     dashboard: {
       welcome: "Bienvenue",
@@ -770,6 +778,14 @@ export const translations = {
       swissPortal: "ch.ch - Schweizer Portal",
       footerTagline: "Privates SaaS-Tool zur Vorbereitung von Rückerstattungsanträgen für die Mineralölsteuer in der Schweiz.",
       footerNotAffiliated: "Diese Website ist nicht mit der Schweizer Bundesverwaltung verbunden.",
+      // Statistics section
+      statsTitle: "In Zahlen",
+      statsSubtitle: "Konkrete Ergebnisse und Zeitersparnis",
+      statsReimbursement: "Durchschnittliche Rückerstattung*",
+      statsConformity: "Konformitätsrate",
+      statsTimeSaved: "Eingesparte Zeit",
+      statsCompanies: "Aktive Unternehmen",
+      statsNote: "* Basierend auf einem durchschnittlichen Jahresverbrauch von 20'000 Litern zum BAZG-Satz von 0.3405 CHF/L",
     },
     dashboard: {
       welcome: "Willkommen",
@@ -1326,6 +1342,14 @@ export const translations = {
       swissPortal: "ch.ch - Portale svizzero",
       footerTagline: "Strumento SaaS privato per la preparazione delle richieste di rimborso della tassa sugli oli minerali in Svizzera.",
       footerNotAffiliated: "Questo sito non è affiliato all'amministrazione federale svizzera.",
+      // Statistics section
+      statsTitle: "In cifre",
+      statsSubtitle: "Risultati concreti e tempo risparmiato",
+      statsReimbursement: "Rimborso medio*",
+      statsConformity: "Tasso di conformità",
+      statsTimeSaved: "Tempo risparmiato",
+      statsCompanies: "Aziende attive",
+      statsNote: "* Basato su un consumo annuo medio di 20'000 litri al tasso AFD di 0.3405 CHF/L",
     },
     dashboard: {
       welcome: "Benvenuto",
@@ -1874,6 +1898,14 @@ export const translations = {
       swissPortal: "ch.ch - Swiss Portal",
       footerTagline: "Private SaaS tool for preparing mineral oil tax reimbursement claims in Switzerland.",
       footerNotAffiliated: "This website is not affiliated with the Swiss federal administration.",
+      // Statistics section
+      statsTitle: "In Numbers",
+      statsSubtitle: "Concrete results and time saved",
+      statsReimbursement: "Average reimbursement*",
+      statsConformity: "Compliance rate",
+      statsTimeSaved: "Time saved",
+      statsCompanies: "Active companies",
+      statsNote: "* Based on an average annual consumption of 20,000 liters at the FOCBS rate of 0.3405 CHF/L",
     },
     dashboard: {
       welcome: "Welcome",

@@ -309,9 +309,9 @@ export default function LandingPage() {
         <section className="py-16 bg-gradient-to-b from-background to-muted/20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">En chiffres</h2>
+              <h2 className="text-3xl font-bold mb-4">{(t.landing as any).statsTitle || "En chiffres"}</h2>
               <p className="text-lg text-muted-foreground">
-                Résultats concrets et temps économisé
+                {(t.landing as any).statsSubtitle || "Résultats concrets et temps économisé"}
               </p>
             </div>
 
@@ -322,7 +322,7 @@ export default function LandingPage() {
                     <span className="text-4xl font-bold text-primary">6'810</span>
                     <span className="text-2xl font-semibold text-primary ml-1">CHF</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">Remboursement moyen*</p>
+                  <p className="text-sm text-muted-foreground">{(t.landing as any).statsReimbursement || "Remboursement moyen*"}</p>
                 </CardContent>
               </Card>
 
@@ -332,7 +332,7 @@ export default function LandingPage() {
                     <span className="text-4xl font-bold text-green-600 dark:text-green-500">95</span>
                     <span className="text-2xl font-semibold text-green-600 dark:text-green-500 ml-1">%</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">Taux de conformité</p>
+                  <p className="text-sm text-muted-foreground">{(t.landing as any).statsConformity || "Taux de conformité"}</p>
                 </CardContent>
               </Card>
 
@@ -342,7 +342,7 @@ export default function LandingPage() {
                     <span className="text-4xl font-bold text-blue-600 dark:text-blue-500">3</span>
                     <span className="text-2xl font-semibold text-blue-600 dark:text-blue-500 ml-1">h</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">Temps économisé</p>
+                  <p className="text-sm text-muted-foreground">{(t.landing as any).statsTimeSaved || "Temps économisé"}</p>
                 </CardContent>
               </Card>
 
@@ -351,13 +351,13 @@ export default function LandingPage() {
                   <div className="mb-2">
                     <span className="text-4xl font-bold text-amber-600 dark:text-amber-500">50+</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">Entreprises actives</p>
+                  <p className="text-sm text-muted-foreground">{(t.landing as any).statsCompanies || "Entreprises actives"}</p>
                 </CardContent>
               </Card>
             </div>
 
             <p className="text-xs text-muted-foreground text-center mt-6">
-              * Basé sur une consommation annuelle moyenne de 20'000 litres au taux OFDF de 0.3405 CHF/L
+              {(t.landing as any).statsNote || "* Basé sur une consommation annuelle moyenne de 20'000 litres au taux OFDF de 0.3405 CHF/L"}
             </p>
           </div>
         </section>
