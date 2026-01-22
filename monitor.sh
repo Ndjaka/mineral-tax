@@ -1,7 +1,16 @@
 #!/bin/bash
 # Script de monitoring pour MineralTax sur Infomaniak
 
-export SSHPASS='Kombi1989*'
+# Lire le mot de passe depuis la variable d'environnement
+if [ -z "$SSHPASS" ]; then
+    if [ -n "$INFOMANIAK_SSH_PASSWORD" ]; then
+        export SSHPASS="$INFOMANIAK_SSH_PASSWORD"
+    else
+        echo "❌ Erreur : Mot de passe SSH non configuré"
+        echo "Utilisez : SSHPASS='votre_mot_de_passe' ./monitor.sh [command]"
+        exit 1
+    fi
+fi
 
 echo "🔍 Monitoring MineralTax sur Infomaniak..."
 echo ""
