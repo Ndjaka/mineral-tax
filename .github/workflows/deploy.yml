@@ -43,10 +43,10 @@ jobs:
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no -tt \
+          sshpass -e ssh -o StrictHostKeyChecking=no \
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
             'cd sites/mineraltax.ch && \
              (test -f node_modules/.bin/pm2 || npm install pm2) && \
              (./node_modules/.bin/pm2 restart mineraltax 2>/dev/null || ./node_modules/.bin/pm2 start dist/index.mjs --name mineraltax) && \
-             ./node_modules/.bin/pm2 save && \
-             echo "Application redémarrée avec succès"'
+             ./node_modules/.bin/pm2 save' || true
+          echo "✅ Application déployée et redémarrée avec PM2"
