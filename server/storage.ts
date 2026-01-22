@@ -21,6 +21,8 @@ import {
   type User,
   REIMBURSEMENT_RATE_CHF_PER_LITER,
   calculateReimbursement,
+  calculateReimbursementBySectorAndDate,
+  getApplicableRate,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
@@ -235,7 +237,7 @@ export class DatabaseStorage implements IStorage {
     const now = new Date();
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const dayAfter = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-    
+
     return db
       .select()
       .from(subscriptions)
@@ -254,7 +256,7 @@ export class DatabaseStorage implements IStorage {
     now.setUTCHours(0, 0, 0, 0);
     const targetDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
     const nextDay = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000);
-    
+
     const expiringSubscriptions = await db
       .select()
       .from(subscriptions)
@@ -266,7 +268,7 @@ export class DatabaseStorage implements IStorage {
           lte(subscriptions.currentPeriodEnd, nextDay)
         )
       );
-    
+
     const results: (Subscription & { user?: User })[] = [];
     for (const sub of expiringSubscriptions) {
       const [user] = await db
@@ -275,7 +277,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(users.id, sub.userId));
       results.push({ ...sub, user });
     }
-    
+
     return results;
   }
 
@@ -283,13 +285,13 @@ export class DatabaseStorage implements IStorage {
     const now = new Date();
     const currentMonth = now.getMonth();
     const quarterEndMonths = [2, 5, 8, 11];
-    
+
     if (!quarterEndMonths.includes(currentMonth)) {
       return [];
     }
-    
+
     const quarterStart = new Date(now.getFullYear(), currentMonth, 1);
-    
+
     return db
       .select()
       .from(subscriptions)
@@ -326,17 +328,17 @@ export class DatabaseStorage implements IStorage {
   hasRenewalReminderBeenSent(subscription: Subscription, days: number): boolean {
     const now = new Date();
     now.setUTCHours(0, 0, 0, 0);
-    
+
     let sentDate: Date | null = null;
     if (days === 30) sentDate = subscription.renewalReminder30DaysSent;
     else if (days === 7) sentDate = subscription.renewalReminder7DaysSent;
     else if (days === 1) sentDate = subscription.renewalReminder1DaySent;
-    
+
     if (!sentDate) return false;
-    
+
     const sentDateNormalized = new Date(sentDate);
     sentDateNormalized.setUTCHours(0, 0, 0, 0);
-    
+
     return sentDateNormalized.getTime() === now.getTime();
   }
 
@@ -357,10 +359,10 @@ export class DatabaseStorage implements IStorage {
   async updateSubscriptionPeriod(userId: string, periodStart: Date, periodEnd: Date): Promise<void> {
     await db
       .update(subscriptions)
-      .set({ 
-        currentPeriodStart: periodStart, 
-        currentPeriodEnd: periodEnd, 
-        updatedAt: new Date() 
+      .set({
+        currentPeriodStart: periodStart,
+        currentPeriodEnd: periodEnd,
+        updatedAt: new Date()
       })
       .where(eq(subscriptions.userId, userId));
   }
@@ -370,14 +372,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(subscriptions)
       .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));
-    
+
     if (!subscription) return undefined;
-    
+
     const [user] = await db
       .select()
       .from(users)
       .where(eq(users.id, subscription.userId));
-    
+
     return user;
   }
 
@@ -418,12 +420,31 @@ export class DatabaseStorage implements IStorage {
     const totalVolume = entryStats[0]?.totalVolume || 0;
     const eligibleVolume = eligibleStats[0]?.eligibleVolume || 0;
 
+    // Calcul du remboursement avec le nouveau système bi-secteur
+    // On récupère toutes les entrées éligibles avec leurs machines pour calculer précisément
+    const eligibleEntries = await db
+      .select()
+      .from(fuelEntries)
+      .leftJoin(machines, eq(fuelEntries.machineId, machines.id))
+      .where(and(eq(fuelEntries.userId, userId), eq(machines.isEligible, true)));
+
+    let estimatedReimbursement = 0;
+    for (const row of eligibleEntries) {
+      if (row.fuel_entries && row.machines) {
+        estimatedReimbursement += calculateReimbursementBySectorAndDate(
+          row.fuel_entries.volumeLiters,
+          row.fuel_entries.invoiceDate,
+          row.machines.taxasActivity
+        );
+      }
+    }
+
     return {
       totalMachines: machineCount[0]?.count || 0,
       totalFuelEntries: entryStats[0]?.count || 0,
       totalVolume,
       eligibleVolume,
-      estimatedReimbursement: calculateReimbursement(eligibleVolume),
+      estimatedReimbursement,
       pendingReports: pendingReportsCount[0]?.count || 0,
     };
   }
@@ -433,11 +454,9 @@ export class DatabaseStorage implements IStorage {
     volume: number;
     reimbursement: number;
   }[]> {
-    const result = await db
-      .select({
-        month: sql<string>`to_char(${fuelEntries.invoiceDate}, 'YYYY-MM')`,
-        volume: sql<number>`coalesce(sum(${fuelEntries.volumeLiters}), 0)::real`,
-      })
+    // Récupérer toutes les entrées éligibles avec leurs machines
+    const entries = await db
+      .select()
       .from(fuelEntries)
       .leftJoin(machines, eq(fuelEntries.machineId, machines.id))
       .where(
@@ -446,14 +465,35 @@ export class DatabaseStorage implements IStorage {
           eq(machines.isEligible, true)
         )
       )
-      .groupBy(sql`to_char(${fuelEntries.invoiceDate}, 'YYYY-MM')`)
-      .orderBy(sql`to_char(${fuelEntries.invoiceDate}, 'YYYY-MM')`);
+      .orderBy(fuelEntries.invoiceDate);
 
-    return result.map((row) => ({
-      month: row.month,
-      volume: row.volume,
-      reimbursement: calculateReimbursement(row.volume),
-    }));
+    // Grouper par mois et calculer le remboursement avec les taux appropriés
+    const monthlyData = new Map<string, { volume: number; reimbursement: number }>();
+
+    for (const row of entries) {
+      if (row.fuel_entries && row.machines) {
+        const monthKey = new Date(row.fuel_entries.invoiceDate).toISOString().substring(0, 7); // YYYY-MM
+        const existing = monthlyData.get(monthKey) || { volume: 0, reimbursement: 0 };
+
+        existing.volume += row.fuel_entries.volumeLiters;
+        existing.reimbursement += calculateReimbursementBySectorAndDate(
+          row.fuel_entries.volumeLiters,
+          row.fuel_entries.invoiceDate,
+          row.machines.taxasActivity
+        );
+
+        monthlyData.set(monthKey, existing);
+      }
+    }
+
+    // Convertir en tableau et trier
+    return Array.from(monthlyData.entries())
+      .map(([month, data]) => ({
+        month,
+        volume: data.volume,
+        reimbursement: data.reimbursement,
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
   }
 
   async calculateReportData(userId: string, periodStart: Date, periodEnd: Date): Promise<{
@@ -492,10 +532,35 @@ export class DatabaseStorage implements IStorage {
     const totalVolumeLiters = totalStats[0]?.totalVolume || 0;
     const eligibleVolumeLiters = eligibleStats[0]?.eligibleVolume || 0;
 
+    // Calcul du remboursement avec le système bi-secteur
+    const eligibleEntries = await db
+      .select()
+      .from(fuelEntries)
+      .leftJoin(machines, eq(fuelEntries.machineId, machines.id))
+      .where(
+        and(
+          eq(fuelEntries.userId, userId),
+          eq(machines.isEligible, true),
+          gte(fuelEntries.invoiceDate, periodStart),
+          lte(fuelEntries.invoiceDate, periodEnd)
+        )
+      );
+
+    let reimbursementAmount = 0;
+    for (const row of eligibleEntries) {
+      if (row.fuel_entries && row.machines) {
+        reimbursementAmount += calculateReimbursementBySectorAndDate(
+          row.fuel_entries.volumeLiters,
+          row.fuel_entries.invoiceDate,
+          row.machines.taxasActivity
+        );
+      }
+    }
+
     return {
       totalVolumeLiters,
       eligibleVolumeLiters,
-      reimbursementAmount: calculateReimbursement(eligibleVolumeLiters),
+      reimbursementAmount,
     };
   }
 
@@ -548,12 +613,12 @@ export class DatabaseStorage implements IStorage {
   async getNextInvoiceNumber(): Promise<string> {
     const year = new Date().getFullYear();
     const prefix = `INV-${year}-`;
-    
+
     const [result] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(invoices)
       .where(sql`${invoices.invoiceNumber} LIKE ${prefix + '%'}`);
-    
+
     const nextNumber = (result?.count || 0) + 1;
     return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
   }

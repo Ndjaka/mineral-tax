@@ -26,7 +26,7 @@ export const machineTypeEnum = pgEnum("machine_type", [
 
 export const plateColorEnum = pgEnum("plate_color", [
   "white",
-  "green", 
+  "green",
   "yellow",
   "blue",
   "none"
@@ -239,12 +239,72 @@ export type Invoice = typeof invoices.$inferSelect;
 export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;
 export type CompanyProfile = typeof companyProfiles.$inferSelect;
 
-export const REIMBURSEMENT_RATE_CHF_PER_LITER = 0.3405;
+// ==================== TAUX DE REMBOURSEMENT OFDF 2026 ====================
+// Taux standards (maintiennent l'ancien système pour compatibilité)
+export const REIMBURSEMENT_RATE_CHF_PER_LITER = 0.3406; // 34.06 CHF/100L
+
+// Nouveaux taux différenciés OFDF 2026
+export const RATE_AGRICULTURE_PRE_2026 = 0.3406;  // 34.06 CHF/100L (avant 01.01.2026)
+export const RATE_AGRICULTURE_POST_2026 = 0.6005; // 60.05 CHF/100L (à partir du 01.01.2026) - Hausse de 76%
+export const RATE_BTP_STANDARD = 0.3406;          // 34.06 CHF/100L (Secteur BTP/Hors route)
+
+// Date de transition pour l'agriculture
+export const AGRICULTURE_RATE_CHANGE_DATE = new Date('2026-01-01T00:00:00.000Z');
+
+/**
+ * Calcule le remboursement en fonction du secteur d'activité et de la date de facture
+ * @param volumeLiters - Volume de carburant en litres
+ * @param invoiceDate - Date de la facture de carburant
+ * @param sector - Catégorie Taxas de la machine
+ * @returns Montant du remboursement en CHF
+ */
+export function calculateReimbursementBySectorAndDate(
+  volumeLiters: number,
+  invoiceDate: Date,
+  sector?: string | null
+): number {
+  // Si le secteur est "agriculture avec paiements directs"
+  if (sector === "agriculture_with_direct") {
+    const dateToCheck = new Date(invoiceDate);
+
+    // Factures à partir du 01.01.2026 : nouveau taux de 60.05 CHF/100L
+    if (dateToCheck >= AGRICULTURE_RATE_CHANGE_DATE) {
+      return roundToCentimes(volumeLiters * RATE_AGRICULTURE_POST_2026);
+    } else {
+      // Factures avant 01.01.2026 : ancien taux de 34.06 CHF/100L
+      return roundToCentimes(volumeLiters * RATE_AGRICULTURE_PRE_2026);
+    }
+  }
+
+  // Pour tous les autres secteurs (BTP, construction, etc.) : taux standard
+  return roundToCentimes(volumeLiters * RATE_BTP_STANDARD);
+}
+
+/**
+ * Retourne le taux applicable en fonction du secteur et de la date
+ * @param invoiceDate - Date de la facture
+ * @param sector - Catégorie Taxas de la machine
+ * @returns Taux applicable en CHF/L
+ */
+export function getApplicableRate(
+  invoiceDate: Date,
+  sector?: string | null
+): number {
+  if (sector === "agriculture_with_direct") {
+    const dateToCheck = new Date(invoiceDate);
+    return dateToCheck >= AGRICULTURE_RATE_CHANGE_DATE
+      ? RATE_AGRICULTURE_POST_2026
+      : RATE_AGRICULTURE_PRE_2026;
+  }
+  return RATE_BTP_STANDARD;
+}
 
 export function roundToCentimes(amount: number): number {
   return Math.round(amount * 100) / 100;
 }
 
+// Fonction de compatibilité (maintenue pour l'ancien code)
 export function calculateReimbursement(volumeLiters: number): number {
   return roundToCentimes(volumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER);
 }
+

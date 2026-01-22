@@ -7,7 +7,7 @@ export function AppFooter() {
 
   const texts = {
     fr: {
-      copyright: "MineralTax Sàrl. Tous droits réservés.",
+      copyright: "MineralTax.ch. Tous droits réservés.",
       hosted: "Hébergé en Suisse par Infomaniak",
       lpd: "Données traitées selon la LPD suisse",
       jurisdiction: "For juridique : Crissier, Suisse",
@@ -17,7 +17,7 @@ export function AppFooter() {
       help: "Besoin d'aide ?",
     },
     de: {
-      copyright: "MineralTax Sàrl. Alle Rechte vorbehalten.",
+      copyright: "MineralTax.ch. Alle Rechte vorbehalten.",
       hosted: "Gehostet in der Schweiz bei Infomaniak",
       lpd: "Daten gemäss Schweizer DSG verarbeitet",
       jurisdiction: "Gerichtsstand: Crissier, Schweiz",
@@ -27,7 +27,7 @@ export function AppFooter() {
       help: "Brauchen Sie Hilfe?",
     },
     it: {
-      copyright: "MineralTax Sàrl. Tutti i diritti riservati.",
+      copyright: "MineralTax.ch. Tutti i diritti riservati.",
       hosted: "Ospitato in Svizzera da Infomaniak",
       lpd: "Dati trattati secondo la LPD svizzera",
       jurisdiction: "Foro competente: Crissier, Svizzera",
@@ -37,7 +37,7 @@ export function AppFooter() {
       help: "Hai bisogno di aiuto?",
     },
     en: {
-      copyright: "MineralTax Sàrl. All rights reserved.",
+      copyright: "MineralTax.ch. All rights reserved.",
       hosted: "Hosted in Switzerland by Infomaniak",
       lpd: "Data processed under Swiss FADP",
       jurisdiction: "Jurisdiction: Crissier, Switzerland",
@@ -70,22 +70,22 @@ export function AppFooter() {
             <span>{c.jurisdiction}</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link 
-              href="/cgv" 
+            <Link
+              href="/cgv"
               className="hover:text-foreground transition-colors"
               data-testid="link-cgv-footer"
             >
               <ScrollText className="h-4 w-4 inline mr-1" />
               {c.terms}
             </Link>
-            <Link 
-              href="/confidentialite" 
+            <Link
+              href="/confidentialite"
               className="hover:text-foreground transition-colors"
               data-testid="link-privacy-footer"
             >
               {c.privacy}
             </Link>
-            <a 
+            <a
               href="mailto:support@mineraltax.ch"
               className="flex items-center gap-1 hover:text-foreground transition-colors"
               data-testid="link-help-footer"

@@ -14,7 +14,7 @@ export default function Confidentialite() {
       sections: [
         {
           title: "1. Responsable du traitement",
-          content: `MineralTax Sàrl\nChemin des Lentillières\n1023 Crissier, Suisse\nEmail : support@mineraltax.ch`,
+          content: `MineralTax.ch\nChemin des Lentillières\n1023 Crissier, Suisse\nEmail : support@mineraltax.ch`,
         },
         {
           title: "2. Données collectées",
@@ -61,7 +61,7 @@ export default function Confidentialite() {
       sections: [
         {
           title: "1. Verantwortlicher",
-          content: `MineralTax Sàrl\nChemin des Lentillières\n1023 Crissier, Schweiz\nEmail: support@mineraltax.ch`,
+          content: `MineralTax.ch\nChemin des Lentillières\n1023 Crissier, Schweiz\nEmail: support@mineraltax.ch`,
         },
         {
           title: "2. Erhobene Daten",
@@ -108,7 +108,7 @@ export default function Confidentialite() {
       sections: [
         {
           title: "1. Titolare del trattamento",
-          content: `MineralTax Sàrl\nChemin des Lentillières\n1023 Crissier, Svizzera\nEmail: support@mineraltax.ch`,
+          content: `MineralTax.ch\nChemin des Lentillières\n1023 Crissier, Svizzera\nEmail: support@mineraltax.ch`,
         },
         {
           title: "2. Dati raccolti",
@@ -155,7 +155,7 @@ export default function Confidentialite() {
       sections: [
         {
           title: "1. Data Controller",
-          content: `MineralTax Sàrl\nChemin des Lentillières\n1023 Crissier, Switzerland\nEmail: support@mineraltax.ch`,
+          content: `MineralTax.ch\nChemin des Lentillières\n1023 Crissier, Switzerland\nEmail: support@mineraltax.ch`,
         },
         {
           title: "2. Data Collected",

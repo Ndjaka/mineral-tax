@@ -1,0 +1,91 @@
+import { useState, useEffect } from "react";
+import { X, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
+
+const BANNER_STORAGE_KEY = "banner2026_dismissed";
+const BANNER_DISPLAY_DAYS = 7;
+
+export function Banner2026() {
+    const { language } = useI18n();
+    const [isVisible, setIsVisible] = useState(false);
+
+    const messages = {
+        fr: {
+            text: "🚀 Nouveau taux 2026 : Récupérez jusqu'à 60.05 CHF / 100L de diesel agricole. Votre compte est prêt pour Taxas !",
+            dismiss: "Compris",
+        },
+        de: {
+            text: "🚀 Neuer Tarif 2026: Erhalten Sie bis zu 60.05 CHF / 100L für landwirtschaftlichen Diesel. Ihr Konto ist bereit für Taxas!",
+            dismiss: "Verstanden",
+        },
+        it: {
+            text: "🚀 Nuova tariffa 2026: Recupera fino a 60.05 CHF / 100L di diesel agricolo. Il tuo account è pronto per Taxas!",
+            dismiss: "Capito",
+        },
+        en: {
+            text: "🚀 New 2026 rate: Claim up to 60.05 CHF / 100L for agricultural diesel. Your account is ready for Taxas!",
+            dismiss: "Got it",
+        },
+    };
+
+    const content = messages[language as keyof typeof messages] || messages.fr;
+
+    useEffect(() => {
+        // Vérifier si la bannière a été fermée
+        const dismissed = localStorage.getItem(BANNER_STORAGE_KEY);
+
+        if (!dismissed) {
+            // Afficher la bannière immédiatement si elle n'a jamais été fermée
+            setIsVisible(true);
+        } else {
+            // Vérifier si la bannière doit être réaffichée après 7 jours
+            const dismissedDate = new Date(dismissed);
+            const now = new Date();
+            const daysSinceDismissed = Math.floor(
+                (now.getTime() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24)
+            );
+
+            if (daysSinceDismissed >= BANNER_DISPLAY_DAYS) {
+                setIsVisible(true);
+            }
+        }
+    }, []);
+
+    const handleDismiss = () => {
+        localStorage.setItem(BANNER_STORAGE_KEY, new Date().toISOString());
+        setIsVisible(false);
+    };
+
+    if (!isVisible) return null;
+
+    return (
+        <div
+            className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg"
+            data-testid="banner-2026"
+        >
+            <div className="container mx-auto px-4 py-3">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 flex-1">
+                        <div className="hidden sm:block">
+                            <TrendingUp className="h-5 w-5" />
+                        </div>
+                        <p className="text-sm md:text-base font-medium flex-1">
+                            {content.text}
+                        </p>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleDismiss}
+                        className="text-white hover:bg-blue-700 shrink-0"
+                        data-testid="button-dismiss-banner"
+                    >
+                        <span className="hidden sm:inline mr-2">{content.dismiss}</span>
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -42,7 +42,7 @@ export default function CGV() {
         },
         {
           title: "8. Propriété intellectuelle",
-          content: `L'ensemble du contenu de la plateforme (code, design, textes) est la propriété de MineralTax Sàrl. Toute reproduction sans autorisation est interdite.`,
+          content: `L'ensemble du contenu de la plateforme (code, design, textes) est la propriété de MineralTax.ch. Toute reproduction sans autorisation est interdite.`,
         },
         {
           title: "9. For juridique",
@@ -50,7 +50,7 @@ export default function CGV() {
         },
         {
           title: "10. Contact",
-          content: `MineralTax Sàrl\nChemin des Lentillières\n1023 Crissier, Suisse\nEmail : support@mineraltax.ch`,
+          content: `MineralTax.ch\nChemin des Lentillières\n1023 Crissier, Suisse\nEmail : support@mineraltax.ch`,
         },
       ],
     },
@@ -89,7 +89,7 @@ export default function CGV() {
         },
         {
           title: "8. Geistiges Eigentum",
-          content: `Der gesamte Inhalt der Plattform ist Eigentum von MineralTax Sàrl. Jede Vervielfältigung ohne Genehmigung ist untersagt.`,
+          content: `Der gesamte Inhalt der Plattform ist Eigentum von MineralTax.ch. Jede Vervielfältigung ohne Genehmigung ist untersagt.`,
         },
         {
           title: "9. Gerichtsstand",
@@ -97,7 +97,7 @@ export default function CGV() {
         },
         {
           title: "10. Kontakt",
-          content: `MineralTax Sàrl\nChemin des Lentillières\n1023 Crissier, Schweiz\nEmail: support@mineraltax.ch`,
+          content: `MineralTax.ch\nChemin des Lentillières\n1023 Crissier, Schweiz\nEmail: support@mineraltax.ch`,
         },
       ],
     },
@@ -136,7 +136,7 @@ export default function CGV() {
         },
         {
           title: "8. Proprietà intellettuale",
-          content: `Tutti i contenuti della piattaforma sono di proprietà di MineralTax Sàrl.`,
+          content: `Tutti i contenuti della piattaforma sono di proprietà di MineralTax.ch.`,
         },
         {
           title: "9. Foro competente",
@@ -144,7 +144,7 @@ export default function CGV() {
         },
         {
           title: "10. Contatto",
-          content: `MineralTax Sàrl\nChemin des Lentillières\n1023 Crissier, Svizzera\nEmail: support@mineraltax.ch`,
+          content: `MineralTax.ch\nChemin des Lentillières\n1023 Crissier, Svizzera\nEmail: support@mineraltax.ch`,
         },
       ],
     },
@@ -183,7 +183,7 @@ export default function CGV() {
         },
         {
           title: "8. Intellectual property",
-          content: `All platform content is the property of MineralTax Sàrl.`,
+          content: `All platform content is the property of MineralTax.ch.`,
         },
         {
           title: "9. Jurisdiction",
@@ -191,7 +191,7 @@ export default function CGV() {
         },
         {
           title: "10. Contact",
-          content: `MineralTax Sàrl\nChemin des Lentillières\n1023 Crissier, Switzerland\nEmail: support@mineraltax.ch`,
+          content: `MineralTax.ch\nChemin des Lentillières\n1023 Crissier, Switzerland\nEmail: support@mineraltax.ch`,
         },
       ],
     },
