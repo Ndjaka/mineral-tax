@@ -1143,6 +1143,11 @@ function generateTaxasCsv(
     ].join(";"));
   }
 
+  // Ajout du footer avec la source légale
+  lines.push("");
+  lines.push("# Source légale : Règlement 09 de l'OFDF (vigueur 01.01.2026) - Remboursement de l'impôt sur les huiles minérales");
+  lines.push("# Généré par MineralTax.ch - Compatible avec la plateforme Taxas OFDF");
+
   return lines.join("\n");
 }
 
