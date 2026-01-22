@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: # Permet le déclenchement manuel
 
 jobs:
   deploy:
@@ -15,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -24,29 +25,23 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Deploy via rsync
-        uses: easingthemes/ssh-deploy@main
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          ARGS: "-avz --delete"
-          SOURCE: "/"
-          REMOTE_HOST: "57-106659.ssh.hosting-ik.com"
-          REMOTE_USER: "N89UEvW6WcN_Mineraltax"
-          TARGET: "sites/mineraltax.ch/"
-          EXCLUDE: "/node_modules/, /.git/, /.github/, /.vscode/, /.env, /exports/"
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Restart application
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: "57-106659.ssh.hosting-ik.com"
-          username: "N89UEvW6WcN_Mineraltax"
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd sites/mineraltax.ch
-            # S'assurer que les dépendances de production sont à jour
-            npm install --production
-            # Tuer le processus utilisant le port 3000
-            lsof -ti:3000 | xargs kill -9 || true
-            # Lancer l'application en arrière-plan
-            nohup npm start > app.log 2>&1 &
-            echo "Déploiement terminé et application redémarrée."
+      - name: Deploy dist folder via rsync
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -e rsync -avz --delete \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            dist/ \
+            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com:sites/mineraltax.ch/dist/
+
+      - name: Restart application with PM2
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no \
+            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
+            'cd sites/mineraltax.ch && ./node_modules/.bin/pm2 restart mineraltax || ./node_modules/.bin/pm2 start dist/index.mjs --name mineraltax && ./node_modules/.bin/pm2 save'
