@@ -33,7 +33,7 @@ Ajoutez dans votre `~/.zshrc` (ou `~/.bashrc`) :
 
 ```bash
 # Ajouter cette ligne à la fin du fichier
-export INFOMANIAK_SSH_PASSWORD='Kombi1989*'
+export INFOMANIAK_SSH_PASSWORD='votre_mot_de_passe'
 ```
 
 Puis rechargez votre configuration :
@@ -44,7 +44,7 @@ source ~/.zshrc
 **Option B : Passer le mot de passe à chaque exécution**
 
 ```bash
-SSHPASS='Kombi1989*' ./deploy-env.sh
+SSHPASS='votre_mot_de_passe' ./deploy-env.sh
 ```
 
 #### Utilisation
@@ -87,7 +87,7 @@ Si vous préférez contrôler le transfert manuellement :
 
 ```bash
 # Définir le mot de passe SSH
-export SSHPASS='Kombi1989*'
+export SSHPASS='votre_mot_de_passe'
 
 # Transférer le .env
 sshpass -e rsync -avz \

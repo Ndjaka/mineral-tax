@@ -335,7 +335,7 @@ df -h
    ```bash
    cd /Users/eugenendjaka/Downloads/MineralTax
    npm run build
-   export SSHPASS='Kombi1989*'
+   export SSHPASS='VOTRE_MOT_DE_PASSE'
    sshpass -e rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
      dist/ N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com:sites/mineraltax.ch/dist/
    

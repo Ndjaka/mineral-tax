@@ -25,7 +25,7 @@ Le déploiement se fait **automatiquement via GitHub Actions** à chaque push su
 1. Allez sur : https://github.com/Ndjaka/MineralTax/settings/secrets/actions
 2. Cliquez sur **"New repository secret"**
 3. Nom : `SSH_PASSWORD`
-4. Valeur : `Kombi1989*`
+4. Valeur : `votre_mot_de_passe_ssh`
 5. Cliquez sur **"Add secret"**
 
 ### 🔄 Utilisation quotidienne
@@ -74,7 +74,7 @@ npm run build
 
 ```bash
 # Définir le mot de passe SSH
-export SSHPASS='Kombi1989*'
+export SSHPASS='votre_mot_de_passe_ssh'
 
 # Déployer le dossier dist/
 sshpass -e rsync -avz --delete \
