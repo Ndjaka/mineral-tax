@@ -33,6 +33,7 @@ jobs:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
           sshpass -e rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
             --exclude='node_modules' \
             --exclude='.git' \
             dist/ \
