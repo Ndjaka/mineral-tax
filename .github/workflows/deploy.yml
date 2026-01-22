@@ -30,7 +30,7 @@ jobs:
 
       - name: Deploy dist folder via rsync
         env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
           sshpass -e rsync -avz --delete \
             --exclude='node_modules' \
@@ -40,7 +40,7 @@ jobs:
 
       - name: Restart application with PM2
         env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
           sshpass -e ssh -o StrictHostKeyChecking=no \
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
