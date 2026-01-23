@@ -76,13 +76,38 @@ jobs:
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
             "sed -i 's/^PORT=.*/PORT=${{ env.SERVER_PORT }}/' ${{ env.REMOTE_PATH }}/.env || echo 'PORT=${{ env.SERVER_PORT }}' >> ${{ env.REMOTE_PATH }}/.env"
 
-      - name: Setup Apache Proxy (Test only)
+      - name: Setup PHP Proxy (Test only)
         if: env.ENV_NAME == 'test'
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
-          # Créer un .htaccess pour rediriger le trafic vers le port 5001 (Node)
-          HTACCESS="RewriteEngine On\nRewriteRule ^(.*)$ http://localhost:5001/\$1 [P,L]"
+          # Créer un proxy PHP car le [P] flag Apache peut être limité
+          PHP_PROXY="<?php
+          \$url = 'http://localhost:5001' . \$_SERVER['REQUEST_URI'];
+          \$ch = curl_init();
+          curl_setopt(\$ch, CURLOPT_URL, \$url);
+          curl_setopt(\$ch, CURLOPT_RETURNTRANSFER, true);
+          curl_setopt(\$ch, CURLOPT_FOLLOWLOCATION, false);
+          curl_setopt(\$ch, CURLOPT_HEADER, true);
+          \$headers = [];
+          foreach (getallheaders() as \$name => \$v) { if (\$name !== 'Host') \$headers[] = \"\$name: \$v\"; }
+          curl_setopt(\$ch, CURLOPT_HTTPHEADER, \$headers);
+          \$res = curl_exec(\$ch);
+          \$h_size = curl_getinfo(\$ch, CURLINFO_HEADER_SIZE);
+          \$h_cont = substr(\$res, 0, \$h_size);
+          \$body = substr(\$res, \$h_size);
+          curl_close(\$ch);
+          foreach (explode(\"\r\n\", \$h_cont) as \$line) {
+            if (\$line && !preg_match('/^Transfer-Encoding:/i', \$line) && !preg_match('/^HTTP\//i', \$line)) header(\$line);
+          }
+          echo \$body;
+          ?>"
+          sshpass -e ssh -o StrictHostKeyChecking=no \
+            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
+            "echo -e '$PHP_PROXY' > ${{ env.REMOTE_PATH }}/index.php"
+
+          # Configurer .htaccess pour tout envoyer vers index.php
+          HTACCESS="RewriteEngine On\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteRule ^(.*)$ index.php [L,QSA]"
           sshpass -e ssh -o StrictHostKeyChecking=no \
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
             "echo -e '$HTACCESS' > ${{ env.REMOTE_PATH }}/.htaccess"
