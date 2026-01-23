@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - develop
-  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -32,21 +31,15 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
             echo "ENV_NAME=test" >> $GITHUB_ENV
             echo "REMOTE_PATH=sites/test.mineraltax.ch" >> $GITHUB_ENV
-            echo "DEPLOY_TYPE=auto" >> $GITHUB_ENV
           elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "ENV_NAME=prod" >> $GITHUB_ENV
             echo "REMOTE_PATH=sites/mineraltax.ch" >> $GITHUB_ENV
-            echo "DEPLOY_TYPE=manual" >> $GITHUB_ENV
           fi
 
       - name: Install sshpass
-        if: |
-          (env.ENV_NAME == 'test') || 
-          (env.ENV_NAME == 'prod' && github.event_name == 'workflow_dispatch')
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Prepare remote directory (Test only)
-        if: env.ENV_NAME == 'test'
+      - name: Prepare remote directory
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
@@ -55,9 +48,6 @@ jobs:
             "mkdir -p ${{ env.REMOTE_PATH }}/dist"
 
       - name: Deploy dist folder via rsync
-        if: |
-          (env.ENV_NAME == 'test') || 
-          (env.ENV_NAME == 'prod' && github.event_name == 'workflow_dispatch')
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
@@ -69,9 +59,6 @@ jobs:
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com:${{ env.REMOTE_PATH }}/dist/
 
       - name: Restart application with PM2
-        if: |
-          (env.ENV_NAME == 'test') || 
-          (env.ENV_NAME == 'prod' && github.event_name == 'workflow_dispatch')
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
@@ -85,4 +72,5 @@ jobs:
              (./node_modules/.bin/pm2 restart $PM2_NAME 2>/dev/null || ./node_modules/.bin/pm2 start dist/index.mjs --name $PM2_NAME) && \
              ./node_modules/.bin/pm2 save" || true
           echo "✅ Application (${{ env.ENV_NAME }}) déployée et redémarrée avec PM2"
+
 
