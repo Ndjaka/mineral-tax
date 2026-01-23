@@ -50,16 +50,23 @@ jobs:
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
             "mkdir -p ${{ env.REMOTE_PATH }}/dist"
 
-      - name: Deploy dist folder via rsync
+      - name: Deploy project files via rsync
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
+          # Déployer le dossier dist
           sshpass -e rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no" \
             --exclude='node_modules' \
             --exclude='.git' \
             dist/ \
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com:${{ env.REMOTE_PATH }}/dist/
+          
+          # Déployer package.json et package-lock.json à la racine pour npm install
+          sshpass -e rsync -avz \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            package.json package-lock.json \
+            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com:${{ env.REMOTE_PATH }}/
 
       - name: Update .env on server
         env:
@@ -80,7 +87,7 @@ jobs:
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
             "echo -e '$HTACCESS' > ${{ env.REMOTE_PATH }}/.htaccess"
 
-      - name: Restart application with PM2
+      - name: Install dependencies and Restart with PM2
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
@@ -90,10 +97,12 @@ jobs:
           sshpass -e ssh -o StrictHostKeyChecking=no \
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
             "cd ${{ env.REMOTE_PATH }} && \
+             npm install --omit=dev && \
              (test -f node_modules/.bin/pm2 || npm install pm2) && \
              (./node_modules/.bin/pm2 restart $PM2_NAME 2>/dev/null || ./node_modules/.bin/pm2 start dist/index.mjs --name $PM2_NAME) && \
              ./node_modules/.bin/pm2 save" || true
           echo "✅ Application (${{ env.ENV_NAME }}) déployée sur port ${{ env.SERVER_PORT }} et redémarrée"
+
 
 
 
