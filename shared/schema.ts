@@ -244,59 +244,66 @@ export type CompanyProfile = typeof companyProfiles.$inferSelect;
 export const REIMBURSEMENT_RATE_CHF_PER_LITER = 0.3406; // 34.06 CHF/100L
 
 // Nouveaux taux différenciés OFDF 2026
-export const RATE_AGRICULTURE_PRE_2026 = 0.3406;  // 34.06 CHF/100L (avant 01.01.2026)
-export const RATE_AGRICULTURE_POST_2026 = 0.6005; // 60.05 CHF/100L (à partir du 01.01.2026) - Hausse de 76%
-export const RATE_BTP_STANDARD = 0.3406;          // 34.06 CHF/100L (Secteur BTP/Hors route)
+// DIESEL
+export const RATE_DIESEL_AGRICULTURE_PRE_2026 = 0.3406;  // 34.06 CHF/100L
+export const RATE_DIESEL_AGRICULTURE_POST_2026 = 0.6005; // 60.05 CHF/100L
+export const RATE_DIESEL_STANDARD = 0.3406;              // 34.06 CHF/100L
+
+// ESSENCE
+export const RATE_GASOLINE_AGRICULTURE_PRE_2026 = 0.3350;  // 33.50 CHF/100L
+export const RATE_GASOLINE_AGRICULTURE_POST_2026 = 0.5924; // 59.24 CHF/100L
+export const RATE_GASOLINE_STANDARD = 0.3350;              // 33.50 CHF/100L
 
 // Date de transition pour l'agriculture
 export const AGRICULTURE_RATE_CHANGE_DATE = new Date('2026-01-01T00:00:00.000Z');
 
 /**
- * Calcule le remboursement en fonction du secteur d'activité et de la date de facture
+ * Calcule le remboursement en fonction du secteur d'activité, de la date de facture et du type de carburant
  * @param volumeLiters - Volume de carburant en litres
  * @param invoiceDate - Date de la facture de carburant
  * @param sector - Catégorie Taxas de la machine
+ * @param fuelType - Type de carburant (diesel, gasoline, biodiesel)
  * @returns Montant du remboursement en CHF
  */
 export function calculateReimbursementBySectorAndDate(
   volumeLiters: number,
   invoiceDate: Date,
-  sector?: string | null
+  sector?: string | null,
+  fuelType: string = "diesel" // Default to diesel if not specified
 ): number {
-  // Si le secteur est "agriculture avec paiements directs"
-  if (sector === "agriculture_with_direct") {
-    const dateToCheck = new Date(invoiceDate);
-
-    // Factures à partir du 01.01.2026 : nouveau taux de 60.05 CHF/100L
-    if (dateToCheck >= AGRICULTURE_RATE_CHANGE_DATE) {
-      return roundToCentimes(volumeLiters * RATE_AGRICULTURE_POST_2026);
-    } else {
-      // Factures avant 01.01.2026 : ancien taux de 34.06 CHF/100L
-      return roundToCentimes(volumeLiters * RATE_AGRICULTURE_PRE_2026);
-    }
-  }
-
-  // Pour tous les autres secteurs (BTP, construction, etc.) : taux standard
-  return roundToCentimes(volumeLiters * RATE_BTP_STANDARD);
+  const rate = getApplicableRate(invoiceDate, sector, fuelType);
+  return roundToCentimes(volumeLiters * rate);
 }
 
 /**
- * Retourne le taux applicable en fonction du secteur et de la date
+ * Retourne le taux applicable en fonction du secteur, de la date et du type de carburant
  * @param invoiceDate - Date de la facture
  * @param sector - Catégorie Taxas de la machine
+ * @param fuelType - Type de carburant
  * @returns Taux applicable en CHF/L
  */
 export function getApplicableRate(
   invoiceDate: Date,
-  sector?: string | null
+  sector?: string | null,
+  fuelType: string = "diesel"
 ): number {
+  const isGasoline = fuelType === "gasoline";
+
+  // Si le secteur est "agriculture avec paiements directs"
   if (sector === "agriculture_with_direct") {
     const dateToCheck = new Date(invoiceDate);
-    return dateToCheck >= AGRICULTURE_RATE_CHANGE_DATE
-      ? RATE_AGRICULTURE_POST_2026
-      : RATE_AGRICULTURE_PRE_2026;
+
+    // Factures à partir du 01.01.2026
+    if (dateToCheck >= AGRICULTURE_RATE_CHANGE_DATE) {
+      return isGasoline ? RATE_GASOLINE_AGRICULTURE_POST_2026 : RATE_DIESEL_AGRICULTURE_POST_2026;
+    } else {
+      // Factures avant 01.01.2026
+      return isGasoline ? RATE_GASOLINE_AGRICULTURE_PRE_2026 : RATE_DIESEL_AGRICULTURE_PRE_2026;
+    }
   }
-  return RATE_BTP_STANDARD;
+
+  // Pour tous les autres secteurs (BTP, construction, etc.) : taux standard
+  return isGasoline ? RATE_GASOLINE_STANDARD : RATE_DIESEL_STANDARD;
 }
 
 export function roundToCentimes(amount: number): number {

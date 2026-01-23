@@ -26,7 +26,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Banner2026 } from "@/components/banner-2026";
 import type { Machine, FuelEntry, Report, Invoice } from "@shared/schema";
-import { calculateReimbursement } from "@shared/schema";
+import { calculateReimbursementBySectorAndDate } from "@shared/schema";
 import {
   AreaChart,
   Area,
@@ -375,7 +375,12 @@ export default function DashboardPage() {
                       <div className="text-right">
                         <p className="font-mono font-medium">{formatNumber(entry.volumeLiters)} L</p>
                         <p className="text-xs text-primary font-mono">
-                          {formatCurrency(calculateReimbursement(entry.volumeLiters))}
+                          {formatCurrency(calculateReimbursementBySectorAndDate(
+                            entry.volumeLiters,
+                            entry.invoiceDate,
+                            entry.machine?.taxasActivity,
+                            entry.fuelType
+                          ))}
                         </p>
                       </div>
                     </div>
@@ -424,7 +429,7 @@ export default function DashboardPage() {
                     <div className="flex-1">
                       <p className="font-medium text-sm">{t.reports.rate}</p>
                       <p className="text-xl font-bold text-primary font-mono">
-                        0.3405 CHF/L
+                        34.06 - 60.05 CHF/100L
                       </p>
                     </div>
                   </div>

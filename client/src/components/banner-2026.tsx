@@ -3,7 +3,7 @@ import { X, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 
-const BANNER_STORAGE_KEY = "banner2026_dismissed";
+const BANNER_STORAGE_KEY = "banner2026_update_v2";
 const BANNER_DISPLAY_DAYS = 7;
 
 export function Banner2026() {
@@ -12,19 +12,19 @@ export function Banner2026() {
 
     const messages = {
         fr: {
-            text: "🚀 Nouveau taux 2026 : Récupérez jusqu'à 60.05 CHF / 100L de diesel agricole. Votre compte est prêt pour Taxas !",
+            text: "🚀 Mise à jour majeure : Vos remboursements 2026 sont désormais calculés au taux de 60.05 CHF/100L. Votre interface est prête pour le nouveau portail fédéral Taxas.",
             dismiss: "Compris",
         },
         de: {
-            text: "🚀 Neuer Tarif 2026: Erhalten Sie bis zu 60.05 CHF / 100L für landwirtschaftlichen Diesel. Ihr Konto ist bereit für Taxas!",
+            text: "🚀 Wichtiges Update: Ihre Rückerstattungen 2026 werden jetzt mit dem Satz von 60.05 CHF/100L berechnet. Ihre Schnittstelle ist bereit für das neue Bundesportal Taxas.",
             dismiss: "Verstanden",
         },
         it: {
-            text: "🚀 Nuova tariffa 2026: Recupera fino a 60.05 CHF / 100L di diesel agricolo. Il tuo account è pronto per Taxas!",
+            text: "🚀 Aggiornamento importante: I tuoi rimborsi 2026 sono ora calcolati al tasso di 60.05 CHF/100L. La tua interfaccia è pronta per il nuovo portale federale Taxas.",
             dismiss: "Capito",
         },
         en: {
-            text: "🚀 New 2026 rate: Claim up to 60.05 CHF / 100L for agricultural diesel. Your account is ready for Taxas!",
+            text: "🚀 Major update: Your 2026 reimbursements are now calculated at the rate of 60.05 CHF/100L. Your interface is ready for the new federal Taxas portal.",
             dismiss: "Got it",
         },
     };
@@ -36,19 +36,10 @@ export function Banner2026() {
         const dismissed = localStorage.getItem(BANNER_STORAGE_KEY);
 
         if (!dismissed) {
-            // Afficher la bannière immédiatement si elle n'a jamais été fermée
             setIsVisible(true);
         } else {
-            // Vérifier si la bannière doit être réaffichée après 7 jours
-            const dismissedDate = new Date(dismissed);
-            const now = new Date();
-            const daysSinceDismissed = Math.floor(
-                (now.getTime() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-
-            if (daysSinceDismissed >= BANNER_DISPLAY_DAYS) {
-                setIsVisible(true);
-            }
+            // Respecter la fermeture définitive
+            setIsVisible(false);
         }
     }, []);
 

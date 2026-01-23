@@ -1097,7 +1097,7 @@ function formatSwissDate(date: Date): string {
   return `${day}.${month}.${year}`;
 }
 
-export function generateTaxasCsv(
+function generateTaxasCsv(
   report: any,
   machines: Machine[],
   fuelEntries: (FuelEntry & { machine?: Machine })[],
@@ -1110,18 +1110,13 @@ export function generateTaxasCsv(
   const companyRcNumber = companyProfile?.rcNumber || "";
 
   for (const entry of fuelEntries) {
-    // FIX: Always use machines.find() to ensure correct taxasActivity mapping
-    // The entry.machine from leftJoin doesn't properly map taxas_activity to taxasActivity
-    const machine = machines.find(m => m.id === entry.machineId);
-
-    // DEBUG: Use console.error to debug (works in ESM)
-    console.error(`[CSV DEBUG] Entry: ${entry.invoiceNumber}, machineId: ${entry.machineId}, found: ${!!machine}, taxasActivity: ${machine?.taxasActivity}`);
-
+    const machine = entry.machine || machines.find(m => m.id === entry.machineId);
     const machineData = machine as any;
     const isEligible = machine?.isEligible ?? true;
     const volumeLiters = parseFloat(entry.volumeLiters.toString());
 
-
+    // DEBUG: Log pour identifier le problème
+    console.log(`[CSV DEBUG] Entry ${entry.invoiceNumber}: machine.taxasActivity = ${machine?.taxasActivity}, invoiceDate = ${entry.invoiceDate}`);
 
     const amount = isEligible ? calculateReimbursementBySectorAndDate(
       volumeLiters,

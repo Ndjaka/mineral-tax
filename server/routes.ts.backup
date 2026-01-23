@@ -1097,7 +1097,7 @@ function formatSwissDate(date: Date): string {
   return `${day}.${month}.${year}`;
 }
 
-export function generateTaxasCsv(
+function generateTaxasCsv(
   report: any,
   machines: Machine[],
   fuelEntries: (FuelEntry & { machine?: Machine })[],
@@ -1110,23 +1110,19 @@ export function generateTaxasCsv(
   const companyRcNumber = companyProfile?.rcNumber || "";
 
   for (const entry of fuelEntries) {
-    // FIX: Always use machines.find() to ensure correct taxasActivity mapping
-    // The entry.machine from leftJoin doesn't properly map taxas_activity to taxasActivity
-    const machine = machines.find(m => m.id === entry.machineId);
-
-    // DEBUG: Use console.error to debug (works in ESM)
-    console.error(`[CSV DEBUG] Entry: ${entry.invoiceNumber}, machineId: ${entry.machineId}, found: ${!!machine}, taxasActivity: ${machine?.taxasActivity}`);
-
+    const machine = entry.machine || machines.find(m => m.id === entry.machineId);
     const machineData = machine as any;
     const isEligible = machine?.isEligible ?? true;
     const volumeLiters = parseFloat(entry.volumeLiters.toString());
 
-
+    
+    // FIX: Access taxas_activity with fallback for Drizzle ORM mapping
+    const taxasActivity = machine?.taxasActivity || (machineData as any)?.taxas_activity;
 
     const amount = isEligible ? calculateReimbursementBySectorAndDate(
       volumeLiters,
       entry.invoiceDate,
-      machine?.taxasActivity,
+      taxasActivity,
       entry.fuelType
     ) : 0;
 

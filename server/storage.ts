@@ -434,7 +434,8 @@ export class DatabaseStorage implements IStorage {
         estimatedReimbursement += calculateReimbursementBySectorAndDate(
           row.fuel_entries.volumeLiters,
           row.fuel_entries.invoiceDate,
-          row.machines.taxasActivity
+          row.machines.taxasActivity,
+          row.fuel_entries.fuelType
         );
       }
     }
@@ -479,7 +480,8 @@ export class DatabaseStorage implements IStorage {
         existing.reimbursement += calculateReimbursementBySectorAndDate(
           row.fuel_entries.volumeLiters,
           row.fuel_entries.invoiceDate,
-          row.machines.taxasActivity
+          row.machines.taxasActivity,
+          row.fuel_entries.fuelType
         );
 
         monthlyData.set(monthKey, existing);
@@ -552,7 +554,8 @@ export class DatabaseStorage implements IStorage {
         reimbursementAmount += calculateReimbursementBySectorAndDate(
           row.fuel_entries.volumeLiters,
           row.fuel_entries.invoiceDate,
-          row.machines.taxasActivity
+          row.machines.taxasActivity,
+          row.fuel_entries.fuelType
         );
       }
     }

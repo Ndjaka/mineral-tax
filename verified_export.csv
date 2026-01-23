@@ -1,0 +1,6 @@
+RC;N° matricule;N° châssis;N° article;N° entrepôt;Date mouvement;N° mouvement;Quantité de litres / kg;BD;Stat.;CI;Montant de l'impôt CHF
+RC-555;MAT-987654;VIN-123456789;ART-001;WH-01;15.12.2025;MOV-001;1000.00;;;;340.60
+RC-555;MAT-987654;VIN-123456789;ART-001;WH-01;05.01.2026;MOV-001;1000.00;;;;600.50
+
+# Source légale : Règlement 09 de l'OFDF (vigueur 01.01.2026) - Remboursement de l'impôt sur les huiles minérales
+# Généré par MineralTax.ch - Compatible avec la plateforme Taxas OFDF

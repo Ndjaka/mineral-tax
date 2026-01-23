@@ -55,7 +55,7 @@ import {
 import { StatsBar } from "@/components/stats-bar";
 import { Progress } from "@/components/ui/progress";
 import type { Machine, FuelEntry } from "@shared/schema";
-import { calculateReimbursement } from "@shared/schema";
+import { calculateReimbursement, calculateReimbursementBySectorAndDate } from "@shared/schema";
 import { extractTextFromImage } from "@/lib/ocr";
 
 const fuelTypes = ["diesel", "gasoline", "biodiesel"] as const;
@@ -82,8 +82,8 @@ function InfoPopover({ content }: { content: string }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="ml-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
           onClick={(e) => e.stopPropagation()}
         >
@@ -127,13 +127,23 @@ export default function FuelPage() {
   });
 
   const volumeValue = form.watch("volumeLiters");
-  const calculatedReimbursement = volumeValue
-    ? calculateReimbursement(volumeValue).toFixed(2)
-    : "0.00";
+  const selectedMachineId = form.watch("machineId");
+  const selectedDate = form.watch("invoiceDate");
+  const selectedFuelType = form.watch("fuelType");
 
   const { data: machines } = useQuery<Machine[]>({
     queryKey: ["/api/machines"],
   });
+
+  const selectedMachine = machines?.find(m => m.id === selectedMachineId);
+  const calculatedReimbursement = volumeValue && selectedDate
+    ? calculateReimbursementBySectorAndDate(
+      volumeValue,
+      new Date(selectedDate),
+      selectedMachine?.taxasActivity,
+      selectedFuelType
+    ).toFixed(2)
+    : "0.00";
 
   const { data: entries, isLoading } = useQuery<(FuelEntry & { machine?: Machine })[]>({
     queryKey: ["/api/fuel-entries"],
@@ -285,8 +295,8 @@ export default function FuelPage() {
 
       toast({
         title: t.fuel.scanComplete || "Scan terminé",
-        description: result.extractedData.volume 
-          ? `${result.extractedData.volume} L détecté` 
+        description: result.extractedData.volume
+          ? `${result.extractedData.volume} L détecté`
           : "Vérifiez les données extraites",
       });
     } catch (error) {
@@ -315,7 +325,7 @@ export default function FuelPage() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button 
+          <Button
             disabled={isScanning}
             className="relative bg-primary hover:bg-primary/90"
             data-testid="button-scan-ticket"
@@ -380,8 +390,13 @@ export default function FuelPage() {
         <div className="space-y-4">
           {entries.map((entry) => {
             const machine = machines?.find((m) => m.id === entry.machineId);
-            const reimbursement = calculateReimbursement(entry.volumeLiters);
-            
+            const reimbursement = calculateReimbursementBySectorAndDate(
+              entry.volumeLiters,
+              entry.invoiceDate,
+              machine?.taxasActivity,
+              entry.fuelType
+            );
+
             return (
               <Card key={entry.id} className="hover-elevate" data-testid={`card-fuel-entry-${entry.id}`}>
                 <CardContent className="p-6">
@@ -414,7 +429,7 @@ export default function FuelPage() {
                           {getFuelTypeLabel(entry.fuelType)}
                         </p>
                       </div>
-                      
+
                       <div className="text-left sm:text-right">
                         <p className="text-lg sm:text-xl font-bold text-primary font-mono">
                           {formatCurrency(reimbursement)}
@@ -444,7 +459,7 @@ export default function FuelPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {entry.notes && (
                     <p className="mt-3 text-sm text-muted-foreground border-t pt-3">
                       {entry.notes}

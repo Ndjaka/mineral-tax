@@ -1,0 +1,6 @@
+RC;N° matricule;N° châssis;N° article;N° entrepôt;Date mouvement;N° mouvement;Quantité de litres / kg;BD;Stat.;CI;Montant de l'impôt CHF
+;;;;;15.12.2025;FACTURE-A-DEC2025;1000.00;;;;340.60
+;;;;;05.01.2026;FACTURE-B-JAN2026;1000.00;;;;340.60
+
+# Source légale : Règlement 09 de l'OFDF (vigueur 01.01.2026) - Remboursement de l'impôt sur les huiles minérales
+# Généré par MineralTax.ch - Compatible avec la plateforme Taxas OFDF
