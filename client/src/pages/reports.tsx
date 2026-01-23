@@ -27,7 +27,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, FileText, Download, Calendar, Loader2, HelpCircle, FileSpreadsheet, ExternalLink, LogIn, Upload, Lightbulb, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { Plus, FileText, Download, Calendar, Loader2, HelpCircle, FileSpreadsheet, ExternalLink, LogIn, Upload, Lightbulb, CheckCircle2, AlertTriangle, XCircle, Building, AppWindow, ShieldCheck } from "lucide-react";
 import {
   Accordion,
   AccordionContent,

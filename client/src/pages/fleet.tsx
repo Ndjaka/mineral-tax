@@ -49,6 +49,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Truck, Search, AlertTriangle } from "lucide-react";
 import { StatsBar } from "@/components/stats-bar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Machine } from "@shared/schema";
 
 const machineTypesEngins = [

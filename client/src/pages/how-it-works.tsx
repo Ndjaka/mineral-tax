@@ -90,7 +90,7 @@ export default function HowItWorks() {
                     </p>
 
                     <ul className="space-y-2 pt-2">
-                      {(hp[featuresKey] as string[]).map((feature, fIndex) => (
+                      {(hp[featuresKey] as unknown as string[]).map((feature, fIndex) => (
                         <li key={fIndex} className="flex items-center gap-2 text-sm" data-testid={`text-${stepKey}-feature-${fIndex}`}>
                           <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                           <span>{feature}</span>

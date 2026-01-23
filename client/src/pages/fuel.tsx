@@ -45,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Fuel, Calendar, Camera, Loader2, ChevronDown, HelpCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Fuel, Calendar, Camera, Loader2, ChevronDown, HelpCircle, Calculator } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Popover,
