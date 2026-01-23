@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useI18n, languageNames, type Language } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
@@ -49,13 +48,9 @@ export default function SettingsPage() {
       return response.json();
     },
     onSuccess: (data) => {
-      console.log("[Twint] Checkout response:", data);
       if (data.url) {
         window.location.href = data.url;
       }
-    },
-    onError: (error) => {
-      console.error("[Twint] Checkout error:", error);
     },
   });
 
@@ -87,7 +82,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-3xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-3xl mx-auto text-foreground">
       <div>
         <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-settings-title">
           {t.settings.title}
@@ -172,9 +167,7 @@ export default function SettingsPage() {
               <p className="text-sm font-medium">{t.settings.choosePaymentMethod}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Card Payment - Recommended */}
                 <div className="relative p-4 rounded-lg border-2 border-primary/40 bg-primary/10 hover-elevate">
-                  {/* Recommended Badge */}
                   <div className="absolute -top-3 left-4">
                     <Badge className="bg-primary text-primary-foreground shadow-md">
                       <Star className="h-3 w-3 mr-1" />
@@ -216,7 +209,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Twint Payment */}
                 <div className="p-4 rounded-lg border-2 border-orange-400/30 bg-orange-50/50 dark:bg-orange-950/20 hover-elevate">
                   <div className="flex items-start gap-3 mb-3">
                     <div className="p-2 rounded-lg bg-orange-400/20">
@@ -274,7 +266,7 @@ export default function SettingsPage() {
             <span className="font-mono font-medium">0.3405 CHF/L</span>
           </div>
           <div className="flex justify-between py-2 border-b">
-            <span className="text-muted-foreground">Formulaire / Formular</span>
+            <span className="text-muted-foreground">Formulaire</span>
             <span className="font-medium">45.35</span>
           </div>
           <div className="flex justify-between py-2">

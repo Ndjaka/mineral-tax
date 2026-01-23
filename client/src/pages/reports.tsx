@@ -27,7 +27,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, FileText, Download, Calendar, Loader2, HelpCircle, FileSpreadsheet, ExternalLink, Key, Building, AppWindow, ShieldCheck, AlertTriangle, CheckCircle2, XCircle, LogIn, Upload, Lightbulb } from "lucide-react";
+import { Plus, FileText, Download, Calendar, Loader2, HelpCircle, FileSpreadsheet, ExternalLink, LogIn, Upload, Lightbulb, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -115,7 +115,6 @@ export default function ReportsPage() {
       });
       if (!response.ok) throw new Error("Failed to download");
 
-      // Récupérer le nom du fichier depuis l'en-tête Content-Disposition
       const contentDisposition = response.headers.get("Content-Disposition");
       let filename = `report-${reportId}.pdf`;
       if (contentDisposition) {
@@ -172,10 +171,10 @@ export default function ReportsPage() {
     onSuccess: (result: AuditResult) => {
       setAuditResult(result);
       if (result.isValid) {
-        toast({ title: t.reports.auditSuccess || "Audit réussi - Aucune erreur détectée" });
+        toast({ title: t.reports.auditSuccess || "Audit réussi" });
       } else {
         toast({
-          title: t.reports.auditErrors || "Erreurs détectées dans vos données",
+          title: t.reports.auditErrors || "Erreurs détectées",
           variant: "destructive"
         });
       }
@@ -195,14 +194,14 @@ export default function ReportsPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("de-CH", {
+    return new Intl.NumberFormat("fr-CH", {
       style: "currency",
       currency: "CHF",
     }).format(amount);
   };
 
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("de-CH").format(num);
+    return new Intl.NumberFormat("fr-CH").format(num);
   };
 
   const getStatusBadge = (status: string) => {
@@ -214,13 +213,13 @@ export default function ReportsPage() {
     };
     return (
       <Badge variant={variants[status] || "secondary"}>
-        {t.reports.status[status as keyof typeof t.reports.status] || status}
+        {(t.reports.status as any)[status] || status}
       </Badge>
     );
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto text-foreground">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-reports-title">
@@ -267,7 +266,7 @@ export default function ReportsPage() {
           {reports.map((report) => (
             <Card key={report.id} className="hover-elevate" data-testid={`card-report-${report.id}`}>
               <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-foreground">
                   <div className="flex items-center gap-4">
                     <div className="p-3 rounded-lg bg-primary/10">
                       <FileText className="h-6 w-6 text-primary" />
@@ -347,7 +346,7 @@ export default function ReportsPage() {
         </div>
       ) : (
         <Card>
-          <CardContent className="py-12 text-center">
+          <CardContent className="py-12 text-center text-foreground">
             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <h3 className="font-medium mb-2">{t.common.noData}</h3>
             <p className="text-muted-foreground text-sm mb-4">
@@ -361,9 +360,8 @@ export default function ReportsPage() {
         </Card>
       )}
 
-      {/* Guide d'importation Agate - Collapsible */}
       {reports && reports.length > 0 && (
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion type="single" collapsible className="w-full text-foreground">
           <AccordionItem value="agate-guide" className="border rounded-lg px-4">
             <AccordionTrigger className="hover:no-underline" data-testid="accordion-agate-guide">
               <div className="flex items-center gap-2">
@@ -373,7 +371,6 @@ export default function ReportsPage() {
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4 py-2">
-                {/* Étape 1 */}
                 <div className="flex gap-4">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <LogIn className="h-4 w-4 text-primary" />
@@ -399,49 +396,26 @@ export default function ReportsPage() {
                   </div>
                 </div>
 
-                {/* Étape 2 */}
-                <div className="flex gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <AppWindow className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-muted-foreground">2</span>
-                      <h4 className="font-medium">{t.reports.agateStep2Title}</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t.reports.agateStep2Desc}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Étape 3 */}
                 <div className="flex gap-4">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <Upload className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-muted-foreground">3</span>
-                      <h4 className="font-medium">{t.reports.agateStep3Title}</h4>
+                      <span className="text-xs font-semibold text-muted-foreground">2</span>
+                      <h4 className="font-medium">{t.reports.agateStep2Title}</h4>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t.reports.agateStep3Desc}
+                    <p className="text-sm text-muted-foreground mt-1 text-wrap">
+                      {t.reports.agateStep2Desc}
                     </p>
                   </div>
                 </div>
 
-                {/* Conseil technique */}
-                <div className="flex gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg mt-4">
-                  <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-                      {t.reports.agateTipTitle}
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                      {t.reports.agateTipDesc}
-                    </p>
-                  </div>
+                <div className="flex gap-4 border-l-2 border-primary/20 pl-4 py-2 bg-primary/5 rounded-r-lg">
+                  <Lightbulb className="h-5 w-5 text-primary shrink-0" />
+                  <p className="text-sm italic text-muted-foreground">
+                    {t.reports.agateProTip}
+                  </p>
                 </div>
               </div>
             </AccordionContent>
@@ -449,137 +423,112 @@ export default function ReportsPage() {
         </Accordion>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setAuditResult(null); }}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] text-foreground">
           <DialogHeader>
             <DialogTitle>{t.reports.generate}</DialogTitle>
           </DialogHeader>
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="periodStart"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.reports.periodStart} *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        onChange={(e) => { field.onChange(e); setAuditResult(null); }}
-                        data-testid="input-period-start"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="periodStart"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.reports.periodStart}</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="periodEnd"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.reports.periodEnd} *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        onChange={(e) => { field.onChange(e); setAuditResult(null); }}
-                        data-testid="input-period-end"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="periodEnd"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.reports.periodEnd}</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-              <Card className="bg-muted/50">
-                <CardContent className="p-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t.reports.rate}</span>
-                    <span className="font-mono font-medium">0.3405 CHF/L</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t.settings.language}</span>
-                    <span className="font-medium">{language.toUpperCase()}</span>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex flex-col gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAudit}
+                  disabled={auditMutation.isPending}
+                  className="w-full"
+                >
+                  {auditMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {t.reports.verifyData || "Vérifier mes données (Audit)"}
+                </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAudit}
-                disabled={auditMutation.isPending}
-                className="w-full"
-                data-testid="button-run-audit"
-              >
-                {auditMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <ShieldCheck className="h-4 w-4 mr-2" />
-                )}
-                {t.reports.runAudit || "Vérifier la conformité"}
-              </Button>
-
-              {auditResult && (
-                <Card className={auditResult.isValid ? "border-green-500/50 bg-green-50/50 dark:bg-green-950/20" : "border-destructive/50 bg-destructive/10"}>
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center gap-2">
+                {auditResult && (
+                  <div className={`p-4 rounded-lg border ${auditResult.isValid ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
+                    <div className="flex items-center gap-2 mb-2">
                       {auditResult.isValid ? (
                         <CheckCircle2 className="h-5 w-5 text-green-600" />
                       ) : (
-                        <XCircle className="h-5 w-5 text-destructive" />
+                        <AlertTriangle className="h-5 w-5 text-amber-600" />
                       )}
-                      <span className="font-medium">
-                        {auditResult.isValid
-                          ? (t.reports.auditPassed || "Données conformes")
-                          : (t.reports.auditFailed || "Corrections requises")}
-                      </span>
+                      <p className="font-semibold text-sm">
+                        {auditResult.isValid ? t.reports.auditReady || "Prêt pour soumission" : t.reports.auditErrors || "Erreurs détectées"}
+                      </p>
                     </div>
 
-                    <div className="text-xs text-muted-foreground">
-                      {t.reports.auditSummary || "Résumé"}: {auditResult.summary.entriesAnalyzed} {t.fuel.title || "entrées"}, {auditResult.summary.machinesChecked} {t.fleet.title || "machines"}
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span>{t.reports.machinesChecked || "Engins vérifiés"}:</span>
+                        <span>{auditResult.summary.machinesChecked}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{t.reports.entriesAnalyzed || "Tickets analysés"}:</span>
+                        <span>{auditResult.summary.entriesAnalyzed}</span>
+                      </div>
                     </div>
 
                     {auditResult.findings.length > 0 && (
-                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                      <div className="mt-3 pt-3 border-t border-black/5 space-y-2">
                         {auditResult.findings.map((finding, idx) => (
-                          <div
-                            key={idx}
-                            className={`flex items-start gap-2 text-sm p-2 rounded ${finding.type === "error"
-                              ? "bg-destructive/20 text-destructive"
-                              : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"
-                              }`}
-                          >
-                            {finding.type === "error" ? (
-                              <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                            ) : (
-                              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                            )}
+                          <div key={idx} className="flex gap-2 text-[10px] leading-tight">
+                            {finding.type === "error" ? <XCircle className="h-3 w-3 text-destructive shrink-0" /> : <AlertTriangle className="h-3 w-3 text-amber-600 shrink-0" />}
                             <span>{finding.message}</span>
                           </div>
                         ))}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                )}
+              </div>
 
-              <DialogFooter className="gap-2">
-                <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); setAuditResult(null); }}>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setIsDialogOpen(false)}
+                  disabled={generateMutation.isPending}
+                >
                   {t.common.cancel}
                 </Button>
                 <Button
                   type="submit"
-                  disabled={generateMutation.isPending || !auditResult || !auditResult.isValid}
+                  disabled={generateMutation.isPending || (auditResult !== null && !auditResult.isValid)}
                   data-testid="button-confirm-generate"
                 >
                   {generateMutation.isPending && (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   )}
-                  {t.common.generate}
+                  {t.reports.generate}
                 </Button>
               </DialogFooter>
             </form>
@@ -588,70 +537,45 @@ export default function ReportsPage() {
       </Dialog>
 
       <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] text-foreground">
           <DialogHeader>
-            <DialogTitle>{t.reports.adminHelpTitle}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Building className="h-5 w-5" />
+              {t.reports.adminHelp}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
-            <div className="flex gap-4">
-              <div className="p-3 rounded-lg bg-primary/10 h-fit">
-                <Key className="h-5 w-5 text-primary" />
+          <div className="space-y-4 py-4 text-sm">
+            <p>{t.reports.adminHelpIntro}</p>
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-muted flex gap-4">
+                <LogIn className="h-5 w-5 text-primary shrink-0" />
+                <div>
+                  <h4 className="font-bold mb-1">{t.reports.adminHelpLoginTitle}</h4>
+                  <p className="text-muted-foreground">{t.reports.adminHelpLoginDesc}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-semibold">{t.reports.adminHelpLoginCH}</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {t.reports.adminHelpLoginCHDesc}
-                </p>
+              <div className="p-4 rounded-lg bg-muted flex gap-4">
+                <AppWindow className="h-5 w-5 text-primary shrink-0" />
+                <div>
+                  <h4 className="font-bold mb-1">{t.reports.adminHelpSearchTitle}</h4>
+                  <p className="text-muted-foreground">{t.reports.adminHelpSearchDesc}</p>
+                </div>
               </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="p-3 rounded-lg bg-primary/10 h-fit">
-                <Building className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-semibold">{t.reports.adminHelpPartner}</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {t.reports.adminHelpPartnerDesc}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="p-3 rounded-lg bg-primary/10 h-fit">
-                <AppWindow className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-semibold">{t.reports.adminHelpTaxas}</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {t.reports.adminHelpTaxasDesc}
-                </p>
+              <div className="p-4 rounded-lg bg-muted flex gap-4">
+                <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+                <div>
+                  <h4 className="font-bold mb-1">{t.reports.adminHelpSubmitTitle}</h4>
+                  <p className="text-muted-foreground">{t.reports.adminHelpSubmitDesc}</p>
+                </div>
               </div>
             </div>
+            <p className="font-semibold text-primary">{t.reports.adminHelpOutro}</p>
           </div>
-
-          <DialogFooter className="sm:justify-between">
-            <Button
-              variant="outline"
-              onClick={() => window.open("https://www.bazg.admin.ch/", "_blank")}
-              data-testid="button-ofdf-portal"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              {t.reports.adminHelpLink}
-            </Button>
-            <Button onClick={() => setIsHelpDialogOpen(false)}>
-              {t.common.close}
-            </Button>
+          <DialogFooter>
+            <Button onClick={() => setIsHelpDialogOpen(false)}>{t.common.close}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Footer OFDF */}
-      <div className="mt-8 flex justify-end">
-        <p className="text-xs text-muted-foreground italic">
-          Fichiers générés selon les directives officielles de l'OFDF
-        </p>
-      </div>
     </div>
   );
 }

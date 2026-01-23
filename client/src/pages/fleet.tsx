@@ -7,7 +7,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +72,7 @@ const machineTypesAutres = [
   { value: "other", emoji: "🔧" },
 ] as const;
 
-const machineTypes = [
+const machineTypesArr = [
   "excavator",
   "spider_excavator",
   "loader",
@@ -90,8 +90,9 @@ const machineTypes = [
   "other",
 ] as const;
 
-const taxasActivities = [
+const taxasActivitiesArr = [
   "agriculture_with_direct",
+  "agriculture_with_direct_old",
   "agriculture_without_direct",
   "forestry",
   "rinsing",
@@ -106,15 +107,15 @@ const taxasActivities = [
   "other_taxas",
 ] as const;
 
-const plateColors = ["white", "green", "yellow", "blue", "none"] as const;
+const plateColorsArr = ["white", "green", "yellow", "blue", "none"] as const;
 
 const machineFormSchema = z.object({
   name: z.string().min(1),
-  type: z.enum(machineTypes),
+  type: z.enum(machineTypesArr),
   customType: z.string().optional(),
-  taxasActivity: z.enum(taxasActivities).optional(),
+  taxasActivity: z.enum(taxasActivitiesArr).optional(),
   licensePlate: z.string().optional(),
-  plateColor: z.enum(plateColors).optional(),
+  plateColor: z.enum(plateColorsArr).optional(),
   chassisNumber: z.string().optional(),
   registrationNumber: z.string().optional(),
   rcNumber: z.string().optional(),
@@ -127,7 +128,7 @@ const machineFormSchema = z.object({
   }
   return true;
 }, {
-  message: "Veuillez préciser le type de machine",
+  message: "Required",
   path: ["customType"],
 });
 
@@ -174,13 +175,11 @@ export default function FleetPage() {
       handleCloseDialog();
     },
     onError: (error: any) => {
-      console.error("Create machine error:", error);
       if (error?.message?.includes("403") || error?.code === "subscription_required") {
         toast({ title: t.subscription.subscriptionRequired, variant: "destructive" });
         setLocation("/subscription");
       } else {
-        const errorMessage = error?.message || t.common.error;
-        toast({ title: errorMessage, variant: "destructive" });
+        toast({ title: error?.message || t.common.error, variant: "destructive" });
       }
     },
   });
@@ -217,11 +216,11 @@ export default function FleetPage() {
       setEditingMachine(machine);
       form.reset({
         name: machine.name,
-        type: machine.type as typeof machineTypes[number],
+        type: (machine.type as any) || "excavator",
         customType: machine.customType || "",
-        taxasActivity: (machine.taxasActivity as typeof taxasActivities[number]) || "construction",
+        taxasActivity: (machine.taxasActivity as any) || "construction",
         licensePlate: machine.licensePlate || "",
-        plateColor: (machine.plateColor as typeof plateColors[number]) || "none",
+        plateColor: (machine.plateColor as any) || "none",
         chassisNumber: machine.chassisNumber || "",
         registrationNumber: machine.registrationNumber || "",
         rcNumber: machine.rcNumber || "",
@@ -271,11 +270,11 @@ export default function FleetPage() {
   );
 
   const getMachineTypeLabel = (type: string) => {
-    return t.fleet.types[type as keyof typeof t.fleet.types] || type;
+    return (t.fleet.types as any)[type] || type;
   };
 
   const getTaxasActivityLabel = (activity: string) => {
-    return t.fleet.taxasActivities[activity as keyof typeof t.fleet.taxasActivities] || activity;
+    return (t.fleet.taxasActivities as any)[activity] || activity;
   };
 
   const getPlateColorInfo = (color: string) => {
@@ -290,15 +289,15 @@ export default function FleetPage() {
   };
 
   const getPlateColorLabel = (color: string) => {
-    return t.fleet.plateColors?.[color as keyof typeof t.fleet.plateColors] || color;
+    return (t.fleet.plateColors as any)?.[color] || color;
   };
 
   const watchPlateColor = form.watch("plateColor");
   const watchIsEligible = form.watch("isEligible");
   const watchType = form.watch("type");
-  
+
   const handlePlateColorChange = (color: string) => {
-    form.setValue("plateColor", color as typeof plateColors[number]);
+    form.setValue("plateColor", color as any);
     if (!hasEligibilityOverride) {
       const colorInfo = getPlateColorInfo(color);
       form.setValue("isEligible", colorInfo.eligible);
@@ -375,14 +374,14 @@ export default function FleetPage() {
                     {machine.isEligible ? t.fleet.eligible : t.fleet.notEligible}
                   </Badge>
                 </div>
-                
+
                 <div className="space-y-2 text-sm">
                   {machine.licensePlate && (
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">{t.fleet.licensePlate || "Plaque"}</span>
                       <div className="flex items-center gap-2">
                         {machine.plateColor && machine.plateColor !== "none" && (
-                          <span 
+                          <span
                             className={`w-4 h-4 rounded border ${getPlateColorInfo(machine.plateColor).bg} ${getPlateColorInfo(machine.plateColor).border}`}
                             title={getPlateColorLabel(machine.plateColor)}
                           />
@@ -400,29 +399,40 @@ export default function FleetPage() {
                   {machine.year && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t.fleet.year}</span>
-                      <span className="font-mono">{machine.year}</span>
+                      <span>{machine.year}</span>
+                    </div>
+                  )}
+                  {machine.taxasActivity && (
+                    <div className="pt-2 border-t mt-2">
+                      <p className="text-[10px] uppercase text-muted-foreground tracking-wider mb-1">
+                        {t.fleet.taxasActivity}
+                      </p>
+                      <p className="text-xs font-medium">
+                        {getTaxasActivityLabel(machine.taxasActivity)}
+                      </p>
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-2 mt-4 pt-4 border-t">
+                <div className="flex justify-end gap-2 mt-6">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="flex-1"
                     onClick={() => handleOpenDialog(machine)}
                     data-testid={`button-edit-machine-${machine.id}`}
                   >
-                    <Pencil className="h-4 w-4 mr-1" />
+                    <Pencil className="h-4 w-4 mr-2" />
                     {t.common.edit}
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => setDeletingMachine(machine)}
                     data-testid={`button-delete-machine-${machine.id}`}
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {t.common.delete}
                   </Button>
                 </div>
               </CardContent>
@@ -430,295 +440,256 @@ export default function FleetPage() {
           ))}
         </div>
       ) : (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Truck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="font-medium mb-2">{t.common.noData}</h3>
-            <p className="text-muted-foreground text-sm mb-4">
-              {t.fleet.emptyDescription || "Commencez par ajouter vos véhicules et machines"}
-            </p>
-          </CardContent>
+        <Card className="p-8 text-center text-muted-foreground">
+          <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>{t.common.noData}</p>
+          <p className="text-sm mt-1">{t.fleet.emptyDescription}</p>
+          <Button onClick={() => handleOpenDialog()} className="mt-4">
+            <Plus className="h-4 w-4 mr-2" />
+            {t.fleet.addMachine}
+          </Button>
         </Card>
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
               {editingMachine ? t.fleet.editMachine : t.fleet.addMachine}
             </DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.machineName} *</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-machine-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.machineType} *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fleet.machineName}</FormLabel>
                       <FormControl>
-                        <SelectTrigger data-testid="select-machine-type">
-                          <SelectValue />
-                        </SelectTrigger>
+                        <Input {...field} placeholder="Pelle hydraulique A12" />
                       </FormControl>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Engins de chantier</SelectLabel>
-                          {machineTypesEngins.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.emoji} {getMachineTypeLabel(type.value)}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel>Autres équipements</SelectLabel>
-                          {machineTypesAutres.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.emoji} {getMachineTypeLabel(type.value)}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fleet.machineType}</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choisir un type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>{t.fleet.constructionEngines}</SelectLabel>
+                            {machineTypesEngins.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.emoji} {getMachineTypeLabel(type.value)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                          <SelectGroup>
+                            <SelectLabel>{t.fleet.otherEquipment}</SelectLabel>
+                            {machineTypesAutres.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.emoji} {getMachineTypeLabel(type.value)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               {watchType === "other" && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="customType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Précisez le type de machine *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="Ex: Broyeur fixe, Pompe à lisier, Compresseur..."
-                            data-testid="input-custom-type"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex items-start gap-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/30">
-                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-700 dark:text-amber-400">
-                      <strong>Note :</strong> Les machines de type "Autre" peuvent nécessiter une validation manuelle de l'OFDF. Assurez-vous qu'elles ne sont pas destinées au transport routier.
-                    </p>
-                  </div>
-                </>
+                <FormField
+                  control={form.control}
+                  name="customType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fleet.specifyMachineType}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={t.fleet.otherTypePlaceholder}
+                        />
+                      </FormControl>
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                        {t.fleet.otherTypeNote}
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
 
-              <FormField
-                control={form.control}
-                name="taxasActivity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.taxasActivity}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-taxas-activity">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {taxasActivities.map((activity) => (
-                          <SelectItem key={activity} value={activity}>
-                            {getTaxasActivityLabel(activity)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="taxasActivity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fleet.taxasActivity}</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choisir une activité" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {taxasActivitiesArr.map((activity) => (
+                            <SelectItem key={activity} value={activity}>
+                              {getTaxasActivityLabel(activity)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <div className="space-y-3">
-                <FormLabel>{t.fleet.licensePlate || "Plaque d'immatriculation"}</FormLabel>
-                <div className="flex gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <FormField
                     control={form.control}
                     name="licensePlate"
                     render={({ field }) => (
-                      <FormItem className="flex-1">
+                      <FormItem>
+                        <FormLabel>{t.fleet.licensePlate || "Plaque"}</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="e.g. VS 12345" 
-                            data-testid="input-license-plate" 
-                          />
+                          <Input {...field} placeholder="VD 123456" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    {t.fleet.plateColorLabel || "Couleur de la plaque (détermine l'éligibilité)"}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {plateColors.map((color) => {
-                      const info = getPlateColorInfo(color);
-                      const isSelected = watchPlateColor === color;
-                      return (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handlePlateColorChange(color)}
-                          className={`px-3 py-2 rounded-md border-2 text-sm font-medium transition-all ${info.bg} ${info.text} ${
-                            isSelected ? "ring-2 ring-primary ring-offset-2" : info.border
-                          }`}
-                          data-testid={`button-plate-color-${color}`}
+
+                  <FormField
+                    control={form.control}
+                    name="plateColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t.fleet.plateColorLabel || "Couleur"}</FormLabel>
+                        <Select
+                          onValueChange={(val) => handlePlateColorChange(val)}
+                          defaultValue={field.value}
+                          value={field.value}
                         >
-                          {getPlateColorLabel(color)}
-                          {color !== "none" && (
-                            <span className="ml-1.5 text-xs opacity-75">
-                              {info.eligible ? "✓" : "✗"}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t.fleet.plateColorHint || "Plaques vertes (agricoles) et jaunes (industrielles) = éligibles. Plaques blanches (routières) = non éligibles."}
-                  </p>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {plateColorsArr.map((color) => (
+                              <SelectItem key={color} value={color}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3 h-3 rounded-full border ${getPlateColorInfo(color).bg} ${getPlateColorInfo(color).border}`} />
+                                  {getPlateColorLabel(color)}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
 
-              <FormField
-                control={form.control}
-                name="chassisNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.chassisNumber}</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. FE724V2026TX001" data-testid="input-chassis-number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="chassisNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fleet.chassisNumber}</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="VIN / N° de châssis" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="registrationNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.registrationNumber || "N° de matricule"}</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. 405.122.889" data-testid="input-registration-number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="registrationNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fleet.registrationNumber}</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Matricule / N° d'immatriculation" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-              <FormField
-                control={form.control}
-                name="rcNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.rcNumber || "N° RC Taxas"}</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. RC-BTP-2025-001" data-testid="input-rc-number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="year"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.year}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-year"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="power"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.power}</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="e.g. 150 kW"
-                        data-testid="input-power"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isEligible"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">{t.fleet.eligible}</FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          {t.calculator.eligibilityNote}
-                        </p>
-                      </div>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/10">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    {t.fleet.eligible}
+                  </FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    {t.fleet.plateColorHint || "Plaques vertes et jaunes = éligible. Plaques blanches = non éligible."}
+                  </p>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="isEligible"
+                  render={({ field }) => (
+                    <FormItem>
                       <FormControl>
                         <Switch
                           checked={field.value}
-                          onCheckedChange={handleEligibilityChange}
-                          data-testid="switch-eligible"
+                          onCheckedChange={(val) => handleEligibilityChange(val)}
+                          data-testid="switch-is-eligible"
                         />
                       </FormControl>
-                    </div>
-                    {showWhitePlateWarning && (
-                      <div className="flex items-start gap-2 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
-                        <span className="text-sm">
-                          {t.fleet.whitePlateWarning || "Plaque blanche/bleue marquée comme éligible - documentez l'usage spécial (déneigement, etc.) pour Taxas."}
-                        </span>
-                      </div>
-                    )}
-                  </FormItem>
-                )}
-              />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {showWhitePlateWarning && (
+                <Alert className="bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-400">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    {t.fleet.whitePlateWarning || "Plaque blanche marquée comme éligible : documentez l'usage spécial pour l'OFDF."}
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleCloseDialog}
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
                   {t.common.cancel}
                 </Button>
                 <Button
@@ -726,6 +697,9 @@ export default function FleetPage() {
                   disabled={createMutation.isPending || updateMutation.isPending}
                   data-testid="button-save-machine"
                 >
+                  {(createMutation.isPending || updateMutation.isPending) && (
+                    <span className="mr-2 animate-spin">⏳</span>
+                  )}
                   {t.common.save}
                 </Button>
               </DialogFooter>
@@ -734,7 +708,10 @@ export default function FleetPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletingMachine} onOpenChange={() => setDeletingMachine(null)}>
+      <AlertDialog
+        open={!!deletingMachine}
+        onOpenChange={(open) => !open && setDeletingMachine(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t.common.confirm}</AlertDialogTitle>
@@ -743,13 +720,19 @@ export default function FleetPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t.common.cancel}
+            </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingMachine && deleteMutation.mutate(deletingMachine.id)}
-              className="bg-destructive text-destructive-foreground"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                if (deletingMachine) deleteMutation.mutate(deletingMachine.id);
+              }}
+              disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {t.common.delete}
+              {deleteMutation.isPending ? "..." : t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

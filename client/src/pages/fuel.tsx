@@ -7,7 +7,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Fuel, Calendar, Calculator, Camera, Loader2, ChevronDown, FileSpreadsheet, HelpCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Fuel, Calendar, Camera, Loader2, ChevronDown, HelpCircle } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Popover,
@@ -58,7 +58,7 @@ import type { Machine, FuelEntry } from "@shared/schema";
 import { calculateReimbursement } from "@shared/schema";
 import { extractTextFromImage } from "@/lib/ocr";
 
-const fuelTypes = ["diesel", "gasoline", "biodiesel"] as const;
+const fuelTypesArr = ["diesel", "gasoline", "biodiesel"] as const;
 
 const fuelEntryFormSchema = z.object({
   machineId: z.string().min(1),
@@ -66,7 +66,7 @@ const fuelEntryFormSchema = z.object({
   invoiceNumber: z.string().optional(),
   volumeLiters: z.coerce.number().positive(),
   engineHours: z.coerce.number().nonnegative().optional(),
-  fuelType: z.enum(fuelTypes).default("diesel"),
+  fuelType: z.enum(fuelTypesArr).default("diesel"),
   articleNumber: z.string().optional(),
   warehouseNumber: z.string().optional(),
   movementNumber: z.string().optional(),
@@ -82,8 +82,8 @@ function InfoPopover({ content }: { content: string }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="ml-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
           onClick={(e) => e.stopPropagation()}
         >
@@ -198,7 +198,7 @@ export default function FuelPage() {
         invoiceNumber: entry.invoiceNumber || "",
         volumeLiters: entry.volumeLiters,
         engineHours: entry.engineHours || undefined,
-        fuelType: entry.fuelType as typeof fuelTypes[number],
+        fuelType: entry.fuelType as any,
         articleNumber: (entry as any).articleNumber || "",
         warehouseNumber: (entry as any).warehouseNumber || "",
         movementNumber: (entry as any).movementNumber || "",
@@ -243,18 +243,18 @@ export default function FuelPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("de-CH", {
+    return new Intl.NumberFormat("fr-CH", {
       style: "currency",
       currency: "CHF",
     }).format(amount);
   };
 
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("de-CH").format(num);
+    return new Intl.NumberFormat("fr-CH").format(num);
   };
 
   const getFuelTypeLabel = (type: string) => {
-    return t.fuel.fuelTypes[type as keyof typeof t.fuel.fuelTypes] || type;
+    return (t.fuel.fuelTypes as any)[type] || type;
   };
 
   const allMachines = machines || [];
@@ -284,16 +284,16 @@ export default function FuelPage() {
       }
 
       toast({
-        title: t.fuel.scanComplete || "Scan terminé",
-        description: result.extractedData.volume 
-          ? `${result.extractedData.volume} L détecté` 
-          : "Vérifiez les données extraites",
+        title: t.fuel.scanComplete,
+        description: result.extractedData.volume
+          ? `${result.extractedData.volume}${t.fuel.volumeDetected}`
+          : t.fuel.checkData,
       });
     } catch (error) {
       console.error("OCR error:", error);
       toast({
         title: t.common.error,
-        description: "Impossible de lire le ticket",
+        description: t.fuel.ocrError,
         variant: "destructive",
       });
     } finally {
@@ -315,7 +315,7 @@ export default function FuelPage() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button 
+          <Button
             disabled={isScanning}
             className="relative bg-primary hover:bg-primary/90"
             data-testid="button-scan-ticket"
@@ -331,12 +331,12 @@ export default function FuelPage() {
             {isScanning ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {t.fuel.ocrAnalyzing || "Analyse OFDF..."}
+                {t.fuel.ocrAnalyzing}
               </>
             ) : (
               <>
                 <Camera className="h-5 w-5 mr-2" />
-                {t.fuel.scanTicket || "Scanner"}
+                {t.fuel.scanTicket}
               </>
             )}
           </Button>
@@ -356,7 +356,7 @@ export default function FuelPage() {
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
               <div className="flex-1">
                 <p className="text-sm font-medium mb-2">
-                  {t.fuel.scanningTicket || "Analyse du ticket en cours..."}
+                  {t.fuel.scanningTicket}
                 </p>
                 <Progress value={scanProgress} className="h-2" />
               </div>
@@ -381,7 +381,7 @@ export default function FuelPage() {
           {entries.map((entry) => {
             const machine = machines?.find((m) => m.id === entry.machineId);
             const reimbursement = calculateReimbursement(entry.volumeLiters);
-            
+
             return (
               <Card key={entry.id} className="hover-elevate" data-testid={`card-fuel-entry-${entry.id}`}>
                 <CardContent className="p-6">
@@ -391,128 +391,138 @@ export default function FuelPage() {
                         <Fuel className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-semibold">{machine?.name || "-"}</h3>
+                        <h3 className="font-semibold">
+                          {machine?.name || "-"}
+                          {machine && !machine.isEligible && (
+                            <span className="ml-2 text-[10px] text-destructive uppercase tracking-tighter">
+                              {t.fuel.notEligibleTag}
+                            </span>
+                          )}
+                        </h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           <span>{new Date(entry.invoiceDate).toLocaleDateString()}</span>
                           {entry.invoiceNumber && (
                             <>
                               <span>•</span>
-                              <span>{entry.invoiceNumber}</span>
+                              <span>N° {entry.invoiceNumber}</span>
                             </>
                           )}
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                      <div className="text-left sm:text-right">
-                        <p className="text-xl sm:text-2xl font-bold font-mono">
-                          {formatNumber(entry.volumeLiters)} L
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {getFuelTypeLabel(entry.fuelType)}
+                    <div className="flex items-center justify-between sm:justify-end gap-6">
+                      <div className="text-right">
+                        <p className="font-mono font-bold text-lg">{formatNumber(entry.volumeLiters)} L</p>
+                        <p className="text-xs text-primary font-mono">
+                          {machine?.isEligible ? `+ ${formatCurrency(reimbursement)}` : "0.00 CHF"}
                         </p>
                       </div>
-                      
-                      <div className="text-left sm:text-right">
-                        <p className="text-lg sm:text-xl font-bold text-primary font-mono">
-                          {formatCurrency(reimbursement)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t.fuel.calculatedReimbursement}
-                        </p>
-                      </div>
-
-                      <div className="flex gap-2 ml-auto">
+                      <div className="flex items-center gap-1">
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="icon"
                           onClick={() => handleOpenDialog(entry)}
-                          data-testid={`button-edit-fuel-${entry.id}`}
+                          data-testid={`button-edit-entry-${entry.id}`}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => setDeletingEntry(entry)}
-                          data-testid={`button-delete-fuel-${entry.id}`}
+                          data-testid={`button-delete-entry-${entry.id}`}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   </div>
-                  
-                  {entry.notes && (
-                    <p className="mt-3 text-sm text-muted-foreground border-t pt-3">
-                      {entry.notes}
-                    </p>
-                  )}
                 </CardContent>
               </Card>
             );
           })}
         </div>
       ) : (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Fuel className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="font-medium mb-2">{t.common.noData}</h3>
-            <p className="text-muted-foreground text-sm mb-4">
-              {t.fuel.emptyDescription || "Commencez par saisir vos consommations de carburant"}
-            </p>
-          </CardContent>
+        <Card className="p-8 text-center text-muted-foreground">
+          <Fuel className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>{t.common.noData}</p>
+          <p className="text-sm mt-1">{t.fuel.emptyDescription}</p>
+          <Button onClick={() => handleOpenDialog()} className="mt-4">
+            <Plus className="h-4 w-4 mr-2" />
+            {t.fuel.addEntry}
+          </Button>
         </Card>
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
               {editingEntry ? t.fuel.editEntry : t.fuel.addEntry}
             </DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="machineId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fuel.selectMachine} *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-machine">
-                          <SelectValue placeholder={t.fuel.selectMachine} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {allMachines.map((machine) => (
-                          <SelectItem key={machine.id} value={machine.id}>
-                            {machine.name}
-                            {!machine.isEligible && (
-                              <span className="ml-2 text-xs text-muted-foreground">(non éligible)</span>
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <div className="grid grid-cols-2 gap-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="machineId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fleet.title}</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choisir une machine" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-60">
+                          {allMachines.map((machine) => (
+                            <SelectItem key={machine.id} value={machine.id}>
+                              {machine.name} {!machine.isEligible && `(${t.fleet.notEligible})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="invoiceDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t.fuel.invoiceDate} *</FormLabel>
+                      <FormLabel>{t.fuel.invoiceDate}</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} data-testid="input-invoice-date" />
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="volumeLiters"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.fuel.volume}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input type="number" step="0.01" {...field} placeholder="0.00" className="pr-12 font-mono" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">L</span>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -526,7 +536,7 @@ export default function FuelPage() {
                     <FormItem>
                       <FormLabel>{t.fuel.invoiceNumber}</FormLabel>
                       <FormControl>
-                        <Input {...field} data-testid="input-invoice-number" />
+                        <Input {...field} placeholder="N° de facture" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -534,98 +544,42 @@ export default function FuelPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="volumeLiters"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.fuel.volume} *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-volume"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="engineHours"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.fuel.engineHours}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-engine-hours"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Calculator className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{t.fuel.calculatedReimbursement}</p>
+                    <p className="text-[10px] text-muted-foreground">Taux: 0.3405 CHF/L (OFDF)</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-primary font-mono">{calculatedReimbursement} CHF</p>
+                </div>
               </div>
-
-              <FormField
-                control={form.control}
-                name="fuelType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fuel.fuelType}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-fuel-type">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {fuelTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {getFuelTypeLabel(type)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <Collapsible>
                 <CollapsibleTrigger asChild>
-                  <Button variant="outline" type="button" className="w-full justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="h-4 w-4" />
-                      <span>{t.fuel.taxasFieldsTitle}</span>
-                    </div>
+                  <Button variant="ghost" size="sm" className="w-full justify-between px-2 font-normal text-muted-foreground hover:text-foreground">
+                    Données Taxas optionnelles (Codes douaniers)
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4 mt-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <CollapsibleContent className="space-y-4 pt-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <FormField
                       control={form.control}
                       name="articleNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center">
-                            {t.fuel.articleNumber}
-                            <InfoPopover content={t.fuel.articleNumberTooltip} />
-                          </FormLabel>
+                          <div className="flex items-center">
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground leading-none">N° Article</FormLabel>
+                            <InfoPopover content="Code interne agriculture/BTP" />
+                          </div>
                           <FormControl>
-                            <Input placeholder="1234" {...field} data-testid="input-article-number" />
+                            <Input {...field} className="h-8 text-xs font-mono" />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -634,48 +588,40 @@ export default function FuelPage() {
                       name="warehouseNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center">
-                            {t.fuel.warehouseNumber}
-                            <InfoPopover content={t.fuel.warehouseNumberTooltip} />
-                          </FormLabel>
+                          <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground leading-none">N° Entrepôt</FormLabel>
                           <FormControl>
-                            <Input placeholder="001" {...field} data-testid="input-warehouse-number" />
+                            <Input {...field} className="h-8 text-xs font-mono" />
                           </FormControl>
-                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="movementNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground leading-none">N° Mouvement</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="h-8 text-xs font-mono" />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
                   </div>
-                  <FormField
-                    control={form.control}
-                    name="movementNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center">
-                          {t.fuel.movementNumber}
-                          <InfoPopover content={t.fuel.movementNumberTooltip} />
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="MOV-2026-001" {...field} data-testid="input-movement-number" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-3 gap-4">
+
+                  <div className="grid grid-cols-3 gap-3">
                     <FormField
                       control={form.control}
                       name="bd"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center">
-                            {t.fuel.bdLabel}
-                            <InfoPopover content={t.fuel.bdTooltip} />
-                          </FormLabel>
+                          <div className="flex items-center">
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground leading-none">BD</FormLabel>
+                            <InfoPopover content="Usage spécial" />
+                          </div>
                           <FormControl>
-                            <Input placeholder="ex: 01" {...field} data-testid="input-bd" />
+                            <Input {...field} className="h-8 text-xs font-mono" placeholder="45" />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -684,14 +630,13 @@ export default function FuelPage() {
                       name="stat"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center">
-                            {t.fuel.statLabel}
-                            <InfoPopover content={t.fuel.statTooltip} />
-                          </FormLabel>
+                          <div className="flex items-center">
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground leading-none">Stat.</FormLabel>
+                            <InfoPopover content="Code douanier (ex: 2710)" />
+                          </div>
                           <FormControl>
-                            <Input placeholder="ex: 2710" {...field} data-testid="input-stat" />
+                            <Input {...field} className="h-8 text-xs font-mono" placeholder="2710" />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -700,14 +645,13 @@ export default function FuelPage() {
                       name="ci"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center">
-                            {t.fuel.ciLabel}
-                            <InfoPopover content={t.fuel.ciTooltip} />
-                          </FormLabel>
+                          <div className="flex items-center">
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground leading-none">CI</FormLabel>
+                            <InfoPopover content="Clé d'imposition (ex: A1)" />
+                          </div>
                           <FormControl>
-                            <Input placeholder="ex: A1" {...field} data-testid="input-ci" />
+                            <Input {...field} className="h-8 text-xs font-mono" placeholder="A1" />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -722,32 +666,20 @@ export default function FuelPage() {
                   <FormItem>
                     <FormLabel>{t.fuel.notes}</FormLabel>
                     <FormControl>
-                      <Textarea {...field} data-testid="input-notes" />
+                      <Textarea {...field} placeholder="Informations complémentaires..." className="resize-none" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Card className="bg-primary/5 border-primary/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Calculator className="h-5 w-5 text-primary" />
-                      <span className="font-medium">{t.fuel.calculatedReimbursement}</span>
-                    </div>
-                    <span className="text-2xl font-bold text-primary font-mono">
-                      CHF {calculatedReimbursement}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {t.reports.rate}: 0.3405 CHF/L
-                  </p>
-                </CardContent>
-              </Card>
-
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleCloseDialog}
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
                   {t.common.cancel}
                 </Button>
                 <Button
@@ -763,21 +695,31 @@ export default function FuelPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletingEntry} onOpenChange={() => setDeletingEntry(null)}>
+      <AlertDialog
+        open={!!deletingEntry}
+        onOpenChange={(open) => !open && setDeletingEntry(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t.common.confirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t.fleet.deleteConfirm}
+              {t.fuel.deleteConfirm}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t.common.cancel}
+            </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingEntry && deleteMutation.mutate(deletingEntry.id)}
-              className="bg-destructive text-destructive-foreground"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                if (deletingEntry) deleteMutation.mutate(deletingEntry.id);
+              }}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
             >
-              {t.common.delete}
+              {deleteMutation.isPending ? "..." : t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

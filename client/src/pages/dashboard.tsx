@@ -2,30 +2,26 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
-import { useLocation } from "wouter";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import {
   Truck,
   Fuel,
   FileText,
   TrendingUp,
-  Plus,
-  Calculator,
-  CheckCircle,
   Download,
-  Receipt,
   BarChart3,
   Camera,
   FileSpreadsheet,
+  CheckCircle,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Banner2026 } from "@/components/banner-2026";
-import type { Machine, FuelEntry, Report, Invoice } from "@shared/schema";
+import type { Machine, FuelEntry, Invoice } from "@shared/schema";
 import { calculateReimbursement } from "@shared/schema";
 import {
   AreaChart,
@@ -53,10 +49,9 @@ interface FuelTrend {
 }
 
 export default function DashboardPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -82,7 +77,7 @@ export default function DashboardPage() {
           console.error("Payment verification error:", err);
           toast({
             title: t.common.error,
-            description: "Erreur de vérification du paiement",
+            description: t.dashboard.paymentError,
             variant: "destructive",
           });
         })
@@ -90,7 +85,7 @@ export default function DashboardPage() {
           window.history.replaceState({}, "", "/dashboard");
         });
     }
-  }, []);
+  }, [t, toast]);
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -121,14 +116,14 @@ export default function DashboardPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("de-CH", {
+    return new Intl.NumberFormat("fr-CH", {
       style: "currency",
       currency: "CHF",
     }).format(amount);
   };
 
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("de-CH").format(num);
+    return new Intl.NumberFormat("fr-CH").format(num);
   };
 
   const summaryCards = [
@@ -165,17 +160,17 @@ export default function DashboardPage() {
   const quickActions = [
     {
       title: t.dashboard.addMachine,
-      href: "/fleet?action=add",
+      href: "/fleet",
       icon: Truck,
     },
     {
-      title: t.dashboard.scanTicket || "Scanner un ticket",
-      href: "/fuel?action=scan",
+      title: t.dashboard.scanTicket,
+      href: "/fuel",
       icon: Camera,
     },
     {
-      title: t.dashboard.exportTaxasCsv || "Exporter CSV Taxas",
-      href: "/reports?action=export",
+      title: t.dashboard.exportTaxasCsv,
+      href: "/reports",
       icon: FileSpreadsheet,
     },
   ];
@@ -210,7 +205,7 @@ export default function DashboardPage() {
                   data-testid="button-download-invoice"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  {t.common.downloadInvoice || "Télécharger ma facture"}
+                  {t.common.downloadInvoice}
                 </Button>
               )}
             </AlertDescription>
@@ -250,7 +245,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-muted-foreground" />
                 <CardTitle className="text-lg">
-                  {t.dashboard.consumptionTrends || "Évolution des consommations"}
+                  {t.dashboard.consumptionTrends}
                 </CardTitle>
               </div>
             </CardHeader>
@@ -263,7 +258,7 @@ export default function DashboardPage() {
                     <AreaChart
                       data={trends.map((t) => ({
                         ...t,
-                        monthLabel: new Date(t.month + "-01").toLocaleDateString("fr-CH", {
+                        monthLabel: new Date(t.month + "-01").toLocaleDateString(language === 'fr' ? 'fr-CH' : language === 'de' ? 'de-CH' : language === 'it' ? 'it-CH' : 'en-CH', {
                           month: "short",
                           year: "2-digit",
                         }),
@@ -299,7 +294,7 @@ export default function DashboardPage() {
                           name === "volume"
                             ? `${formatNumber(value)} L`
                             : formatCurrency(value),
-                          name === "volume" ? "Volume" : "Remboursement",
+                          name === "volume" ? t.common.total : t.common.amount,
                         ]}
                       />
                       <Area
@@ -331,7 +326,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-primary" />
-                  <span className="text-muted-foreground">Remboursement (CHF)</span>
+                  <span className="text-muted-foreground">{t.reports.reimbursementAmount} (CHF)</span>
                 </div>
               </div>
             </CardContent>
@@ -386,7 +381,7 @@ export default function DashboardPage() {
                   <Fuel className="h-12 w-12 mx-auto mb-3 opacity-50" />
                   <p>{t.common.noData}</p>
                   <Button variant="ghost" asChild className="mt-2">
-                    <Link href="/fuel?action=add">{t.fuel.addEntry}</Link>
+                    <Link href="/fuel">{t.fuel.addEntry}</Link>
                   </Button>
                 </div>
               )}
@@ -402,34 +397,15 @@ export default function DashboardPage() {
                 <Button
                   key={index}
                   variant="outline"
-                  className="w-full justify-start gap-3"
+                  className="w-full justify-start h-12"
                   asChild
-                  data-testid={`button-quick-action-${index}`}
                 >
                   <Link href={action.href}>
-                    <action.icon className="h-4 w-4" />
+                    <action.icon className="h-5 w-5 mr-3 text-muted-foreground" />
                     {action.title}
                   </Link>
                 </Button>
               ))}
-            </CardContent>
-
-            <CardContent className="pt-0">
-              <Card className="bg-primary/5 border-primary/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Calculator className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{t.reports.rate}</p>
-                      <p className="text-xl font-bold text-primary font-mono">
-                        0.3405 CHF/L
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </CardContent>
           </Card>
         </div>

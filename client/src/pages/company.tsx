@@ -6,7 +6,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,8 +52,8 @@ function InfoTooltip({ content }: { content: string }) {
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="ml-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
           onClick={(e) => e.preventDefault()}
         >
@@ -67,51 +67,51 @@ function InfoTooltip({ content }: { content: string }) {
   );
 }
 
-const companyFormSchema = z.object({
-  companyName: z.string().min(1, "Required"),
-  ideNumber: z.string().regex(/^(CHE-\d{3}\.\d{3}\.\d{3})?$/, "Format: CHE-000.000.000").optional().or(z.literal("")),
-  rcNumber: z.string().optional(),
-  taxSubjectNumber: z.string().optional(),
-  attribution99: z.string().optional(),
-  street: z.string().optional(),
-  postalCode: z.string().optional(),
-  city: z.string().optional(),
-  canton: z.string().optional(),
-  country: z.string().optional(),
-  contactName: z.string().optional(),
-  contactEmail: z.string().email().optional().or(z.literal("")),
-  contactPhone: z.string().optional(),
-  bankName: z.string().optional(),
-  iban: z.string().optional(),
-  bic: z.string().optional(),
-});
-
-type CompanyFormData = z.infer<typeof companyFormSchema>;
-
-interface CompanyProfile {
-  id: string;
-  userId: string;
-  companyName: string;
-  ideNumber?: string | null;
-  rcNumber?: string | null;
-  taxSubjectNumber?: string | null;
-  attribution99?: string | null;
-  street?: string | null;
-  postalCode?: string | null;
-  city?: string | null;
-  canton?: string | null;
-  country?: string | null;
-  contactName?: string | null;
-  contactEmail?: string | null;
-  contactPhone?: string | null;
-  bankName?: string | null;
-  iban?: string | null;
-  bic?: string | null;
-}
-
 export default function CompanyPage() {
   const { t } = useI18n();
   const { toast } = useToast();
+
+  const companyFormSchema = z.object({
+    companyName: z.string().min(1, t.common.required),
+    ideNumber: z.string().regex(/^(CHE-\d{3}\.\d{3}\.\d{3})?$/, "Format: CHE-000.000.000").optional().or(z.literal("")),
+    rcNumber: z.string().optional(),
+    taxSubjectNumber: z.string().optional(),
+    attribution99: z.string().optional(),
+    street: z.string().optional(),
+    postalCode: z.string().optional(),
+    city: z.string().optional(),
+    canton: z.string().optional(),
+    country: z.string().optional(),
+    contactName: z.string().optional(),
+    contactEmail: z.string().email().optional().or(z.literal("")),
+    contactPhone: z.string().optional(),
+    bankName: z.string().optional(),
+    iban: z.string().optional(),
+    bic: z.string().optional(),
+  });
+
+  type CompanyFormData = z.infer<typeof companyFormSchema>;
+
+  interface CompanyProfile {
+    id: string;
+    userId: string;
+    companyName: string;
+    ideNumber?: string | null;
+    rcNumber?: string | null;
+    taxSubjectNumber?: string | null;
+    attribution99?: string | null;
+    street?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+    canton?: string | null;
+    country?: string | null;
+    contactName?: string | null;
+    contactEmail?: string | null;
+    contactPhone?: string | null;
+    bankName?: string | null;
+    iban?: string | null;
+    bic?: string | null;
+  }
 
   const { data: profile, isLoading } = useQuery<CompanyProfile | null>({
     queryKey: ["/api/company-profile"],
@@ -196,7 +196,7 @@ export default function CompanyPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6 text-foreground">
       <div>
         <h1 className="text-xl md:text-2xl font-bold">{t.company.title}</h1>
         <p className="text-sm md:text-base text-muted-foreground">{t.company.subtitle}</p>
@@ -242,9 +242,9 @@ export default function CompanyPage() {
                       <InfoTooltip content={t.company.ideTooltip} />
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="CHE-123.456.789" 
-                        {...field} 
+                      <Input
+                        placeholder="CHE-123.456.789"
+                        {...field}
                         data-testid="input-ide-number"
                         onChange={(e) => {
                           const formatted = formatIdeNumber(e.target.value);
@@ -373,7 +373,7 @@ export default function CompanyPage() {
                             <SelectValue placeholder={t.company.canton} />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="max-h-60 overflow-y-auto">
                           {swissCantons.map((canton) => (
                             <SelectItem key={canton} value={canton}>
                               {canton}
