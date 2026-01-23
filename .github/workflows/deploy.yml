@@ -26,9 +26,11 @@ jobs:
         run: npm run build
 
       - name: Install sshpass
+        if: github.event_name == 'workflow_dispatch'
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
       - name: Deploy dist folder via rsync
+        if: github.event_name == 'workflow_dispatch'
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
@@ -40,6 +42,7 @@ jobs:
             N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com:sites/mineraltax.ch/dist/
 
       - name: Restart application with PM2
+        if: github.event_name == 'workflow_dispatch'
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
