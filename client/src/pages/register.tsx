@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { Loader2, CheckCircle2, XCircle, Mail } from "lucide-react";
@@ -26,6 +27,8 @@ export default function RegisterPage() {
     confirmPassword: "",
     firstName: "",
     lastName: "",
+    activitySector: "" as "agriculture" | "btp" | "",
+    companyName: "",
   });
 
   const passwordChecks = {
@@ -66,6 +69,8 @@ export default function RegisterPage() {
         password: formData.password,
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
+        activitySector: formData.activitySector || undefined,
+        companyName: formData.companyName || undefined,
       });
       const data = await response.json();
 
@@ -216,6 +221,40 @@ export default function RegisterPage() {
                     data-testid="input-lastname"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="activitySector">Secteur d'activité</Label>
+                <Select
+                  value={formData.activitySector}
+                  onValueChange={(value: "agriculture" | "btp") => setFormData({ ...formData, activitySector: value })}
+                >
+                  <SelectTrigger id="activitySector" data-testid="select-activity-sector">
+                    <SelectValue placeholder="Sélectionnez votre secteur" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agriculture">Agriculture</SelectItem>
+                    <SelectItem value="btp">BTP (Bâtiment et Travaux Publics)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Le secteur d'activité permet d'appliquer les bons taux de remboursement
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Raison sociale (optionnel)</Label>
+                <Input
+                  id="companyName"
+                  type="text"
+                  placeholder="Nom de votre entreprise"
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  data-testid="input-company-name"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Le nom légal de votre entreprise
+                </p>
               </div>
 
               <div className="space-y-2">

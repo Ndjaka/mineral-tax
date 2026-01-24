@@ -4,6 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const authProviderEnum = pgEnum("auth_provider", ["replit", "local"]);
+export const activitySectorEnum = pgEnum("activity_sector", ["agriculture", "btp"]);
 
 // User storage table - supports both Replit Auth and local email/password authentication
 export const users = pgTable("users", {
@@ -18,6 +19,7 @@ export const users = pgTable("users", {
   passwordResetExpires: timestamp("password_reset_expires"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  activitySector: activitySectorEnum("activity_sector"),
   profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -85,6 +87,8 @@ export const registerUserSchema = z.object({
     .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre"),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  activitySector: z.enum(["agriculture", "btp"]).optional(),
+  companyName: z.string().optional(),
 });
 
 export const loginUserSchema = z.object({

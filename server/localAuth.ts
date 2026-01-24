@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { db } from "./db";
-import { users, registerUserSchema, loginUserSchema } from "@shared/schema";
+import { users, registerUserSchema, loginUserSchema, companyProfiles } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 const BCRYPT_ROUNDS = 12;
@@ -32,13 +32,13 @@ export function registerLocalAuthRoutes(app: Express): void {
     try {
       const validation = registerUserSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
-          message: "Données invalides", 
-          errors: validation.error.errors 
+        return res.status(400).json({
+          message: "Données invalides",
+          errors: validation.error.errors
         });
       }
 
-      const { email, password, firstName, lastName } = validation.data;
+      const { email, password, firstName, lastName, activitySector, companyName } = validation.data;
 
       const [existingUser] = await db.select().from(users).where(eq(users.email, email));
       if (existingUser) {
@@ -54,7 +54,16 @@ export function registerLocalAuthRoutes(app: Express): void {
         passwordSet: true,
         firstName: firstName || null,
         lastName: lastName || null,
+        activitySector: activitySector || null,
       }).returning();
+
+      // Créer automatiquement un profil d'entreprise si la raison sociale est fournie
+      if (companyName && companyName.trim().length > 0) {
+        await db.insert(companyProfiles).values({
+          userId: newUser.id,
+          companyName: companyName.trim(),
+        });
+      }
 
       req.session.userId = newUser.id;
 
@@ -70,16 +79,16 @@ export function registerLocalAuthRoutes(app: Express): void {
     try {
       const validation = loginUserSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
-          message: "Données invalides", 
-          errors: validation.error.errors 
+        return res.status(400).json({
+          message: "Données invalides",
+          errors: validation.error.errors
         });
       }
 
       const { email, password } = validation.data;
 
       const [user] = await db.select().from(users).where(eq(users.email, email));
-      
+
       if (!user || !user.passwordHash) {
         return res.status(401).json({ message: "Email ou mot de passe incorrect" });
       }
