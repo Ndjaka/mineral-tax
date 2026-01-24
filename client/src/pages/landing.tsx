@@ -49,13 +49,16 @@ export default function LandingPage() {
   const { t, language } = useI18n();
   const [volumeLiters, setVolumeLiters] = useState(20000);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
+  const [selectedSector, setSelectedSector] = useState<"agriculture" | "btp">("agriculture");
 
   // Debounce volume for better performance
   const debouncedVolume = useDebouncedValue(volumeLiters, 150);
 
   const calculatedReimbursement = useMemo(() => {
-    return calculateReimbursement(debouncedVolume);
-  }, [debouncedVolume]);
+    // Agriculture: 60.05 cts/L, BTP: 34.06 cts/L
+    const rate = selectedSector === "agriculture" ? 0.6005 : 0.3406;
+    return debouncedVolume * rate;
+  }, [debouncedVolume, selectedSector]);
 
 
   // Handle sticky CTA on scroll
@@ -252,6 +255,28 @@ export default function LandingPage() {
                 <div className="relative">
                   <Card className="bg-card/50 backdrop-blur border-2">
                     <CardContent className="p-6 space-y-5">
+                      {/* Sector Selector */}
+                      <div className="flex gap-2 p-1 bg-muted rounded-lg">
+                        <button
+                          onClick={() => setSelectedSector("agriculture")}
+                          className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedSector === "agriculture"
+                            ? "bg-green-600 text-white shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          🌾 Agriculture
+                        </button>
+                        <button
+                          onClick={() => setSelectedSector("btp")}
+                          className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedSector === "btp"
+                            ? "bg-blue-600 text-white shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          🏗️ BTP
+                        </button>
+                      </div>
+
                       <div className="text-center">
                         <p className="text-sm font-medium text-muted-foreground mb-2">
                           {t.landing.sliderLabel || "Votre consommation annuelle de diesel"}
@@ -282,12 +307,26 @@ export default function LandingPage() {
                         <p className="text-sm text-muted-foreground">
                           {t.landing.sliderResult || "Vous pouvez récupérer"}
                         </p>
-                        <p className="text-4xl md:text-5xl font-bold text-primary font-mono" data-testid="text-calculated-reimbursement">
+                        <p className={`text-4xl md:text-5xl font-bold font-mono ${selectedSector === "agriculture" ? "text-green-600" : "text-blue-600"
+                          }`} data-testid="text-calculated-reimbursement">
                           {formatCurrency(calculatedReimbursement)}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t.landing.sliderRate || "Taux OFDF: 0.3405 CHF/L"}
-                        </p>
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Taux {selectedSector === "agriculture" ? "Agriculture" : "BTP/Industrie"} 2026
+                          </p>
+                          <p className={`text-sm font-bold ${selectedSector === "agriculture" ? "text-green-600" : "text-blue-600"
+                            }`}>
+                            {selectedSector === "agriculture" ? "60.05" : "34.06"} cts/L
+                          </p>
+                        </div>
+                        {selectedSector === "agriculture" && (
+                          <div className="mt-3 p-2 bg-green-50 dark:bg-green-950/20 rounded-md">
+                            <p className="text-xs text-green-700 dark:text-green-400 font-medium">
+                              ✨ Taux agricole majoré : +76% vs BTP
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       <Button className="w-full" size="lg" asChild>
