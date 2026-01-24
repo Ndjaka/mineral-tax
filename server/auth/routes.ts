@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 import { lucia } from "./lucia";
 import { db } from "../db";
-import { users, registerUserSchema, loginUserSchema, resetPasswordRequestSchema, resetPasswordSchema } from "@shared/schema";
+import { users, registerUserSchema, loginUserSchema, resetPasswordRequestSchema, resetPasswordSchema, companyProfiles } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { createEmailVerificationToken, verifyEmailToken, createPasswordResetToken, verifyPasswordResetToken, getBaseUrl } from "./utils";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../emailService";
@@ -78,7 +78,7 @@ export function registerAuthRoutes(app: Express): void {
         });
       }
 
-      const { email, password, firstName, lastName } = validation.data;
+      const { email, password, firstName, lastName, activitySector, companyName } = validation.data;
 
       const [existingUser] = await db.select().from(users).where(eq(users.email, email.toLowerCase()));
       if (existingUser) {
@@ -97,7 +97,16 @@ export function registerAuthRoutes(app: Express): void {
         emailVerifiedAt: skipVerification ? new Date() : null,
         firstName: firstName || null,
         lastName: lastName || null,
+        activitySector: activitySector || null,
       }).returning();
+
+      // Créer automatiquement un profil d'entreprise si la raison sociale est fournie
+      if (companyName && companyName.trim().length > 0) {
+        await db.insert(companyProfiles).values({
+          userId: newUser.id,
+          companyName: companyName.trim(),
+        });
+      }
 
       if (skipVerification) {
         console.log(`[Auth] SKIP_EMAIL_VERIFICATION enabled - account auto-verified for ${email}`);

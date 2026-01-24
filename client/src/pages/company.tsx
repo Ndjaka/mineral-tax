@@ -52,8 +52,8 @@ function InfoTooltip({ content }: { content: string }) {
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="ml-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
           onClick={(e) => e.preventDefault()}
         >
@@ -117,6 +117,12 @@ export default function CompanyPage() {
     queryKey: ["/api/company-profile"],
   });
 
+  // DEBUG: Log quand les données changent
+  useEffect(() => {
+    console.log('🔍 [DEBUG] Profile data changed:', profile);
+    console.log('🔍 [DEBUG] Is loading:', isLoading);
+  }, [profile, isLoading]);
+
   const form = useForm<CompanyFormData>({
     resolver: zodResolver(companyFormSchema),
     defaultValues: {
@@ -140,7 +146,12 @@ export default function CompanyPage() {
   });
 
   useEffect(() => {
+    console.log('🔍 [DEBUG] useEffect triggered, profile:', profile);
     if (profile) {
+      console.log('🔍 [DEBUG] Resetting form with data:', {
+        companyName: profile.companyName,
+        ideNumber: profile.ideNumber,
+      });
       form.reset({
         companyName: profile.companyName || "",
         ideNumber: profile.ideNumber || "",
@@ -159,6 +170,9 @@ export default function CompanyPage() {
         iban: profile.iban || "",
         bic: profile.bic || "",
       });
+      console.log('🔍 [DEBUG] Form values after reset:', form.getValues());
+    } else {
+      console.log('🔍 [DEBUG] Profile is null or undefined');
     }
   }, [profile, form]);
 
@@ -242,9 +256,9 @@ export default function CompanyPage() {
                       <InfoTooltip content={t.company.ideTooltip} />
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="CHE-123.456.789" 
-                        {...field} 
+                      <Input
+                        placeholder="CHE-123.456.789"
+                        {...field}
                         data-testid="input-ide-number"
                         onChange={(e) => {
                           const formatted = formatIdeNumber(e.target.value);
