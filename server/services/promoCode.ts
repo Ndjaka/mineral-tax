@@ -79,7 +79,9 @@ export async function validatePromoCode(
 
         return { valid: true, promoCode: promoCode as PromoCode };
     } catch (error) {
-        console.error("Error validating promo code:", error);
+        console.error("[PromoCode Service] Error validating promo code:", error);
+        console.error("[PromoCode Service] Code was:", code);
+        console.error("[PromoCode Service] UserId was:", userId);
         return { valid: false, error: "Erreur lors de la validation du code" };
     }
 }

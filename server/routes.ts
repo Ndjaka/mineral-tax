@@ -690,11 +690,9 @@ export async function registerRoutes(
         return res.status(400).json({ valid: false, error: "Code invalide" });
       }
 
-      console.log("[Promo Validation] userId:", userId, "type:", typeof userId);
       const { validatePromoCode } = await import("./services/promoCode");
       const validation = await validatePromoCode(code, userId);
 
-      console.log("[Promo Validation] result:", validation);
       res.json(validation);
     } catch (error) {
       console.error("Error validating promo code:", error);
