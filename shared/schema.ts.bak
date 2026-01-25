@@ -265,15 +265,15 @@ export function calculateReimbursementBySectorAndDate(
 
     // Factures à partir du 01.01.2026 : nouveau taux de 60.05 CHF/100L
     if (dateToCheck >= AGRICULTURE_RATE_CHANGE_DATE) {
-      return roundToCentimes(volumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER);
+      return roundToCentimes(volumeLiters * RATE_AGRICULTURE_POST_2026);
     } else {
       // Factures avant 01.01.2026 : ancien taux de 34.06 CHF/100L
-      return roundToCentimes(volumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER);
+      return roundToCentimes(volumeLiters * RATE_AGRICULTURE_PRE_2026);
     }
   }
 
   // Pour tous les autres secteurs (BTP, construction, etc.) : taux standard
-  return roundToCentimes(volumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER);
+  return roundToCentimes(volumeLiters * RATE_BTP_STANDARD);
 }
 
 /**
@@ -289,10 +289,10 @@ export function getApplicableRate(
   if (sector === "agriculture_with_direct") {
     const dateToCheck = new Date(invoiceDate);
     return dateToCheck >= AGRICULTURE_RATE_CHANGE_DATE
-      ? REIMBURSEMENT_RATE_CHF_PER_LITER
-      : REIMBURSEMENT_RATE_CHF_PER_LITER;
+      ? RATE_AGRICULTURE_POST_2026
+      : RATE_AGRICULTURE_PRE_2026;
   }
-  return REIMBURSEMENT_RATE_CHF_PER_LITER;
+  return RATE_BTP_STANDARD;
 }
 
 export function roundToCentimes(amount: number): number {

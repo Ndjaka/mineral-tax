@@ -8,6 +8,7 @@ import PDFDocument from "pdfkit";
 import { getUncachableStripeClient } from "./stripeClient";
 import { streamChatResponse } from "./chatAssistant";
 
+import { formatTaxasNumber, formatTaxasDate, sanitizeTaxasText, mapFuelTypeToProductCode, mapMachineTypeToCode, getTaxasRate, generateTaxasCSV, generateTaxasSignature } from "./taxas-export.js";
 async function getOrCreateStripePrice(stripe: any): Promise<string> {
   const productName = "MineralTax Swiss - Abonnement Annuel";
 
@@ -1006,7 +1007,7 @@ export async function registerRoutes(
         });
       }
 
-      const csvContent = generateTaxasCsv(report, details.machines, details.fuelEntries, companyProfile);
+      const csvContent = generateTaxasCsv(report, details.machines, details.fuelEntries, companyProfile, userId);
 
       const fiscalYear = new Date().getFullYear();
       const filename = `export_mineraltax_${fiscalYear}_directives_OFDF.csv`;
@@ -1101,54 +1102,82 @@ function generateTaxasCsv(
   report: any,
   machines: Machine[],
   fuelEntries: (FuelEntry & { machine?: Machine })[],
-  companyProfile?: any
-): string {
-  const lines: string[] = [];
+  companyProfile?: any,
+  userId?: string
+): { csvContent: string; summary: any } {
 
-  lines.push("RC;N° matricule;N° châssis;N° article;N° entrepôt;Date mouvement;N° mouvement;Quantité de litres / kg;BD;Stat.;CI;Montant de l'impôt CHF");
+  // Define TaxasExportRow interface inline
+  interface TaxasExportRow {
+    referenceId: string;
+    uidAssujetti: string;
+    nomAssujetti: string;
+    adresse: string;
+    codeMachine: string;
+    numeroMachine: string;
+    codeProduit: string;
+    dateConsommation: string;
+    quantiteLitres: string;
+    tauxImpotCHFL: string;
+    montantRemboursableCHF: string;
+    periodeFiscale: string;
+    declarationOrigineFR: string;
+    declarationOrigineDE: string;
+    directiveVersion: string;
+    signatureTechnique: string;
+    remarques: string;
+  }
 
-  const companyRcNumber = companyProfile?.rcNumber || "";
+  // Get user's sector for rate calculation
+  const activitySector = (report as any).userActivitySector || null;
+
+  // Generate unique signature for this export
+  const signature = generateTaxasSignature(userId || 'UNKNOWN');
+
+  const rows: TaxasExportRow[] = [];
 
   for (const entry of fuelEntries) {
     const machine = entry.machine || machines.find(m => m.id === entry.machineId);
-    const machineData = machine as any;
-    const isEligible = machine?.isEligible ?? true;
+    if (!machine) continue;
+
     const volumeLiters = parseFloat(entry.volumeLiters.toString());
-    const amount = isEligible ? calculateReimbursement(volumeLiters) : 0;
 
-    const invoiceDate = entry.invoiceDate ? new Date(entry.invoiceDate) : null;
-    const dateStr = invoiceDate && !isNaN(invoiceDate.getTime())
-      ? formatSwissDate(invoiceDate)
-      : "";
+    // Extract year from consumption date for rate calculation
+    const entryYear = new Date(entry.invoiceDate).getFullYear();
+    const rate = getTaxasRate(activitySector, entryYear);
 
-    const entryData = entry as any;
+    const reimbursementAmount = machine.isEligible ? volumeLiters * rate : 0;
 
-    const rcNumber = machineData?.rcNumber || companyRcNumber;
-    const registrationNumber = machineData?.registrationNumber || "";
-    const chassisNumber = machineData?.chassisNumber || "";
+    // Build full address
+    const address = [
+      sanitizeTaxasText(companyProfile?.street || ''),
+      `${companyProfile?.postalCode || ''} ${sanitizeTaxasText(companyProfile?.city || '')}`,
+      sanitizeTaxasText(companyProfile?.country || 'CH')
+    ].filter(Boolean).join(', ');
 
-    lines.push([
-      rcNumber,
-      registrationNumber,
-      chassisNumber,
-      entryData.articleNumber || "",
-      entryData.warehouseNumber || "",
-      dateStr,
-      entryData.movementNumber || entry.invoiceNumber || "",
-      volumeLiters.toFixed(2),
-      entryData.bd || "",
-      entryData.stat || "",
-      entryData.ci || "",
-      amount.toFixed(2)
-    ].join(";"));
+    const row: TaxasExportRow = {
+      referenceId: `${entry.id}`,
+      uidAssujetti: sanitizeTaxasText(companyProfile?.ideNumber || companyProfile?.rcNumber || ''),
+      nomAssujetti: sanitizeTaxasText(companyProfile?.companyName || ''),
+      adresse: address,
+      codeMachine: mapMachineTypeToCode(machine.type || 'other'),
+      numeroMachine: sanitizeTaxasText(machine.licensePlate || machine.chassisNumber || machine.name || ''),
+      codeProduit: mapFuelTypeToProductCode(entry.fuelType || 'diesel'),
+      dateConsommation: formatTaxasDate(entry.invoiceDate),
+      quantiteLitres: formatTaxasNumber(volumeLiters),
+      tauxImpotCHFL: formatTaxasNumber(rate),
+      montantRemboursableCHF: formatTaxasNumber(reimbursementAmount),
+      periodeFiscale: '2026',
+      declarationOrigineFR: 'Généré selon les directives OFDF 2026 via MineralTax.ch',
+      declarationOrigineDE: 'Generiert gemäss BAZG-Richtlinien 2026 über MineralTax.ch',
+      directiveVersion: '2026.1',
+      signatureTechnique: signature,
+      remarques: sanitizeTaxasText(entry.notes || ''),
+    };
+
+    rows.push(row);
   }
 
-  // Ajout du footer avec la source légale
-  lines.push("");
-  lines.push("# Source légale : Règlement 09 de l'OFDF (vigueur 01.01.2026) - Remboursement de l'impôt sur les huiles minérales");
-  lines.push("# Généré par MineralTax.ch - Compatible avec la plateforme Taxas OFDF");
-
-  return lines.join("\n");
+  return generateTaxasCSV(rows);
 }
 
 async function generatePdf(

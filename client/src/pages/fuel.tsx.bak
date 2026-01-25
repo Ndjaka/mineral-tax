@@ -60,7 +60,6 @@ import { GainSimulator } from "@/components/GainSimulator";
 import type { Machine, FuelEntry } from "@shared/schema";
 import { calculateReimbursement, calculateReimbursementBySectorAndDate } from "@shared/schema";
 import { extractTextFromImage } from "@/lib/ocr";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const fuelTypes = ["diesel", "gasoline", "biodiesel"] as const;
 

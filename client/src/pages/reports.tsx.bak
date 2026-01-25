@@ -505,6 +505,11 @@ export default function ReportsPage() {
                     <span className="text-muted-foreground">{t.reports.rate}</span>
                     <span className="font-mono font-medium">
                       {uniformRate.toFixed(4)} CHF/L
+                      {sector === 'agriculture' && (
+                        <span className="text-xs text-green-600 dark:text-green-400 ml-2">
+                          (Agriculture {new Date(form.watch('periodStart')).getFullYear()})
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between">

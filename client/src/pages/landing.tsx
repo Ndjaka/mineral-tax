@@ -55,8 +55,8 @@ export default function LandingPage() {
   const debouncedVolume = useDebouncedValue(volumeLiters, 150);
 
   const calculatedReimbursement = useMemo(() => {
-    // Agriculture: 60.05 cts/L, BTP: 34.06 cts/L
-    const rate = selectedSector === "agriculture" ? 0.6005 : 0.3406;
+    // Taux uniforme pour tous les secteurs (impôt sur les huiles minérales uniquement)
+    const rate = 0.3405;
     return debouncedVolume * rate;
   }, [debouncedVolume, selectedSector]);
 
