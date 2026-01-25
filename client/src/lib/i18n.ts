@@ -449,7 +449,7 @@ export const translations = {
       section1Title: "1. Objet",
       section1Content: "La plateforme MineralTax Swiss propose un outil de gestion et d'aide au calcul pour le remboursement de l'impôt sur les huiles minérales en Suisse.",
       section2Title: "2. Nature du service",
-      section2Content: "Le service est un outil technique de simplification administrative. L'utilisateur reconnaît que l'éditeur du logiciel n'est pas un représentant de l'Office fédéral de la douane et de la sécurité des frontières (OFDF). La soumission finale des demandes doit être effectuée par l'utilisateur via le portail officiel (ex: Taxas) avec son propre Login CH.",
+      section2Content: "Le service est un outil technique de simplification administrative. L'utilisateur reconnaît que l'éditeur du logiciel n'est pas un représentant de l'Office fédéral de la douane et de la sécurité des frontières (OFDF). La soumission finale des demandes doit être effectuée par l'utilisateur via le portail officiel (ex: Taxas) avec son propre Login CH. Les calculs et fichiers générés reposent sur les informations règlementaires disponibles à la date de génération.",
       section3Title: "3. Responsabilité",
       section3Content: "L'utilisateur est seul responsable de l'exactitude des données saisies (litres, heures moteur, factures). L'éditeur ne pourra être tenu responsable en cas de refus de remboursement par l'administration ou d'erreur de saisie de la part de l'utilisateur.",
       section4Title: "4. Tarifs et Essai",

@@ -74,6 +74,8 @@ export default function ReportsPage() {
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
   const { sector } = useSector();
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false);
+  const [pendingExportId, setPendingExportId] = useState<string | null>(null);
 
   // Taux uniforme pour tous les secteurs (impôt sur les huiles minérales uniquement)
   const uniformRate = 0.3405; // 34.05 cts/L
@@ -313,7 +315,10 @@ export default function ReportsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => exportCsvMutation.mutate(report.id)}
+                        onClick={() => {
+                          setPendingExportId(report.id);
+                          setDisclaimerOpen(true);
+                        }}
                         disabled={exportCsvMutation.isPending}
                         data-testid={`button-export-csv-${report.id}`}
                         title={t.reports.exportTaxasDesc}
@@ -648,6 +653,54 @@ export default function ReportsPage() {
             </Button>
             <Button onClick={() => setIsHelpDialogOpen(false)}>
               {t.common.close}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Disclaimer Modal pour Export CSV */}
+      <Dialog open={disclaimerOpen} onOpenChange={setDisclaimerOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              Avertissement Important
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+              <AlertDescription className="text-sm leading-relaxed">
+                En générant cet export, l'utilisateur reconnaît être responsable de l'exactitude des données saisies.
+                La responsabilité de MineralTax.ch est limitée au montant de l'abonnement annuel.
+              </AlertDescription>
+            </Alert>
+            <p className="text-sm text-muted-foreground">
+              Veuillez vérifier l'exactitude de toutes vos données avant de soumettre vos fichiers aux autorités fiscales.
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setDisclaimerOpen(false);
+                setPendingExportId(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (pendingExportId) {
+                  exportCsvMutation.mutate(pendingExportId);
+                  setDisclaimerOpen(false);
+                  setPendingExportId(null);
+                }
+              }}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              J'accepte et je télécharge
             </Button>
           </DialogFooter>
         </DialogContent>
