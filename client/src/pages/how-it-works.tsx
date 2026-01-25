@@ -212,9 +212,6 @@ export default function HowItWorks() {
           </div>
         </div>
       </div>
-
-      {/* Main App Footer with LinkedIn */}
-      <AppFooter />
     </>
   );
 }
