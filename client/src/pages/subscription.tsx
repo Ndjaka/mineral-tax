@@ -200,8 +200,86 @@ export default function SubscriptionPage() {
         </Card>
       </div>
 
-      {/* Payment Options - Full Width */}
+      {/* Promo Code Card */}
       {!isActive && (
+        <div className="max-w-3xl mx-auto mb-8">
+          <Card className="border-2 border-green-500/30 bg-green-50/30 dark:bg-green-950/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Star className="h-5 w-5 text-green-600 fill-green-600" />
+                Code promo (optionnel)
+              </CardTitle>
+              <CardDescription>
+                Entrez votre code pour bénéficier d'un accès gratuit
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="VOTRE-CODE-PROMO"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={validatePromoMutation.isPending || !!validatedPromo}
+                  />
+                  <Button
+                    onClick={() => validatePromoMutation.mutate(promoCode)}
+                    disabled={!promoCode || validatePromoMutation.isPending || !!validatedPromo}
+                    className="flex-shrink-0"
+                  >
+                    {validatePromoMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Valider"
+                    )}
+                  </Button>
+                </div>
+
+                {promoError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{promoError}</AlertDescription>
+                  </Alert>
+                )}
+
+                {validatedPromo && (
+                  <>
+                    <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-green-800 dark:text-green-200">
+                        <span className="font-semibold">✅ Code valide !</span>
+                        <br />
+                        Vous bénéficiez de {validatedPromo.durationMonths} mois d'accès gratuit.
+                      </AlertDescription>
+                    </Alert>
+
+                    <Button
+                      size="lg"
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={() => redeemPromoMutation.mutate(promoCode)}
+                      disabled={redeemPromoMutation.isPending}
+                    >
+                      {redeemPromoMutation.isPending ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="h-5 w-5 mr-2" />
+                          Activer mon accès gratuit
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Payment Options - Full Width */}
+      {!isActive && !validatedPromo && (
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold mb-2">{t.settings.choosePaymentMethod}</h2>
