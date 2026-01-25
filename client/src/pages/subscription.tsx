@@ -207,10 +207,10 @@ export default function SubscriptionPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Star className="h-5 w-5 text-green-600 fill-green-600" />
-                Code promo (optionnel)
+                Accès partenaire
               </CardTitle>
               <CardDescription>
-                Entrez votre code pour bénéficier d'un accès gratuit
+                Code réservé aux partenaires du programme de lancement MineralTax.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -251,7 +251,7 @@ export default function SubscriptionPage() {
                       <AlertDescription className="text-green-800 dark:text-green-200">
                         <span className="font-semibold">✅ Code valide !</span>
                         <br />
-                        Vous bénéficiez de {validatedPromo.durationMonths} mois d'accès gratuit.
+                        Accès gratuit {validatedPromo.durationMonths} mois pour jusqu'à {validatedPromo.maxUses} utilisateurs.
                       </AlertDescription>
                     </Alert>
 
