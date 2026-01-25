@@ -875,65 +875,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-20 bg-muted/30" id="tarifs">
-          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl font-bold mb-8">{t.landing.pricingTitle}</h2>
-            <Card className="bg-primary text-primary-foreground overflow-hidden">
-              <CardContent className="p-8 md:p-12">
-                <div className="space-y-6">
-                  <p className="text-lg text-primary-foreground/80">{t.landing.pricingSubtitle}</p>
 
-                  <div className="py-4">
-                    <span className="text-5xl md:text-6xl font-bold">250</span>
-                    <span className="text-2xl ml-2">CHF</span>
-                    <p className="text-primary-foreground/80 mt-2">{t.landing.pricingPeriod}</p>
-                  </div>
-
-                  <ul className="space-y-3 text-primary-foreground/90 text-left max-w-md mx-auto">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>{t.landing.pricingFeature1}</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>{t.landing.pricingFeature2}</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>{t.landing.pricingFeature3}</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>{t.landing.pricingFeature4}</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>{t.landing.pricingFeature5}</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>{t.landing.pricingFeature6}</span>
-                    </li>
-                  </ul>
-
-                  <p className="text-sm text-primary-foreground/70">{t.landing.pricingTrial}</p>
-
-                  <div className="pt-4">
-                    <Button
-                      size="lg"
-                      variant="secondary"
-                      asChild
-                      data-testid="button-subscribe"
-                    >
-                      <Link href="/register">{t.landing.pricingCta}</Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
+        {/* FAQ Section */}
         <section className="py-20 bg-muted/30" id="faq">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
