@@ -536,7 +536,7 @@ export default function FuelPage() {
                       <FormItem>
                         <FormLabel>{t.fuel.invoiceDate} *</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} data-testid="input-invoice-date" />
+                          <Input type="date" className="h-12 md:h-10 text-base" {...field} data-testid="input-invoice-date" />
                         </FormControl>
                         <FormMessage />
 
@@ -560,7 +560,7 @@ export default function FuelPage() {
                     <FormItem>
                       <FormLabel>{t.fuel.invoiceNumber}</FormLabel>
                       <FormControl>
-                        <Input {...field} data-testid="input-invoice-number" />
+                        <Input className="h-12 md:h-10 text-base" {...field} data-testid="input-invoice-number" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -578,7 +578,9 @@ export default function FuelPage() {
                       <FormControl>
                         <Input
                           type="number"
+                          inputMode="decimal"
                           step="0.01"
+                          className="h-12 md:h-10 text-base"
                           {...field}
                           value={field.value || ""}
                           data-testid="input-volume"
@@ -598,7 +600,9 @@ export default function FuelPage() {
                       <FormControl>
                         <Input
                           type="number"
+                          inputMode="decimal"
                           step="0.1"
+                          className="h-12 md:h-10 text-base"
                           {...field}
                           value={field.value || ""}
                           data-testid="input-engine-hours"
@@ -657,7 +661,7 @@ export default function FuelPage() {
                             <InfoPopover content={t.fuel.articleNumberTooltip} />
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="1234" {...field} data-testid="input-article-number" />
+                            <Input placeholder="1234" className="h-12 md:h-10 text-base" inputMode="numeric" {...field} data-testid="input-article-number" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -673,7 +677,7 @@ export default function FuelPage() {
                             <InfoPopover content={t.fuel.warehouseNumberTooltip} />
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="001" {...field} data-testid="input-warehouse-number" />
+                            <Input placeholder="001" className="h-12 md:h-10 text-base" inputMode="numeric" {...field} data-testid="input-warehouse-number" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -690,7 +694,7 @@ export default function FuelPage() {
                           <InfoPopover content={t.fuel.movementNumberTooltip} />
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="MOV-2026-001" {...field} data-testid="input-movement-number" />
+                          <Input placeholder="MOV-2026-001" className="h-12 md:h-10 text-base" {...field} data-testid="input-movement-number" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -707,7 +711,7 @@ export default function FuelPage() {
                             <InfoPopover content={t.fuel.bdTooltip} />
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="ex: 01" {...field} data-testid="input-bd" />
+                            <Input placeholder="ex: 01" className="h-12 md:h-10 text-base" {...field} data-testid="input-bd" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -723,7 +727,7 @@ export default function FuelPage() {
                             <InfoPopover content={t.fuel.statTooltip} />
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="ex: 2710" {...field} data-testid="input-stat" />
+                            <Input placeholder="ex: 2710" className="h-12 md:h-10 text-base" inputMode="numeric" {...field} data-testid="input-stat" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -739,7 +743,7 @@ export default function FuelPage() {
                             <InfoPopover content={t.fuel.ciTooltip} />
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="ex: A1" {...field} data-testid="input-ci" />
+                            <Input placeholder="ex: A1" className="h-12 md:h-10 text-base" {...field} data-testid="input-ci" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
