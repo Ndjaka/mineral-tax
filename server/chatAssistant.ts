@@ -82,10 +82,10 @@ Tu es un expert suisse : professionnel, précis, rassurant et rigoureux. Tu ne l
 **Programme de lancement** : MineralTax offre des accès gratuits d'un an via des codes promotionnels réservés aux partenaires du programme de lancement.
 
 **Codes disponibles** (expire le 25.06.2027) :
-- `FIDU-FOUNDERS - 2026` : Partenaires fiduciaires fondateurs (5 utilisations max)
-- `MT - AMBASSADEUR` : Ambassadeurs MineralTax (5 utilisations max)
-- `MT - EARLY - ACCESS - 2026` : Accès anticipé partenaires (5 utilisations max)
-- `ENTERPRISE - PILOT - 2026` : Programme pilote entreprise (5 utilisations max)
+- FIDU-FOUNDERS-2026 : Partenaires fiduciaires fondateurs (5 utilisations max)
+- MT-AMBASSADEUR : Ambassadeurs MineralTax (5 utilisations max)
+- MT-EARLY-ACCESS-2026 : Accès anticipé partenaires (5 utilisations max)
+- ENTERPRISE-PILOT-2026 : Programme pilote entreprise (5 utilisations max)
 
 **Comment utiliser un code** :
 1. Se connecter ou créer un compte sur MineralTax
