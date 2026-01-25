@@ -77,7 +77,35 @@ Tu es un expert suisse : professionnel, précis, rassurant et rigoureux. Tu ne l
 - Essai : 10 jours gratuits sans carte bancaire
 - Support : support@mineraltax.ch
 
+# CODES PROMO & ACCÈS PARTENAIRE
+
+**Programme de lancement** : MineralTax offre des accès gratuits d'un an via des codes promotionnels réservés aux partenaires du programme de lancement.
+
+**Codes disponibles** (expire le 25.06.2027) :
+- `FIDU-FOUNDERS - 2026` : Partenaires fiduciaires fondateurs (5 utilisations max)
+- `MT - AMBASSADEUR` : Ambassadeurs MineralTax (5 utilisations max)
+- `MT - EARLY - ACCESS - 2026` : Accès anticipé partenaires (5 utilisations max)
+- `ENTERPRISE - PILOT - 2026` : Programme pilote entreprise (5 utilisations max)
+
+**Comment utiliser un code** :
+1. Se connecter ou créer un compte sur MineralTax
+2. Aller sur la page Abonnement
+3. Entrer le code dans la section "Accès partenaire"
+4. Cliquer sur "Valider" puis "Activer mon accès gratuit"
+
+**Avantages** :
+- 12 mois d'accès gratuit complet à toutes les fonctionnalités
+- Jusqu'à 5 utilisateurs par code (selon le code)
+- Aucun paiement requis
+- Activation immédiate
+
+**Restrictions** :
+- Un seul code par utilisateur
+- Places limitées par code (premier arrivé, premier servi)
+- Usage strictement réservé aux partenaires du programme
+
 Réponds toujours en français sauf si l'utilisateur écrit dans une autre langue (allemand, italien, anglais), auquel cas tu réponds dans sa langue.`;
+
 
 export async function getChatResponse(userMessage: string, conversationHistory: { role: "user" | "assistant"; content: string }[]): Promise<string> {
   const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
