@@ -18,6 +18,7 @@ declare module "express-serve-static-core" {
       firstName: string | null;
       lastName: string | null;
       profileImageUrl: string | null;
+      activitySector: "agriculture" | "btp" | null;
     };
     sessionId?: string;
   }
@@ -123,7 +124,8 @@ export function registerAuthRoutes(app: Express): void {
             firstName: newUser.firstName,
             lastName: newUser.lastName,
             profileImageUrl: newUser.profileImageUrl,
-            emailVerified: newUser.emailVerified
+            emailVerified: newUser.emailVerified,
+            activitySector: newUser.activitySector
           }
         });
       }
@@ -250,7 +252,8 @@ export function registerAuthRoutes(app: Express): void {
         firstName: user.firstName,
         lastName: user.lastName,
         profileImageUrl: user.profileImageUrl,
-        emailVerified: user.emailVerified
+        emailVerified: user.emailVerified,
+        activitySector: user.activitySector
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -291,7 +294,8 @@ export function registerAuthRoutes(app: Express): void {
       firstName: user.firstName,
       lastName: user.lastName,
       profileImageUrl: user.profileImageUrl,
-      emailVerified: user.emailVerified
+      emailVerified: user.emailVerified,
+      activitySector: user.activitySector
     });
   });
 

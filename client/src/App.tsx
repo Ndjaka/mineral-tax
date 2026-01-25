@@ -14,6 +14,7 @@ import { TrialBanner } from "@/components/trial-banner";
 import { AppFooter } from "@/components/app-footer";
 import { ChatWidget } from "@/components/chat-widget";
 import { UrgentBanner } from "@/components/urgent-banner";
+import { SectorProvider, useSector } from "@/lib/sector-context";
 import LandingPage from "@/pages/landing";
 import CGVPage from "@/pages/cgv";
 import ConfidentialitePage from "@/pages/confidentialite";
@@ -48,9 +49,12 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     "--sidebar-width-icon": "3rem",
   };
 
+  const { sector } = useSector();
+  const themeClass = sector === "agriculture" ? "theme-agri" : "theme-btp";
+
   return (
     <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex flex-col h-screen w-full">
+      <div className={`flex flex-col h-screen w-full ${themeClass}`}>
         <UrgentBanner />
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar />
@@ -216,15 +220,29 @@ function AppContent() {
   return <AuthenticatedRouter />;
 }
 
-function App() {
+function AppWrapper() {
+  const { user } = useAuth();
+
+  // Debug logging
+  console.log('[AppWrapper] User object:', user);
+  console.log('[AppWrapper] activitySector:', user?.activitySector);
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <SectorProvider userSector={user?.activitySector}>
       <TooltipProvider>
         <I18nProvider>
           <Toaster />
           <AppContent />
         </I18nProvider>
       </TooltipProvider>
+    </SectorProvider>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppWrapper />
     </QueryClientProvider>
   );
 }

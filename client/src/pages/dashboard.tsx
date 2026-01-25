@@ -22,11 +22,14 @@ import {
   BarChart3,
   Camera,
   FileSpreadsheet,
+  TreePine,
+  HardHat,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Banner2026 } from "@/components/banner-2026";
 import type { Machine, FuelEntry, Report, Invoice } from "@shared/schema";
 import { calculateReimbursement } from "@shared/schema";
+import { useSector } from "@/lib/sector-context";
 import {
   AreaChart,
   Area,
@@ -56,7 +59,13 @@ export default function DashboardPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { sector } = useSector();
   const [location, setLocation] = useLocation();
+
+  const isAgri = sector === "agriculture";
+  const displayedRate = isAgri ? 0.6005 : 0.3406;
+  const sectorTitle = isAgri ? "Secteur Agricole" : "Secteur BTP/Industrie";
+  const SectorIcon = isAgri ? TreePine : HardHat;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -186,7 +195,13 @@ export default function DashboardPage() {
       <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-dashboard-title">
+            <div className="flex items-center gap-2 mb-1">
+              <SectorIcon className={`h-6 w-6 ${isAgri ? "text-green-600" : "text-blue-600"}`} />
+              <h2 className={`text-xl font-bold tracking-tight ${isAgri ? "text-green-600" : "text-blue-600"}`}>
+                {sectorTitle}
+              </h2>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-semibold mt-1" data-testid="text-dashboard-title">
               {t.dashboard.welcome}, {user?.firstName || "User"}
             </h1>
             <p className="text-sm md:text-base text-muted-foreground mt-1">{t.dashboard.summary}</p>
@@ -415,17 +430,22 @@ export default function DashboardPage() {
             </CardContent>
 
             <CardContent className="pt-0">
-              <Card className="bg-primary/5 border-primary/20">
+              <Card className={`${isAgri ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800" : "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Calculator className="h-5 w-5 text-primary" />
+                    <div className={`p-2 rounded-lg ${isAgri ? "bg-green-100 dark:bg-green-900/30" : "bg-blue-100 dark:bg-blue-900/30"}`}>
+                      <Calculator className={`h-5 w-5 ${isAgri ? "text-green-600 dark:text-green-400" : "text-blue-600 dark:text-blue-400"}`} />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{t.reports.rate}</p>
-                      <p className="text-xl font-bold text-primary font-mono">
-                        0.3405 CHF/L
+                      <p className={`text-xl font-bold font-mono ${isAgri ? "text-green-600 dark:text-green-400" : "text-blue-600 dark:text-blue-400"}`}>
+                        {displayedRate.toFixed(4)} CHF/L
                       </p>
+                      {isAgri && (
+                        <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                          Taux agricole 2026
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
