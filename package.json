@@ -9,6 +9,7 @@
     "start": "NODE_ENV=production SKIP_EMAIL_VERIFICATION=false node dist/index.mjs",
     "check": "tsc",
     "db:push": "drizzle-kit push",
+    "seed-promo-codes": "tsx scripts/seed-promo-codes.ts",
     "update-promo-limits": "tsx scripts/update-promo-limits.ts"
   },
   "dependencies": {
