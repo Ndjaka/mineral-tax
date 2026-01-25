@@ -137,6 +137,7 @@ export default function SubscriptionPage() {
               250 <span className="text-2xl font-normal text-muted-foreground">CHF</span>
             </CardTitle>
             <CardDescription className="text-base">{t.landing.perYear}</CardDescription>
+            <p className="text-xs text-primary/70 mt-2">Prix de lancement annuel</p>
           </CardHeader>
           <CardContent className="space-y-6">
             <ul className="space-y-3">

@@ -923,22 +923,60 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-8 md:p-12 text-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">
-                {t.landing.sliderResult}
-              </h2>
-              <p className="text-primary-foreground/90 mb-6 max-w-xl mx-auto">
-                {t.landing.trustedBy}
-              </p>
-              <Button size="lg" variant="secondary" asChild data-testid="button-cta-final">
-                <Link href="/register">{t.landing.cta}</Link>
-              </Button>
-              <p className="text-primary-foreground/70 text-sm mt-4">
-                {t.landing.ctaSubtext}
-              </p>
-            </div>
+        <section className="py-20 bg-muted/30">
+          <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+            <Card className="border-2 border-primary/30 shadow-lg">
+              <CardHeader className="text-center pb-4">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Star className="h-6 w-6 text-primary fill-primary" />
+                  <span className="text-sm font-semibold text-primary uppercase tracking-wider">
+                    Prix de lancement annuel
+                  </span>
+                </div>
+                <CardTitle className="text-5xl font-bold mb-2">
+                  250 <span className="text-2xl font-normal text-muted-foreground">CHF</span>
+                </CardTitle>
+                <CardDescription className="text-base">{t.landing.perYear}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <div className="p-1 rounded-full bg-primary/10 shrink-0">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-sm">{t.landing.feature1Title}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="p-1 rounded-full bg-primary/10 shrink-0">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-sm">{t.landing.feature2Title}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="p-1 rounded-full bg-primary/10 shrink-0">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-sm">{t.landing.feature3Title}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="p-1 rounded-full bg-primary/10 shrink-0">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-sm">{t.reports.downloadPdf}</span>
+                  </li>
+                </ul>
+
+                <div className="pt-2">
+                  <Button size="lg" className="w-full" asChild data-testid="button-cta-final">
+                    <Link href="/register">{t.landing.cta}</Link>
+                  </Button>
+                </div>
+
+                <p className="text-center text-sm text-muted-foreground">
+                  {t.landing.ctaSubtext}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </section>
       </main>
