@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrialBanner } from "@/components/trial-banner";
 import { AppFooter } from "@/components/app-footer";
 import { ChatWidget } from "@/components/chat-widget";
+import { MobileNav } from "@/components/mobile-nav";
 import { UrgentBanner } from "@/components/urgent-banner";
 import { SectorProvider, useSector } from "@/lib/sector-context";
 import LandingPage from "@/pages/landing";
@@ -66,7 +67,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 <ThemeToggle />
               </div>
             </header>
-            <main className="flex-1 overflow-auto flex flex-col">
+            <main className="flex-1 overflow-auto flex flex-col pb-16 md:pb-0">
               <div className="px-4 pt-4">
                 <TrialBanner />
               </div>
@@ -76,6 +77,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
               <AppFooter />
             </main>
             <ChatWidget />
+            <MobileNav />
           </div>
         </div>
       </div>
