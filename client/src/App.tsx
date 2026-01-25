@@ -16,6 +16,7 @@ import { ChatWidget } from "@/components/chat-widget";
 import { MobileNav } from "@/components/mobile-nav";
 import { UrgentBanner } from "@/components/urgent-banner";
 import { SectorProvider, useSector } from "@/lib/sector-context";
+import { Analytics } from "@/lib/analytics";
 import LandingPage from "@/pages/landing";
 import CGVPage from "@/pages/cgv";
 import ConfidentialitePage from "@/pages/confidentialite";
@@ -231,6 +232,7 @@ function AppWrapper() {
 
   return (
     <SectorProvider userSector={user?.activitySector}>
+      <Analytics />
       <TooltipProvider>
         <I18nProvider>
           <Toaster />
