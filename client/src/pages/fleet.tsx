@@ -296,7 +296,7 @@ export default function FleetPage() {
   const watchPlateColor = form.watch("plateColor");
   const watchIsEligible = form.watch("isEligible");
   const watchType = form.watch("type");
-  
+
   const handlePlateColorChange = (color: string) => {
     form.setValue("plateColor", color as typeof plateColors[number]);
     if (!hasEligibilityOverride) {
@@ -359,30 +359,30 @@ export default function FleetPage() {
           {filteredMachines.map((machine) => (
             <Card key={machine.id} className="hover-elevate" data-testid={`card-machine-${machine.id}`}>
               <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
                       <Truck className="h-5 w-5 text-primary" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{machine.name}</h3>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold truncate">{machine.name}</h3>
+                      <p className="text-sm text-muted-foreground truncate">
                         {getMachineTypeLabel(machine.type)}
                       </p>
                     </div>
                   </div>
-                  <Badge variant={machine.isEligible ? "default" : "secondary"}>
+                  <Badge variant={machine.isEligible ? "default" : "secondary"} className="flex-shrink-0">
                     {machine.isEligible ? t.fleet.eligible : t.fleet.notEligible}
                   </Badge>
                 </div>
-                
+
                 <div className="space-y-2 text-sm">
                   {machine.licensePlate && (
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">{t.fleet.licensePlate || "Plaque"}</span>
                       <div className="flex items-center gap-2">
                         {machine.plateColor && machine.plateColor !== "none" && (
-                          <span 
+                          <span
                             className={`w-4 h-4 rounded border ${getPlateColorInfo(machine.plateColor).bg} ${getPlateColorInfo(machine.plateColor).border}`}
                             title={getPlateColorLabel(machine.plateColor)}
                           />
@@ -509,8 +509,8 @@ export default function FleetPage() {
                       <FormItem>
                         <FormLabel>Précisez le type de machine *</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
+                          <Input
+                            {...field}
                             placeholder="Ex: Broyeur fixe, Pompe à lisier, Compresseur..."
                             data-testid="input-custom-type"
                           />
@@ -562,10 +562,10 @@ export default function FleetPage() {
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="e.g. VS 12345" 
-                            data-testid="input-license-plate" 
+                          <Input
+                            {...field}
+                            placeholder="e.g. VS 12345"
+                            data-testid="input-license-plate"
                           />
                         </FormControl>
                         <FormMessage />
@@ -586,9 +586,8 @@ export default function FleetPage() {
                           key={color}
                           type="button"
                           onClick={() => handlePlateColorChange(color)}
-                          className={`px-3 py-2 rounded-md border-2 text-sm font-medium transition-all ${info.bg} ${info.text} ${
-                            isSelected ? "ring-2 ring-primary ring-offset-2" : info.border
-                          }`}
+                          className={`px-3 py-2 rounded-md border-2 text-sm font-medium transition-all ${info.bg} ${info.text} ${isSelected ? "ring-2 ring-primary ring-offset-2" : info.border
+                            }`}
                           data-testid={`button-plate-color-${color}`}
                         >
                           {getPlateColorLabel(color)}
