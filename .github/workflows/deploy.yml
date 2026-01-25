@@ -1,15 +1,12 @@
-# Deploy MineralTax
-# Triggering new build...
+name: Deploy to Infomaniak
 
 on:
   push:
     branches:
-      - develop
       - main
-  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -18,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
@@ -27,108 +24,29 @@ jobs:
       - name: Build project
         run: npm run build
 
-      # --- CONFIGURATION ENVIRONNEMENT ---
-      - name: Set Environment Variables
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            echo "ENV_NAME=test" >> $GITHUB_ENV
-            echo "REMOTE_PATH=sites/test.mineraltax.ch" >> $GITHUB_ENV
-            echo "SERVER_PORT=5001" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "ENV_NAME=prod" >> $GITHUB_ENV
-            echo "REMOTE_PATH=sites/mineraltax.ch" >> $GITHUB_ENV
-            echo "SERVER_PORT=3000" >> $GITHUB_ENV
-          fi
+      - name: Deploy via rsync
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: "-avz --delete"
+          SOURCE: "/"
+          REMOTE_HOST: "57-106659.ssh.hosting-ik.com"
+          REMOTE_USER: "N89UEvW6WcN_Mineraltax"
+          TARGET: "sites/mineraltax.ch/"
+          EXCLUDE: "/node_modules/, /.git/, /.github/, /.vscode/, /.env, /exports/"
 
-      - name: Install sshpass
-        run: sudo apt-get update && sudo apt-get install -y sshpass
-
-      - name: Prepare remote directory
-        env:
-          SSHPASS: ${{ secrets.SSH_PASSWORD }}
-        run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
-            "mkdir -p ${{ env.REMOTE_PATH }}/dist"
-
-      - name: Deploy project files via rsync
-        env:
-          SSHPASS: ${{ secrets.SSH_PASSWORD }}
-        run: |
-          # Déployer le dossier dist
-          sshpass -e rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            --exclude='node_modules' \
-            --exclude='.git' \
-            dist/ \
-            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com:${{ env.REMOTE_PATH }}/dist/
-          
-          # Déployer package.json et package-lock.json à la racine pour npm install
-          sshpass -e rsync -avz \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            package.json package-lock.json \
-            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com:${{ env.REMOTE_PATH }}/
-
-      - name: Update .env on server
-        env:
-          SSHPASS: ${{ secrets.SSH_PASSWORD }}
-        run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
-            "sed -i 's/^PORT=.*/PORT=${{ env.SERVER_PORT }}/' ${{ env.REMOTE_PATH }}/.env || echo 'PORT=${{ env.SERVER_PORT }}' >> ${{ env.REMOTE_PATH }}/.env"
-
-      - name: Setup PHP Proxy (Test only)
-        if: env.ENV_NAME == 'test'
-        env:
-          SSHPASS: ${{ secrets.SSH_PASSWORD }}
-        run: |
-          # Créer un proxy PHP car le [P] flag Apache peut être limité
-          PHP_PROXY="<?php
-          \$url = 'http://localhost:5001' . \$_SERVER['REQUEST_URI'];
-          \$ch = curl_init();
-          curl_setopt(\$ch, CURLOPT_URL, \$url);
-          curl_setopt(\$ch, CURLOPT_RETURNTRANSFER, true);
-          curl_setopt(\$ch, CURLOPT_FOLLOWLOCATION, false);
-          curl_setopt(\$ch, CURLOPT_HEADER, true);
-          \$headers = [];
-          foreach (getallheaders() as \$name => \$v) { if (\$name !== 'Host') \$headers[] = \"\$name: \$v\"; }
-          curl_setopt(\$ch, CURLOPT_HTTPHEADER, \$headers);
-          \$res = curl_exec(\$ch);
-          \$h_size = curl_getinfo(\$ch, CURLINFO_HEADER_SIZE);
-          \$h_cont = substr(\$res, 0, \$h_size);
-          \$body = substr(\$res, \$h_size);
-          curl_close(\$ch);
-          foreach (explode(\"\r\n\", \$h_cont) as \$line) {
-            if (\$line && !preg_match('/^Transfer-Encoding:/i', \$line) && !preg_match('/^HTTP\//i', \$line)) header(\$line);
-          }
-          echo \$body;
-          ?>"
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
-            "echo -e '$PHP_PROXY' > ${{ env.REMOTE_PATH }}/index.php"
-
-          # Configurer .htaccess pour tout envoyer vers index.php
-          HTACCESS="RewriteEngine On\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteRule ^(.*)$ index.php [L,QSA]"
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
-            "echo -e '$HTACCESS' > ${{ env.REMOTE_PATH }}/.htaccess"
-
-      - name: Install dependencies and Restart with PM2
-        env:
-          SSHPASS: ${{ secrets.SSH_PASSWORD }}
-        run: |
-          # On ajuste le nom du processus PM2 selon l'environnement
-          PM2_NAME="mineraltax-${{ env.ENV_NAME }}"
-          
-          sshpass -e ssh -o StrictHostKeyChecking=no \
-            N89UEvW6WcN_Mineraltax@57-106659.ssh.hosting-ik.com \
-            "cd ${{ env.REMOTE_PATH }} && \
-             npm install --omit=dev && \
-             (test -f node_modules/.bin/pm2 || npm install pm2) && \
-             (./node_modules/.bin/pm2 restart $PM2_NAME 2>/dev/null || ./node_modules/.bin/pm2 start dist/index.mjs --name $PM2_NAME) && \
-             ./node_modules/.bin/pm2 save" || true
-          echo "✅ Application (${{ env.ENV_NAME }}) déployée sur port ${{ env.SERVER_PORT }} et redémarrée"
-
-
-
-
+      - name: Restart application
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: "57-106659.ssh.hosting-ik.com"
+          username: "N89UEvW6WcN_Mineraltax"
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd sites/mineraltax.ch
+            # S'assurer que les dépendances de production sont à jour
+            npm install --production
+            # Tuer le processus utilisant le port 3000
+            lsof -ti:3000 | xargs kill -9 || true
+            # Lancer l'application en arrière-plan
+            nohup npm start > app.log 2>&1 &
+            echo "Déploiement terminé et application redémarrée."
