@@ -691,7 +691,8 @@ export async function registerRoutes(
       }
 
       const { validatePromoCode } = await import("./services/promoCode");
-      const validation = await validatePromoCode(code, userId);
+      // Test without userId first
+      const validation = await validatePromoCode(code, undefined);
 
       res.json(validation);
     } catch (error) {
