@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -34,6 +36,10 @@ interface SubscriptionData {
 export default function SubscriptionPage() {
   const { t } = useI18n();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [promoCode, setPromoCode] = useState("");
+  const [validatedPromo, setValidatedPromo] = useState<any>(null);
+  const [promoError, setPromoError] = useState("");
 
   const { data: subscription, isLoading } = useQuery<SubscriptionData>({
     queryKey: ["/api/subscription"],
@@ -62,6 +68,46 @@ export default function SubscriptionPage() {
       }
     },
   });
+
+  const validatePromoMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const res = await apiRequest("POST", "/api/promo-codes/validate", { code });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.valid) {
+        setValidatedPromo(data.promoCode);
+        setPromoError("");
+        toast({ title: "✅ Code valide ! Accès gratuit 1 an" });
+      } else {
+        setPromoError(data.error);
+        setValidatedPromo(null);
+      }
+    },
+    onError: () => {
+      setPromoError("Erreur lors de la validation du code");
+      setValidatedPromo(null);
+    },
+  });
+
+  const redeemPromoMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const res = await apiRequest("POST", "/api/promo-codes/redeem", { code });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({ title: "🎉 Accès gratuit activé ! Rechargement..." });
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast({ title: data.error, variant: "destructive" });
+      }
+    },
+    onError: () => {
+      toast({ title: "Erreur lors de l'activation", variant: "destructive" });
+    },
+  });
+
 
   const isTrialExpired = subscription?.status === "trial_expired";
   const isActive = subscription?.status === "active";

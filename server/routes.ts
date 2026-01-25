@@ -680,6 +680,53 @@ export async function registerRoutes(
     }
   });
 
+  // Promo code routes
+  app.post("/api/promo-codes/validate", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { code } = req.body;
+
+      if (!code || typeof code !== "string") {
+        return res.status(400).json({ valid: false, error: "Code invalide" });
+      }
+
+      const { validatePromoCode } = await import("./services/promoCode");
+      const validation = await validatePromoCode(code, userId);
+
+      res.json(validation);
+    } catch (error) {
+      console.error("Error validating promo code:", error);
+      res.status(500).json({ valid: false, error: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/promo-codes/redeem", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { code } = req.body;
+
+      if (!code || typeof code !== "string") {
+        return res.status(400).json({ success: false, error: "Code invalide" });
+      }
+
+      const { redeemPromoCode, createFreeSubscription } = await import("./services/promoCode");
+
+      const redemption = await redeemPromoCode(code, userId);
+
+      if (!redemption.success) {
+        return res.status(400).json(redemption);
+      }
+
+      // Create free subscription
+      await createFreeSubscription(userId, redemption.durationMonths!);
+
+      res.json({ success: true, message: "Accès activé avec succès !" });
+    } catch (error) {
+      console.error("Error redeeming promo code:", error);
+      res.status(500).json({ success: false, error: "Erreur serveur" });
+    }
+  });
+
   app.post("/api/checkout", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);

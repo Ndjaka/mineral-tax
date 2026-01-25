@@ -154,6 +154,27 @@ export const invoices = pgTable("invoices", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const promoCodes = pgTable("promo_codes", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  durationMonths: integer("duration_months").notNull().default(12),
+  maxUses: integer("max_uses"),
+  currentUses: integer("current_uses").notNull().default(0),
+  validFrom: timestamp("valid_from").defaultNow(),
+  validUntil: timestamp("valid_until"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const promoCodeRedemptions = pgTable("promo_code_redemptions", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  promoCodeId: integer("promo_code_id").notNull().references(() => promoCodes.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull(),
+  redeemedAt: timestamp("redeemed_at").defaultNow(),
+});
+
+
 export const companyProfiles = pgTable("company_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().unique(),
