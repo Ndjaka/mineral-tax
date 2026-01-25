@@ -142,9 +142,6 @@ export default function HowItWorks() {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-12 max-w-6xl">
           <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4" data-testid="badge-rate">
-              {t.rate}: {t.rateValue}
-            </Badge>
             <h1 className="text-3xl font-semibold mb-4" data-testid="text-how-it-works-title">
               {t.title}
             </h1>
@@ -213,32 +210,6 @@ export default function HowItWorks() {
               );
             })}
           </div>
-        </div>
-
-        {/* Legal Source Footer */}
-        <div className="mt-16 pt-8 border-t">
-          <p className="text-center text-sm text-muted-foreground">
-            {language === 'fr' && (
-              <>
-                <strong>Source légale :</strong> Règlement 09 de l'OFDF (vigueur 01.01.2026) – Remboursement de l'impôt sur les huiles minérales pour l'agriculture
-              </>
-            )}
-            {language === 'de' && (
-              <>
-                <strong>Rechtsgrundlage:</strong> Verordnung 09 des BAZG (in Kraft seit 01.01.2026) – Rückerstattung der Mineralölsteuer für die Landwirtschaft
-              </>
-            )}
-            {language === 'it' && (
-              <>
-                <strong>Fonte legale:</strong> Regolamento 09 dell'AFD (in vigore dal 01.01.2026) – Rimborso dell'imposta sugli oli minerali per l'agricoltura
-              </>
-            )}
-            {language === 'en' && (
-              <>
-                <strong>Legal source:</strong> Regulation 09 of FOCBS (effective 01.01.2026) – Mineral oil tax reimbursement for agriculture
-              </>
-            )}
-          </p>
         </div>
       </div>
 
