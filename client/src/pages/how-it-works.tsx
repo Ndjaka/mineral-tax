@@ -213,26 +213,6 @@ export default function HowItWorks() {
               );
             })}
           </div>
-
-          <Card className="mt-20 bg-primary/5 border-primary/20">
-            <CardContent className="p-8 text-center">
-              <h2 className="text-xl font-medium mb-2" data-testid="text-cta-title">{t.ctaTitle}</h2>
-              <p className="text-muted-foreground mb-6" data-testid="text-cta-subtitle">{t.ctaSubtitle}</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/register">
-                  <Button size="lg" className="gap-2" data-testid="button-cta-register">
-                    {t.ctaButton}
-                    <ArrowRight className="h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button size="lg" variant="outline" data-testid="button-cta-login">
-                    {t.ctaLogin}
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Legal Source Footer */}
