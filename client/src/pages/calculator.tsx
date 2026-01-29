@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useSector } from "@/lib/sector-context";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,13 +23,43 @@ import {
 
 export default function CalculatorPage() {
   const { t } = useI18n();
+  const { sector } = useSector();
+  const [, setLocation] = useLocation();
+  const isBtp = sector !== "agriculture";
+
+  // Redirection BTP vers dashboard
+  useEffect(() => {
+    if (isBtp) {
+      setLocation("/");
+    }
+  }, [isBtp, setLocation]);
+
+  // Affichage temporaire pendant redirection BTP
+  if (isBtp) {
+    return (
+      <div className="p-6 max-w-lg mx-auto text-center">
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-6">
+            <Info className="h-8 w-8 text-blue-600 mx-auto mb-4" />
+            <p className="text-blue-800 font-medium">
+              Le calcul de remboursement n'est pas disponible pour le secteur BTP.
+            </p>
+            <p className="text-sm text-blue-600 mt-2">
+              Redirection vers le tableau de bord...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const [volume, setVolume] = useState<string>("");
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [sector, setSector] = useState<string>("btp");
+  const [sectorSelect, setSectorSelect] = useState<string>("agriculture_with_direct");
 
   const volumeNum = parseFloat(volume) || 0;
   const dateObj = date ? new Date(date) : new Date();
-  const sectorValue = sector === 'btp' ? null : sector;
+  const sectorValue = sectorSelect === 'btp' ? null : sectorSelect;
 
   const applicableRate = getApplicableRate(dateObj, sectorValue);
   const reimbursement = calculateReimbursementBySectorAndDate(
@@ -36,7 +68,7 @@ export default function CalculatorPage() {
     sectorValue
   );
 
-  const isNewRate = dateObj >= AGRICULTURE_RATE_CHANGE_DATE && sector === 'agriculture_with_direct';
+  const isNewRate = dateObj >= AGRICULTURE_RATE_CHANGE_DATE && sectorSelect === 'agriculture_with_direct';
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("de-CH", {
@@ -92,7 +124,7 @@ export default function CalculatorPage() {
             {/* Champ Secteur */}
             <div className="space-y-2">
               <Label htmlFor="sector">Secteur d'activité (optionnel)</Label>
-              <Select value={sector} onValueChange={setSector}>
+              <Select value={sectorSelect} onValueChange={setSectorSelect}>
                 <SelectTrigger id="sector" className="h-12">
                   <SelectValue />
                 </SelectTrigger>

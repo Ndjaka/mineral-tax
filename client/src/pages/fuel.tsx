@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useI18n } from "@/lib/i18n";
@@ -156,6 +156,62 @@ export default function FuelPage() {
   const { data: entries, isLoading } = useQuery<(FuelEntry & { machine?: Machine })[]>({
     queryKey: ["/api/fuel-entries"],
   });
+
+  // État pour le message d'info sur le chantier (BTP seulement)
+  const [siteInfoMessage, setSiteInfoMessage] = useState<{ type: 'info' | 'warning' | 'success'; text: string } | null>(null);
+
+  // Watchers pour pré-remplissage intelligent
+  const watchedMachineId = form.watch("machineId");
+  const watchedInvoiceDate = form.watch("invoiceDate");
+
+  // Pré-remplissage intelligent du chantier (BTP uniquement)
+  useEffect(() => {
+    if (!isBtp || !watchedMachineId || !watchedInvoiceDate || !isDialogOpen) {
+      setSiteInfoMessage(null);
+      return;
+    }
+
+    const fetchActiveAssignments = async () => {
+      try {
+        const response = await fetch(`/api/machines/${watchedMachineId}/active-assignments?date=${watchedInvoiceDate}`, {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          console.error("Erreur récupération affectations");
+          return;
+        }
+
+        const assignments = await response.json();
+
+        if (assignments.length === 1) {
+          // Auto-sélection si 1 seul chantier actif
+          form.setValue("siteId", assignments[0].siteId);
+          setSiteInfoMessage({
+            type: 'success',
+            text: `Chantier auto-sélectionné : ${assignments[0].site?.name || 'N/A'}`
+          });
+        } else if (assignments.length === 0) {
+          // Aucune affectation active
+          form.setValue("siteId", "");
+          setSiteInfoMessage({
+            type: 'info',
+            text: "Aucun chantier actif pour cette machine à cette date"
+          });
+        } else {
+          // Plusieurs chantiers - ne pas pré-remplir
+          setSiteInfoMessage({
+            type: 'warning',
+            text: `${assignments.length} chantiers actifs - veuillez sélectionner`
+          });
+        }
+      } catch (error) {
+        console.error("Erreur pré-remplissage chantier:", error);
+      }
+    };
+
+    fetchActiveAssignments();
+  }, [isBtp, watchedMachineId, watchedInvoiceDate, isDialogOpen, form]);
 
   const createMutation = useMutation({
     mutationFn: (data: FuelEntryFormData) => apiRequest("POST", "/api/fuel-entries", {
@@ -583,6 +639,15 @@ export default function FuelPage() {
                         </SelectContent>
                       </Select>
                       <FormMessage />
+                      {/* Message d'info pré-remplissage chantier */}
+                      {siteInfoMessage && (
+                        <div className={`mt-2 text-xs p-2 rounded flex items-center gap-2 ${siteInfoMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+                            siteInfoMessage.type === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                              'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}>
+                          {siteInfoMessage.text}
+                        </div>
+                      )}
                     </FormItem>
                   )}
                 />

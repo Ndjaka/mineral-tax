@@ -411,6 +411,19 @@ export async function registerRoutes(
         volumeLiters: parseFloat(req.body.volumeLiters),
         engineHours: req.body.engineHours ? parseFloat(req.body.engineHours) : null,
       });
+
+      // Validation du siteId si fourni (BTP uniquement)
+      if (data.siteId) {
+        const site = await storage.getConstructionSite(data.siteId, userId);
+        if (!site) {
+          return res.status(400).json({ message: "Chantier non trouvé ou non autorisé" });
+        }
+        if (site.status !== "active") {
+          return res.status(400).json({ message: "Le chantier sélectionné n'est pas actif" });
+        }
+        console.log(`[API] POST /api/fuel-entries - Chantier validé: ${site.name}`);
+      }
+
       const entry = await storage.createFuelEntry(data);
       res.status(201).json(entry);
     } catch (error) {
@@ -1187,6 +1200,22 @@ export async function registerRoutes(
     }
   });
 
+  // GET - Score de cohérence Agriculture (données déclaratives uniquement - AUCUN calcul financier)
+  // Conforme Art. 18 LMin : outil de vérification interne uniquement
+  app.get("/api/agriculture/coherence-score", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const score = await storage.calculateAgricultureCoherenceScore(userId);
+
+      console.log(`[API] GET /api/agriculture/coherence-score - Score: ${score.score}/100 (${score.level})`);
+
+      res.json(score);
+    } catch (error) {
+      console.error("Error calculating agriculture coherence score:", error);
+      res.status(500).json({ message: "Failed to calculate coherence score" });
+    }
+  });
+
   // ==================== CHANTIERS BTP ====================
   // Traçabilité machine ↔ chantier ↔ carburant (aucun calcul fiscal)
 
@@ -1286,6 +1315,40 @@ export async function registerRoutes(
     }
   });
 
+  // GET - Dashboard Chantier BTP
+  app.get("/api/construction-sites/:id/dashboard", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const dashboard = await storage.getConstructionSiteDashboard(req.params.id, userId);
+
+      if (!dashboard) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+
+      console.log(`[API] GET /api/construction-sites/${req.params.id}/dashboard - Summary: ${dashboard.summary.totalMachines} machines, ${dashboard.summary.totalLiters}L`);
+
+      res.json(dashboard);
+    } catch (error) {
+      console.error("Error fetching site dashboard:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard" });
+    }
+  });
+
+  // GET - Score de conformité BTP (traçabilité uniquement - AUCUN CHF)
+  app.get("/api/btp/compliance-score", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const score = await storage.calculateBtpComplianceScore(userId);
+
+      console.log(`[API] GET /api/btp/compliance-score - Score: ${score.score}/100 (${score.level})`);
+
+      res.json(score);
+    } catch (error) {
+      console.error("Error calculating BTP compliance score:", error);
+      res.status(500).json({ message: "Failed to calculate compliance score" });
+    }
+  });
+
   // ==================== AFFECTATIONS MACHINE ↔ CHANTIER ====================
 
   const assignmentSchema = z.object({
@@ -1308,7 +1371,34 @@ export async function registerRoutes(
     }
   });
 
-  // GET - Affectations par chantier
+  // GET - Affectations actives pour une machine à une date donnée
+  // Utilisé pour le pré-remplissage intelligent du chantier lors de la saisie carburant
+  app.get("/api/machines/:id/active-assignments", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const machineId = req.params.id;
+      const dateParam = req.query.date as string;
+
+      // Vérifier que la machine appartient à l'utilisateur
+      const machine = await storage.getMachine(machineId, userId);
+      if (!machine) {
+        return res.status(404).json({ message: "Machine not found" });
+      }
+
+      // Date par défaut = aujourd'hui
+      const targetDate = dateParam ? new Date(dateParam) : new Date();
+
+      // Récupérer les affectations actives à cette date
+      const assignments = await storage.getActiveAssignmentsForMachine(machineId, targetDate);
+
+      console.log(`[API] GET /api/machines/${machineId}/active-assignments - Date: ${targetDate.toISOString()} - Found: ${assignments.length}`);
+
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching active assignments:", error);
+      res.status(500).json({ message: "Failed to fetch active assignments" });
+    }
+  });
   app.get("/api/construction-sites/:id/assignments", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);

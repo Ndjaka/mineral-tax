@@ -62,7 +62,7 @@ export function AppSidebar() {
     { title: t.agriculturalSurfaces?.title || "Surfaces agricoles", url: "/agricultural-surfaces", icon: TreePine, agriOnly: true },
     { title: "Chantiers", url: "/construction-sites", icon: Building2, btpOnly: true },
     { title: t.nav.fuelEntry, url: "/fuel", icon: Fuel, disabledInAgri: true },
-    { title: t.calculator.title, url: "/calculator", icon: Calculator, disabledInAgri: true },
+    { title: t.calculator.title, url: "/calculator", icon: Calculator, agriOnly: true },
     { title: t.nav.reports, url: "/reports", icon: FileText, disabledInAgri: true },
     { title: t.nav.taxas, url: "/taxas", icon: Send, disabledInAgri: true },
     { title: t.company.title, url: "/company", icon: Building2 },

@@ -237,6 +237,8 @@ export const translations = {
       scanTicket: "Scanner un ticket",
       exportTaxasCsv: "Exporter CSV Taxas",
       consumptionTrends: "Évolution des consommations",
+      disclaimerAgriTitle: "Art. 18 LMin – Information importante",
+      disclaimerAgriText: "En agriculture, le remboursement de l'impôt sur les huiles minérales est calculé par l'OFDF sur la base de normes forfaitaires liées aux surfaces et aux cultures. MineralTax est un outil de vérification et de préparation des données. Aucun calcul de remboursement n'est effectué.",
     },
     fleet: {
       title: "Gestion de flotte",
@@ -884,6 +886,8 @@ export const translations = {
       scanTicket: "Ticket scannen",
       exportTaxasCsv: "Taxas CSV exportieren",
       consumptionTrends: "Verbrauchsentwicklung",
+      disclaimerAgriTitle: "Art. 18 MinöStG – Wichtige Information",
+      disclaimerAgriText: "In der Landwirtschaft wird die Rückerstattung der Mineralölsteuer vom BAZG auf Basis pauschaler Normen berechnet, die sich auf Flächen und Kulturen beziehen. MineralTax ist ein Werkzeug zur Überprüfung und Vorbereitung der Daten. Es werden keine Rückerstattungsberechnungen durchgeführt.",
     },
     fleet: {
       title: "Flottenmanagement",
@@ -1531,6 +1535,8 @@ export const translations = {
       scanTicket: "Scansiona biglietto",
       exportTaxasCsv: "Esporta CSV Taxas",
       consumptionTrends: "Andamento dei consumi",
+      disclaimerAgriTitle: "Art. 18 LIOm – Informazione importante",
+      disclaimerAgriText: "In agricoltura, il rimborso dell'imposta sugli oli minerali è calcolato dall'AFD sulla base di norme forfettarie legate alle superfici e alle colture. MineralTax è uno strumento di verifica e preparazione dei dati. Non viene effettuato alcun calcolo di rimborso.",
     },
     fleet: {
       title: "Gestione flotta",
@@ -2170,6 +2176,8 @@ export const translations = {
       scanTicket: "Scan ticket",
       exportTaxasCsv: "Export Taxas CSV",
       consumptionTrends: "Consumption trends",
+      disclaimerAgriTitle: "Art. 18 MOT – Important Notice",
+      disclaimerAgriText: "In agriculture, the mineral oil tax reimbursement is calculated by the FOCBS based on flat-rate standards linked to surfaces and crops. MineralTax is a data verification and preparation tool. No reimbursement calculations are performed.",
     },
     fleet: {
       title: "Fleet Management",

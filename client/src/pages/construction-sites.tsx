@@ -45,7 +45,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, Building2, MapPin, Calendar, Info, HardHat, Wrench, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, MapPin, Calendar, Info, HardHat, Wrench, ArrowLeft, BarChart3, Fuel, AlertCircle } from "lucide-react";
 import type { ConstructionSite, Machine, MachineSiteAssignment } from "@shared/schema";
 import {
     Table,
@@ -117,6 +117,23 @@ export default function ConstructionSitesPage() {
         queryKey: [`/api/construction-sites/${viewingSite?.id}/assignments`],
         enabled: !!viewingSite,
     });
+
+    // Type pour le dashboard
+    type DashboardData = {
+        site: ConstructionSite;
+        summary: { totalMachines: number; totalFuelEntries: number; totalLiters: number };
+        machineDetails: { machine: Machine; assignmentPeriod: { start: string; end: string | null }; fuelEntriesCount: number; totalLiters: number }[];
+        coherenceMessages: { type: 'info' | 'warning'; message: string }[];
+    };
+
+    // Query dashboard chantier
+    const { data: dashboardData, isLoading: dashboardLoading } = useQuery<DashboardData>({
+        queryKey: [`/api/construction-sites/${viewingSite?.id}/dashboard`],
+        enabled: !!viewingSite,
+    });
+
+    // État onglet actif (Dashboard / Affectations)
+    const [activeTab, setActiveTab] = useState<'assignments' | 'dashboard'>('dashboard');
 
     // Filtrer machines BTP uniquement (exclure types agricoles)
     const btpMachines = machines?.filter(m => !AGRICULTURE_MACHINE_TYPES.includes(m.type)) || [];
@@ -693,86 +710,229 @@ export default function ConstructionSitesPage() {
                                 </div>
                             </div>
 
-                            {/* Section affectations */}
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                                        <Wrench className="h-5 w-5 text-blue-600" />
-                                        Machines affectées
-                                    </h3>
-                                    <Button
-                                        size="sm"
-                                        onClick={() => {
-                                            assignmentForm.reset({
-                                                machineId: "",
-                                                startDate: viewingSite.startDate ? new Date(viewingSite.startDate).toISOString().split("T")[0] : "",
-                                                endDate: "",
-                                                comment: "",
-                                            });
-                                            setAssignmentDialogOpen(true);
-                                        }}
-                                        className="bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        <Plus className="h-4 w-4 mr-1" />
-                                        Affecter machine
-                                    </Button>
-                                </div>
-
-                                {assignmentsLoading ? (
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-12 w-full" />
-                                        <Skeleton className="h-12 w-full" />
-                                    </div>
-                                ) : siteAssignments && siteAssignments.length > 0 ? (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Machine</TableHead>
-                                                <TableHead>Période</TableHead>
-                                                <TableHead>Commentaire</TableHead>
-                                                <TableHead className="w-20">Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {siteAssignments.map((assignment) => (
-                                                <TableRow key={assignment.id}>
-                                                    <TableCell className="font-medium">
-                                                        {assignment.machine?.name || "Machine inconnue"}
-                                                        <span className="text-xs text-muted-foreground ml-2">
-                                                            ({assignment.machine?.type})
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {formatDate(assignment.startDate)}
-                                                        {assignment.endDate && ` - ${formatDate(assignment.endDate)}`}
-                                                    </TableCell>
-                                                    <TableCell className="text-muted-foreground">
-                                                        {assignment.comment || "-"}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => {
-                                                                setAssignmentToDelete(assignment);
-                                                                setDeleteAssignmentDialogOpen(true);
-                                                            }}
-                                                        >
-                                                            <Trash2 className="h-4 w-4 text-red-500" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                ) : (
-                                    <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                                        <Wrench className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                        <p>Aucune machine affectée à ce chantier</p>
-                                        <p className="text-sm">Cliquez sur "Affecter machine" pour commencer</p>
-                                    </div>
-                                )}
+                            {/* Onglets Dashboard / Affectations */}
+                            <div className="flex gap-2 border-b">
+                                <button
+                                    onClick={() => setActiveTab('dashboard')}
+                                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dashboard'
+                                            ? 'border-blue-600 text-blue-600'
+                                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                                        }`}
+                                >
+                                    <BarChart3 className="h-4 w-4 inline mr-2" />
+                                    Dashboard
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('assignments')}
+                                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'assignments'
+                                            ? 'border-blue-600 text-blue-600'
+                                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                                        }`}
+                                >
+                                    <Wrench className="h-4 w-4 inline mr-2" />
+                                    Affectations
+                                </button>
                             </div>
+
+                            {/* Contenu onglet Dashboard */}
+                            {activeTab === 'dashboard' && (
+                                <div className="space-y-6">
+                                    {dashboardLoading ? (
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20" />)}
+                                        </div>
+                                    ) : dashboardData ? (
+                                        <>
+                                            {/* Indicateurs KPI */}
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <Card className="border-l-4 border-l-blue-500">
+                                                    <CardContent className="p-4">
+                                                        <div className="text-2xl font-bold text-blue-600">{dashboardData.summary.totalMachines}</div>
+                                                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                                            <Wrench className="h-3 w-3" /> Machines
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                                <Card className="border-l-4 border-l-green-500">
+                                                    <CardContent className="p-4">
+                                                        <div className="text-2xl font-bold text-green-600">{dashboardData.summary.totalFuelEntries}</div>
+                                                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                                            <Fuel className="h-3 w-3" /> Entrées carburant
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                                <Card className="border-l-4 border-l-amber-500">
+                                                    <CardContent className="p-4">
+                                                        <div className="text-2xl font-bold text-amber-600">{dashboardData.summary.totalLiters.toFixed(1)} L</div>
+                                                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                                            <Fuel className="h-3 w-3" /> Volume total
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                                <Card className="border-l-4 border-l-purple-500">
+                                                    <CardContent className="p-4">
+                                                        <div className="text-lg font-bold text-purple-600">
+                                                            {formatDate(viewingSite.startDate)}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3" /> Début chantier
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </div>
+
+                                            {/* Tableau machines */}
+                                            {dashboardData.machineDetails.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <h4 className="font-semibold text-sm">Détail par machine</h4>
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>Machine</TableHead>
+                                                                <TableHead>Période</TableHead>
+                                                                <TableHead className="text-right">Entrées</TableHead>
+                                                                <TableHead className="text-right">Litres</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {dashboardData.machineDetails.map((detail, idx) => (
+                                                                <TableRow key={idx}>
+                                                                    <TableCell className="font-medium">
+                                                                        {detail.machine.name}
+                                                                        <span className="text-xs text-muted-foreground ml-2">({detail.machine.type})</span>
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        {formatDate(detail.assignmentPeriod.start)}
+                                                                        {detail.assignmentPeriod.end && ` - ${formatDate(detail.assignmentPeriod.end)}`}
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right">{detail.fuelEntriesCount}</TableCell>
+                                                                    <TableCell className="text-right font-medium">{detail.totalLiters.toFixed(1)} L</TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            )}
+
+                                            {/* Messages cohérence */}
+                                            {dashboardData.coherenceMessages.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <h4 className="font-semibold text-sm flex items-center gap-2">
+                                                        <AlertCircle className="h-4 w-4 text-amber-500" />
+                                                        Alertes cohérence
+                                                    </h4>
+                                                    <div className="space-y-1">
+                                                        {dashboardData.coherenceMessages.map((msg, idx) => (
+                                                            <div key={idx} className={`text-xs p-2 rounded flex items-center gap-2 ${msg.type === 'warning'
+                                                                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                                    : 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                                }`}>
+                                                                {msg.type === 'warning' ? '⚠️' : 'ℹ️'} {msg.message}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Disclaimer légal */}
+                                            <Alert className="bg-gray-50 border-gray-200">
+                                                <Info className="h-4 w-4" />
+                                                <AlertDescription className="text-xs text-muted-foreground">
+                                                    Ce tableau de bord est un outil de suivi et de cohérence.
+                                                    Il ne constitue ni un calcul de droit ni une décision fiscale.
+                                                </AlertDescription>
+                                            </Alert>
+                                        </>
+                                    ) : (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            Erreur de chargement du dashboard
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Contenu onglet Affectations */}
+                            {activeTab === 'assignments' && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                                            <Wrench className="h-5 w-5 text-blue-600" />
+                                            Machines affectées
+                                        </h3>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => {
+                                                assignmentForm.reset({
+                                                    machineId: "",
+                                                    startDate: viewingSite.startDate ? new Date(viewingSite.startDate).toISOString().split("T")[0] : "",
+                                                    endDate: "",
+                                                    comment: "",
+                                                });
+                                                setAssignmentDialogOpen(true);
+                                            }}
+                                            className="bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            <Plus className="h-4 w-4 mr-1" />
+                                            Affecter machine
+                                        </Button>
+                                    </div>
+
+                                    {assignmentsLoading ? (
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-12 w-full" />
+                                            <Skeleton className="h-12 w-full" />
+                                        </div>
+                                    ) : siteAssignments && siteAssignments.length > 0 ? (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Machine</TableHead>
+                                                    <TableHead>Période</TableHead>
+                                                    <TableHead>Commentaire</TableHead>
+                                                    <TableHead></TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {siteAssignments.map((assignment) => (
+                                                    <TableRow key={assignment.id}>
+                                                        <TableCell className="font-medium">
+                                                            {assignment.machine?.name || "Machine inconnue"}
+                                                            <span className="text-xs text-muted-foreground ml-2">
+                                                                ({assignment.machine?.type})
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {formatDate(assignment.startDate)}
+                                                            {assignment.endDate && ` - ${formatDate(assignment.endDate)}`}
+                                                        </TableCell>
+                                                        <TableCell className="text-muted-foreground">
+                                                            {assignment.comment || "-"}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => {
+                                                                    setAssignmentToDelete(assignment);
+                                                                    setDeleteAssignmentDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                                            <Wrench className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                            <p>Aucune machine affectée à ce chantier</p>
+                                            <p className="text-sm">Cliquez sur "Affecter machine" pour commencer</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                 </DialogContent>

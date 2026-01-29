@@ -34,7 +34,7 @@ import {
   getApplicableRate,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, sql, or, lt, gt } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, or, lt, gt, inArray } from "drizzle-orm";
 
 export interface IStorage {
   getUser(userId: string): Promise<User | undefined>;
@@ -819,6 +819,496 @@ export class DatabaseStorage implements IStorage {
     }
 
     return false;
+  }
+
+  // Récupérer les affectations actives pour une machine à une date donnée
+  // Une affectation est active si : startDate <= targetDate ET (endDate is null OR endDate >= targetDate)
+  async getActiveAssignmentsForMachine(machineId: string, targetDate: Date): Promise<(MachineSiteAssignment & { site?: ConstructionSite })[]> {
+    const assignments = await db.select()
+      .from(machineSiteAssignments)
+      .where(eq(machineSiteAssignments.machineId, machineId));
+
+    const activeAssignments: (MachineSiteAssignment & { site?: ConstructionSite })[] = [];
+
+    for (const assignment of assignments) {
+      const startDate = new Date(assignment.startDate);
+      const endDate = assignment.endDate ? new Date(assignment.endDate) : null;
+
+      // Vérifier si l'affectation est active à la date cible
+      const isActive = startDate <= targetDate && (endDate === null || endDate >= targetDate);
+
+      if (isActive) {
+        // Récupérer le chantier associé et vérifier qu'il est actif
+        const [site] = await db.select().from(constructionSites).where(eq(constructionSites.id, assignment.siteId));
+
+        if (site && site.status === "active") {
+          activeAssignments.push({ ...assignment, site });
+        }
+      }
+    }
+
+    return activeAssignments;
+  }
+
+  // Dashboard Chantier BTP - Statistiques et cohérence
+  async getConstructionSiteDashboard(siteId: string, userId: string): Promise<{
+    site: ConstructionSite;
+    summary: {
+      totalMachines: number;
+      totalFuelEntries: number;
+      totalLiters: number;
+    };
+    machineDetails: {
+      machine: Machine;
+      assignmentPeriod: { start: Date; end: Date | null };
+      fuelEntriesCount: number;
+      totalLiters: number;
+    }[];
+    coherenceMessages: { type: 'info' | 'warning'; message: string }[];
+  } | null> {
+    // Récupérer le chantier
+    const site = await this.getConstructionSite(siteId, userId);
+    if (!site) return null;
+
+    // Récupérer les affectations du chantier
+    const assignments = await db.select()
+      .from(machineSiteAssignments)
+      .where(eq(machineSiteAssignments.siteId, siteId));
+
+    // Récupérer toutes les machines affectées
+    const machineIds = assignments.map(a => a.machineId);
+    const machinesData = machineIds.length > 0
+      ? await db.select().from(machines).where(inArray(machines.id, machineIds))
+      : [];
+
+    // Récupérer les entrées carburant liées au chantier
+    const fuelEntriesData = await db.select()
+      .from(fuelEntries)
+      .where(eq(fuelEntries.siteId, siteId));
+
+    // Calculer les statistiques par machine
+    const machineDetails = [];
+    const coherenceMessages: { type: 'info' | 'warning'; message: string }[] = [];
+
+    for (const assignment of assignments) {
+      const machine = machinesData.find(m => m.id === assignment.machineId);
+      if (!machine) continue;
+
+      // Entrées carburant pour cette machine sur ce chantier
+      const machineFuelEntries = fuelEntriesData.filter(e => e.machineId === machine.id);
+      const totalLiters = machineFuelEntries.reduce((sum, e) => sum + Number(e.volumeLiters || 0), 0);
+
+      machineDetails.push({
+        machine,
+        assignmentPeriod: {
+          start: assignment.startDate,
+          end: assignment.endDate,
+        },
+        fuelEntriesCount: machineFuelEntries.length,
+        totalLiters,
+      });
+
+      // Message si machine sans carburant
+      if (machineFuelEntries.length === 0) {
+        coherenceMessages.push({
+          type: 'info',
+          message: `Machine "${machine.name}" affectée sans carburant saisi`,
+        });
+      }
+    }
+
+    // Message si chantier sans machine
+    if (assignments.length === 0) {
+      coherenceMessages.push({
+        type: 'warning',
+        message: 'Aucune machine affectée à ce chantier',
+      });
+    }
+
+    // Carburant saisi sans affectation (entrées liées au chantier mais machine non affectée)
+    for (const entry of fuelEntriesData) {
+      const hasAssignment = assignments.some(a => a.machineId === entry.machineId);
+      if (!hasAssignment) {
+        const machine = await db.select().from(machines).where(eq(machines.id, entry.machineId)).limit(1);
+        if (machine[0]) {
+          coherenceMessages.push({
+            type: 'warning',
+            message: `Carburant saisi pour "${machine[0].name}" sans affectation active`,
+          });
+        }
+      }
+    }
+
+    return {
+      site,
+      summary: {
+        totalMachines: machineDetails.length,
+        totalFuelEntries: fuelEntriesData.length,
+        totalLiters: fuelEntriesData.reduce((sum, e) => sum + Number(e.volumeLiters || 0), 0),
+      },
+      machineDetails,
+      coherenceMessages,
+    };
+  }
+
+  /**
+   * Calcule le score de conformité BTP (traçabilité uniquement - AUCUN CHF)
+   * Score sur 100 points :
+   * - Machines affectées à un chantier actif : 30 pts
+   * - Entrées carburant liées à une affectation valide : 40 pts
+   * - Cohérence des périodes (pas de carburant hors dates) : 20 pts
+   * - Complétude des données : 10 pts
+   */
+  async calculateBtpComplianceScore(userId: string): Promise<{
+    score: number;
+    level: 'conforme' | 'a_corriger' | 'non_conforme';
+    breakdown: {
+      machineAssignment: { score: number; max: number; details: string };
+      fuelTraceability: { score: number; max: number; details: string };
+      periodCoherence: { score: number; max: number; details: string };
+      dataCompleteness: { score: number; max: number; details: string };
+    };
+    alerts: { type: 'info' | 'warning' | 'error'; message: string; action?: string }[];
+    summary: {
+      totalMachines: number;
+      assignedMachines: number;
+      totalFuelEntries: number;
+      trackedFuelEntries: number;
+      activeSites: number;
+    };
+  }> {
+    const alerts: { type: 'info' | 'warning' | 'error'; message: string; action?: string }[] = [];
+
+    // Récupérer toutes les données BTP
+    const allMachines = await this.getMachines(userId);
+    const allSites = await this.getConstructionSites(userId);
+    const activeSites = allSites.filter(s => s.status === 'active');
+    const allAssignments = await this.getMachineSiteAssignments(userId);
+    const allFuelEntries = await this.getFuelEntries(userId);
+    const btpFuelEntries = allFuelEntries.filter(e => e.siteId != null);
+
+    // Machines BTP = machines qui ont au moins une affectation à un chantier (actuelle ou passée)
+    const machineIdsWithAnyAssignment = new Set(allAssignments.map(a => a.machineId));
+    const btpMachines = allMachines.filter(m => machineIdsWithAnyAssignment.has(m.id));
+
+    // === 1. Machines affectées à un chantier actif (30 pts) ===
+    const machineIdsWithActiveAssignment = new Set(
+      allAssignments
+        .filter(a => {
+          const site = allSites.find(s => s.id === a.siteId);
+          return site?.status === 'active';
+        })
+        .map(a => a.machineId)
+    );
+    const assignedMachines = btpMachines.filter(m => machineIdsWithActiveAssignment.has(m.id));
+    const machineScore = btpMachines.length > 0
+      ? Math.round((assignedMachines.length / btpMachines.length) * 30)
+      : (activeSites.length > 0 ? 0 : 30); // Si pas de machines BTP et pas de chantiers actifs, score neutre
+
+    if (btpMachines.length > 0 && assignedMachines.length < btpMachines.length) {
+      const unassignedCount = btpMachines.length - assignedMachines.length;
+      alerts.push({
+        type: 'warning',
+        message: `${unassignedCount} machine(s) BTP sans affectation à un chantier actif`,
+        action: 'Affecter les machines à un chantier',
+      });
+    }
+
+    // === 2. Entrées carburant liées à une affectation valide (40 pts) ===
+    let trackedFuelEntries = 0;
+    for (const entry of btpFuelEntries) {
+      const assignment = allAssignments.find(a =>
+        a.machineId === entry.machineId &&
+        a.siteId === entry.siteId
+      );
+      if (assignment) {
+        trackedFuelEntries++;
+      }
+    }
+    const fuelScore = btpFuelEntries.length > 0
+      ? Math.round((trackedFuelEntries / btpFuelEntries.length) * 40)
+      : 40; // Pas d'entrées = score neutre
+
+    const orphanFuel = btpFuelEntries.length - trackedFuelEntries;
+    if (orphanFuel > 0) {
+      alerts.push({
+        type: 'error',
+        message: `${orphanFuel} entrée(s) carburant sans affectation machine valide`,
+        action: 'Vérifier les affectations des machines concernées',
+      });
+    }
+
+    // === 3. Cohérence des périodes (20 pts) ===
+    let coherentEntries = 0;
+    let incoherentEntries = 0;
+    for (const entry of btpFuelEntries) {
+      const assignment = allAssignments.find(a =>
+        a.machineId === entry.machineId &&
+        a.siteId === entry.siteId
+      );
+      if (assignment) {
+        const entryDate = new Date(entry.invoiceDate);
+        const startOk = entryDate >= new Date(assignment.startDate);
+        const endOk = !assignment.endDate || entryDate <= new Date(assignment.endDate);
+        if (startOk && endOk) {
+          coherentEntries++;
+        } else {
+          incoherentEntries++;
+        }
+      }
+    }
+    const periodScore = trackedFuelEntries > 0
+      ? Math.round((coherentEntries / trackedFuelEntries) * 20)
+      : 20;
+
+    if (incoherentEntries > 0) {
+      alerts.push({
+        type: 'warning',
+        message: `${incoherentEntries} entrée(s) carburant hors période d'affectation`,
+        action: 'Vérifier les dates des entrées carburant',
+      });
+    }
+
+    // === 4. Complétude des données (10 pts) ===
+    let completenessScore = 10;
+    if (activeSites.length === 0 && btpMachines.length > 0) {
+      completenessScore -= 5;
+      alerts.push({
+        type: 'info',
+        message: 'Aucun chantier actif déclaré',
+        action: 'Créer ou activer un chantier',
+      });
+    }
+    if (btpMachines.length === 0 && activeSites.length > 0) {
+      completenessScore -= 5;
+      alerts.push({
+        type: 'info',
+        message: 'Aucune machine BTP enregistrée',
+        action: 'Enregistrer vos machines BTP',
+      });
+    }
+    // Vérifier les chantiers sans dates
+    const sitesWithoutDates = allSites.filter(s => !s.startDate);
+    if (sitesWithoutDates.length > 0) {
+      completenessScore = Math.max(0, completenessScore - 2);
+    }
+
+    // === Calcul du score total ===
+    const totalScore = machineScore + fuelScore + periodScore + completenessScore;
+
+    // Déterminer le niveau
+    let level: 'conforme' | 'a_corriger' | 'non_conforme';
+    if (totalScore >= 80) {
+      level = 'conforme';
+    } else if (totalScore >= 50) {
+      level = 'a_corriger';
+    } else {
+      level = 'non_conforme';
+    }
+
+    return {
+      score: totalScore,
+      level,
+      breakdown: {
+        machineAssignment: {
+          score: machineScore,
+          max: 30,
+          details: `${assignedMachines.length}/${btpMachines.length} machines affectées`,
+        },
+        fuelTraceability: {
+          score: fuelScore,
+          max: 40,
+          details: `${trackedFuelEntries}/${btpFuelEntries.length} entrées tracées`,
+        },
+        periodCoherence: {
+          score: periodScore,
+          max: 20,
+          details: `${coherentEntries}/${trackedFuelEntries || 0} entrées cohérentes`,
+        },
+        dataCompleteness: {
+          score: completenessScore,
+          max: 10,
+          details: `${activeSites.length} chantiers, ${btpMachines.length} machines`,
+        },
+      },
+      alerts,
+      summary: {
+        totalMachines: btpMachines.length,
+        assignedMachines: assignedMachines.length,
+        totalFuelEntries: btpFuelEntries.length,
+        trackedFuelEntries,
+        activeSites: activeSites.length,
+      },
+    };
+  }
+
+  /**
+   * Calcule le score de cohérence Agriculture (données déclaratives uniquement)
+   * Score sur 100 points - AUCUN calcul financier, CHF ou litres
+   * Conforme Art. 18 LMin : outil de vérification interne uniquement
+   * 
+   * - Surfaces agricoles saisies : 40 pts
+   * - Types de cultures renseignés : 30 pts
+   * - Machines agricoles présentes : 20 pts
+   * - Complétude globale : 10 pts
+   */
+  async calculateAgricultureCoherenceScore(userId: string): Promise<{
+    score: number;
+    level: 'bon' | 'a_completer' | 'incomplet';
+    breakdown: {
+      surfaces: { score: number; max: number; details: string };
+      cultures: { score: number; max: number; details: string };
+      machines: { score: number; max: number; details: string };
+      completeness: { score: number; max: number; details: string };
+    };
+    alerts: { type: 'info' | 'warning'; message: string; action?: string }[];
+    summary: {
+      totalSurfaces: number;
+      totalHectares: number;
+      cultureTypes: number;
+      totalMachines: number;
+    };
+  }> {
+    const alerts: { type: 'info' | 'warning'; message: string; action?: string }[] = [];
+
+    // Récupérer les données Agriculture (AUCUNE donnée financière)
+    const surfaces = await this.getAgriculturalSurfaces(userId);
+    const machines = await this.getMachines(userId);
+
+    // Calculs déclaratifs uniquement
+    const totalHectares = surfaces.reduce((sum, s) => sum + Number(s.totalHectares || 0), 0);
+    const cultureTypes = new Set(surfaces.map(s => s.cultureType).filter(Boolean)).size;
+    const currentYear = new Date().getFullYear();
+    const currentYearSurfaces = surfaces.filter(s => s.declarationYear === currentYear);
+
+    // === 1. Surfaces agricoles saisies (40 pts) ===
+    let surfaceScore = 0;
+    if (surfaces.length === 0) {
+      surfaceScore = 0;
+      alerts.push({
+        type: 'warning',
+        message: 'Aucune surface agricole déclarée',
+        action: 'Ajouter vos parcelles',
+      });
+    } else if (currentYearSurfaces.length === 0) {
+      surfaceScore = 20; // Des surfaces existent mais pas pour l'année en cours
+      alerts.push({
+        type: 'info',
+        message: `Aucune surface déclarée pour ${currentYear}`,
+        action: `Mettre à jour les déclarations ${currentYear}`,
+      });
+    } else if (totalHectares > 0) {
+      // Score proportionnel : au moins 1 surface avec hectares = 40 pts
+      surfaceScore = 40;
+    } else {
+      surfaceScore = 25;
+      alerts.push({
+        type: 'info',
+        message: 'Surfaces déclarées sans superficie renseignée',
+        action: 'Compléter les hectares',
+      });
+    }
+
+    // === 2. Types de cultures renseignés (30 pts) ===
+    let cultureScore = 0;
+    if (cultureTypes === 0) {
+      cultureScore = 0;
+      if (surfaces.length > 0) {
+        alerts.push({
+          type: 'warning',
+          message: 'Aucun type de culture renseigné',
+          action: 'Préciser les types de cultures',
+        });
+      }
+    } else if (cultureTypes === 1) {
+      cultureScore = 15;
+    } else if (cultureTypes >= 2) {
+      cultureScore = 30;
+    }
+
+    // === 3. Machines agricoles présentes (20 pts) ===
+    let machineScore = 0;
+    if (machines.length === 0) {
+      machineScore = 0;
+      alerts.push({
+        type: 'warning',
+        message: 'Aucune machine agricole enregistrée',
+        action: 'Enregistrer vos machines',
+      });
+    } else if (machines.length >= 3) {
+      machineScore = 20;
+    } else {
+      machineScore = Math.round((machines.length / 3) * 20);
+    }
+
+    // === 4. Complétude globale (10 pts) ===
+    let completenessScore = 10;
+
+    // Vérifier les champs manquants critiques
+    const surfacesWithoutHectares = surfaces.filter(s => !s.totalHectares || s.totalHectares === 0);
+    const surfacesWithoutYear = surfaces.filter(s => !s.declarationYear);
+
+    if (surfacesWithoutHectares.length > 0) {
+      completenessScore -= 3;
+    }
+    if (surfacesWithoutYear.length > 0) {
+      completenessScore -= 3;
+    }
+    if (surfaces.length > 0 && cultureTypes === 0) {
+      completenessScore -= 2;
+    }
+    if (machines.length === 0 && surfaces.length > 0) {
+      completenessScore -= 2;
+    }
+
+    completenessScore = Math.max(0, completenessScore);
+
+    // === Calcul du score total ===
+    const totalScore = surfaceScore + cultureScore + machineScore + completenessScore;
+
+    // Déterminer le niveau
+    let level: 'bon' | 'a_completer' | 'incomplet';
+    if (totalScore >= 80) {
+      level = 'bon';
+    } else if (totalScore >= 50) {
+      level = 'a_completer';
+    } else {
+      level = 'incomplet';
+    }
+
+    return {
+      score: totalScore,
+      level,
+      breakdown: {
+        surfaces: {
+          score: surfaceScore,
+          max: 40,
+          details: `${surfaces.length} surface(s), ${totalHectares.toFixed(1)} ha`,
+        },
+        cultures: {
+          score: cultureScore,
+          max: 30,
+          details: `${cultureTypes} type(s) de culture`,
+        },
+        machines: {
+          score: machineScore,
+          max: 20,
+          details: `${machines.length} machine(s)`,
+        },
+        completeness: {
+          score: completenessScore,
+          max: 10,
+          details: completenessScore === 10 ? 'Données complètes' : 'Champs à compléter',
+        },
+      },
+      alerts,
+      summary: {
+        totalSurfaces: surfaces.length,
+        totalHectares,
+        cultureTypes,
+        totalMachines: machines.length,
+      },
+    };
   }
 }
 

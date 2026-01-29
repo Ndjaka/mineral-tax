@@ -27,10 +27,15 @@ import {
   Info,
   Clock,
   Leaf,
+  Building2,
+  Shield,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Banner2026 } from "@/components/banner-2026";
-import type { Machine, FuelEntry, Report, Invoice, AgriculturalSurface } from "@shared/schema";
+import type { Machine, FuelEntry, Report, Invoice, AgriculturalSurface, ConstructionSite } from "@shared/schema";
 import { calculateReimbursement } from "@shared/schema";
 import { useSector } from "@/lib/sector-context";
 import {
@@ -135,9 +140,69 @@ export default function DashboardPage() {
     enabled: isAgri,
   });
 
+  // Chantiers BTP (secteur BTP uniquement)
+  const isBtp = !isAgri;
+  const { data: constructionSites } = useQuery<ConstructionSite[]>({
+    queryKey: ["/api/construction-sites"],
+    enabled: isBtp,
+  });
+
   // Calculs surfaces agricoles (UX uniquement, aucun calcul financier)
   const totalHectares = agriculturalSurfaces?.reduce((sum, s) => sum + s.totalHectares, 0) || 0;
   const cultureTypesCount = new Set(agriculturalSurfaces?.map(s => s.cultureType).filter(Boolean)).size;
+
+  // Calculs BTP (traçabilité uniquement, aucun calcul financier)
+  const activeConstructionSites = constructionSites?.filter(s => s.status === 'active').length || 0;
+
+  // Score de conformité BTP (traçabilité uniquement - AUCUN CHF)
+  interface BtpComplianceScore {
+    score: number;
+    level: 'conforme' | 'a_corriger' | 'non_conforme';
+    breakdown: {
+      machineAssignment: { score: number; max: number; details: string };
+      fuelTraceability: { score: number; max: number; details: string };
+      periodCoherence: { score: number; max: number; details: string };
+      dataCompleteness: { score: number; max: number; details: string };
+    };
+    alerts: { type: 'info' | 'warning' | 'error'; message: string; action?: string }[];
+    summary: {
+      totalMachines: number;
+      assignedMachines: number;
+      totalFuelEntries: number;
+      trackedFuelEntries: number;
+      activeSites: number;
+    };
+  }
+
+  const { data: complianceScore, isLoading: complianceLoading } = useQuery<BtpComplianceScore>({
+    queryKey: ["/api/btp/compliance-score"],
+    enabled: isBtp,
+  });
+
+  // Score de cohérence Agriculture (données déclaratives uniquement - AUCUN calcul financier)
+  // Conforme Art. 18 LMin : outil de vérification interne uniquement
+  interface AgricultureCoherenceScore {
+    score: number;
+    level: 'bon' | 'a_completer' | 'incomplet';
+    breakdown: {
+      surfaces: { score: number; max: number; details: string };
+      cultures: { score: number; max: number; details: string };
+      machines: { score: number; max: number; details: string };
+      completeness: { score: number; max: number; details: string };
+    };
+    alerts: { type: 'info' | 'warning'; message: string; action?: string }[];
+    summary: {
+      totalSurfaces: number;
+      totalHectares: number;
+      cultureTypes: number;
+      totalMachines: number;
+    };
+  }
+
+  const { data: agriCoherenceScore, isLoading: agriCoherenceLoading } = useQuery<AgricultureCoherenceScore>({
+    queryKey: ["/api/agriculture/coherence-score"],
+    enabled: isAgri,
+  });
 
   const downloadInvoice = (invoiceId: string) => {
     window.open(`/api/invoices/${invoiceId}/pdf`, "_blank");
@@ -154,35 +219,35 @@ export default function DashboardPage() {
     return new Intl.NumberFormat("de-CH").format(num);
   };
 
-  // === Cartes BTP (avec calculs CHF/litres) ===
+  // === Cartes BTP (traçabilité uniquement - AUCUN CHF) ===
   const summaryCardsBTP = [
     {
-      title: t.dashboard.totalReimbursement,
-      value: stats ? formatCurrency(stats.estimatedReimbursement) : "-",
-      icon: TrendingUp,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
+      title: "Chantiers actifs",
+      value: activeConstructionSites,
+      icon: Building2,
+      color: "text-orange-600",
+      bgColor: "bg-orange-100",
     },
     {
-      title: t.dashboard.activeMachines,
+      title: "Machines BTP",
       value: stats?.totalMachines ?? "-",
       icon: Truck,
-      color: "text-chart-2",
-      bgColor: "bg-chart-2/10",
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
     },
     {
-      title: t.reports.eligibleVolume,
-      value: stats ? `${formatNumber(stats.eligibleVolume)} L` : "-",
+      title: "Volume total (L)",
+      value: stats ? `${formatNumber(stats.totalVolume)} L` : "-",
       icon: Fuel,
-      color: "text-chart-3",
-      bgColor: "bg-chart-3/10",
+      color: "text-amber-600",
+      bgColor: "bg-amber-100",
     },
     {
-      title: t.dashboard.pendingClaims,
-      value: stats?.pendingReports ?? "-",
+      title: "Entrées carburant",
+      value: stats?.totalFuelEntries ?? "-",
       icon: FileText,
-      color: "text-chart-4",
-      bgColor: "bg-chart-4/10",
+      color: "text-green-600",
+      bgColor: "bg-green-100",
     },
   ];
 
@@ -332,8 +397,8 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Graphique tendances - uniquement secteur BTP (affiche litres/CHF) */}
-        {!isAgri && trends && trends.length > 0 && (
+        {/* Graphique tendances - uniquement secteur Agriculture (le BTP n'a pas de remboursement) */}
+        {isAgri && trends && trends.length > 0 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -429,136 +494,327 @@ export default function DashboardPage() {
 
         {/* Contenu principal selon secteur */}
         {isAgri ? (
-          /* === Secteur Agriculture : Contenu conformité uniquement === */
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Carte surfaces agricoles */}
-            <Card className="lg:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <TreePine className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">Surfaces exploitées</CardTitle>
-                </div>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/agricultural-surfaces">Gérer</Link>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <TreePine className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-600" />
-                  <p className="font-medium">Déclarez vos surfaces agricoles</p>
-                  <p className="text-sm mt-1">
-                    Les surfaces déclarées permettent de vérifier la cohérence de votre dossier.
-                  </p>
-                  <Button variant="outline" asChild className="mt-4">
-                    <Link href="/agricultural-surfaces">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Ajouter des surfaces
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Actions et aide Agriculture */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t.dashboard.quickActions}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {quickActions.map((action, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="w-full justify-start gap-3"
-                    asChild
-                    data-testid={`button-quick-action-${index}`}
-                  >
-                    <Link href={action.href}>
-                      <action.icon className="h-4 w-4" />
-                      {action.title}
-                    </Link>
-                  </Button>
-                ))}
-              </CardContent>
-
-              {/* Information forfaitaire Agriculture */}
-              <CardContent className="pt-0">
-                <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                        <Info className="h-5 w-5 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm text-green-800 dark:text-green-300">Calcul forfaitaire</p>
-                        <p className="text-xs text-green-700 dark:text-green-400 mt-1">
-                          Le remboursement agricole est déterminé par l'OFDF sur la base des surfaces exploitées,
-                          pas sur la consommation réelle de carburant.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          /* === Secteur BTP : Contenu avec calculs litres/CHF === */
-          <div className="grid lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <CardTitle className="text-lg">{t.dashboard.recentEntries}</CardTitle>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/fuel">{t.common.view}</Link>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {entriesLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-16 w-full" />
-                    ))}
+          /* === Secteur Agriculture : Score de cohérence (données déclaratives) === */
+          <div className="space-y-6">
+            {/* Bandeau disclaimer Art. 18 LMin - Visible sans interaction */}
+            <Card className="border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 dark:border-green-800">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-4">
+                  <div className="p-2.5 rounded-xl bg-green-100 dark:bg-green-900/50 shrink-0">
+                    <Info className="h-6 w-6 text-green-700 dark:text-green-400" />
                   </div>
-                ) : recentEntries && recentEntries.length > 0 ? (
-                  <div className="space-y-3">
-                    {recentEntries.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                        data-testid={`fuel-entry-${entry.id}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-primary/10">
-                            <Fuel className="h-4 w-4 text-primary" />
+                  <div>
+                    <p className="font-semibold text-green-800 dark:text-green-300 text-sm">
+                      {t.dashboard.disclaimerAgriTitle}
+                    </p>
+                    <p className="text-sm text-green-700 dark:text-green-400 mt-1 leading-relaxed">
+                      {t.dashboard.disclaimerAgriText}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Score de cohérence Agriculture */}
+              <Card className="lg:col-span-2">
+                <CardHeader className="flex flex-row items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-lg">Score de cohérence</CardTitle>
+                  </div>
+                  {agriCoherenceScore && (
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${agriCoherenceScore.level === 'bon'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : agriCoherenceScore.level === 'a_completer'
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                      {agriCoherenceScore.level === 'bon' ? '🟢 Bon'
+                        : agriCoherenceScore.level === 'a_completer' ? '🟠 À compléter'
+                          : '🔴 Incomplet'}
+                    </div>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {agriCoherenceLoading ? (
+                    <Skeleton className="h-32 w-full" />
+                  ) : agriCoherenceScore ? (
+                    <div className="space-y-4">
+                      {/* Score principal */}
+                      <div className="flex items-center gap-4">
+                        <div className={`text-4xl font-bold ${agriCoherenceScore.level === 'bon' ? 'text-green-600'
+                          : agriCoherenceScore.level === 'a_completer' ? 'text-amber-600'
+                            : 'text-red-600'
+                          }`}>
+                          {agriCoherenceScore.score}/100
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>Surfaces</span>
+                            <span>{agriCoherenceScore.breakdown.surfaces.score}/{agriCoherenceScore.breakdown.surfaces.max}</span>
                           </div>
-                          <div>
-                            <p className="font-medium text-sm">{entry.machine?.name || "-"}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(entry.invoiceDate).toLocaleDateString()}
-                            </p>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-green-500 rounded-full"
+                              style={{ width: `${(agriCoherenceScore.breakdown.surfaces.score / agriCoherenceScore.breakdown.surfaces.max) * 100}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>Types de cultures</span>
+                            <span>{agriCoherenceScore.breakdown.cultures.score}/{agriCoherenceScore.breakdown.cultures.max}</span>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-amber-500 rounded-full"
+                              style={{ width: `${(agriCoherenceScore.breakdown.cultures.score / agriCoherenceScore.breakdown.cultures.max) * 100}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>Machines</span>
+                            <span>{agriCoherenceScore.breakdown.machines.score}/{agriCoherenceScore.breakdown.machines.max}</span>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 rounded-full"
+                              style={{ width: `${(agriCoherenceScore.breakdown.machines.score / agriCoherenceScore.breakdown.machines.max) * 100}%` }}
+                            />
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-mono font-medium">{formatNumber(entry.volumeLiters)} L</p>
-                          <p className="text-xs text-primary font-mono">
-                            {formatCurrency(calculateReimbursement(entry.volumeLiters))}
+                      </div>
+
+                      {/* Alertes */}
+                      {agriCoherenceScore.alerts.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-500" />
+                            Actions recommandées
+                          </p>
+                          <div className="space-y-1">
+                            {agriCoherenceScore.alerts.slice(0, 3).map((alert, idx) => (
+                              <div key={idx} className={`text-xs p-2 rounded flex items-start gap-2 ${alert.type === 'warning'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800'
+                                : 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+                                }`}>
+                                {alert.type === 'warning' ? <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                  : <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />}
+                                <div>
+                                  <span>{alert.message}</span>
+                                  {alert.action && (
+                                    <span className="block mt-0.5 font-medium">→ {alert.action}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Résumé */}
+                      <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                        <div className="p-2 bg-muted/50 rounded">
+                          <div className="font-bold text-lg">{agriCoherenceScore.summary.totalSurfaces}</div>
+                          <div className="text-muted-foreground">Surfaces</div>
+                        </div>
+                        <div className="p-2 bg-muted/50 rounded">
+                          <div className="font-bold text-lg">{agriCoherenceScore.summary.totalHectares.toFixed(1)}</div>
+                          <div className="text-muted-foreground">Hectares</div>
+                        </div>
+                        <div className="p-2 bg-muted/50 rounded">
+                          <div className="font-bold text-lg">{agriCoherenceScore.summary.cultureTypes}</div>
+                          <div className="text-muted-foreground">Cultures</div>
+                        </div>
+                        <div className="p-2 bg-muted/50 rounded">
+                          <div className="font-bold text-lg">{agriCoherenceScore.summary.totalMachines}</div>
+                          <div className="text-muted-foreground">Machines</div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Shield className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-600" />
+                      <p>Aucune donnée agricole</p>
+                      <Button variant="ghost" asChild className="mt-2">
+                        <Link href="/agricultural-surfaces">Ajouter des surfaces</Link>
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Actions et aide Agriculture */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t.dashboard.quickActions}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {quickActions.map((action, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="w-full justify-start gap-3"
+                      asChild
+                      data-testid={`button-quick-action-${index}`}
+                    >
+                      <Link href={action.href}>
+                        <action.icon className="h-4 w-4" />
+                        {action.title}
+                      </Link>
+                    </Button>
+                  ))}
+                </CardContent>
+
+                {/* Disclaimer Art. 18 LMin */}
+                <CardContent className="pt-0">
+                  <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                          <Info className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-green-800 dark:text-green-300">Art. 18 LMin</p>
+                          <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                            Ce score est un outil de vérification interne.<br />
+                            Il ne constitue pas un calcul de droit au remboursement.
                           </p>
                         </div>
                       </div>
-                    ))}
+                    </CardContent>
+                  </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          /* === Secteur BTP : Traçabilité uniquement - AUCUN CHF === */
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Score de conformité BTP */}
+            <Card className="lg:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-muted-foreground" />
+                  <CardTitle className="text-lg">Score de conformité BTP</CardTitle>
+                </div>
+                {complianceScore && (
+                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${complianceScore.level === 'conforme'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                    : complianceScore.level === 'a_corriger'
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                    }`}>
+                    {complianceScore.level === 'conforme' ? '🟢 Conforme'
+                      : complianceScore.level === 'a_corriger' ? '🟠 À corriger'
+                        : '🔴 Non conforme'}
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent>
+                {complianceLoading ? (
+                  <Skeleton className="h-32 w-full" />
+                ) : complianceScore ? (
+                  <div className="space-y-4">
+                    {/* Score principal */}
+                    <div className="flex items-center gap-4">
+                      <div className={`text-4xl font-bold ${complianceScore.level === 'conforme' ? 'text-green-600'
+                        : complianceScore.level === 'a_corriger' ? 'text-amber-600'
+                          : 'text-red-600'
+                        }`}>
+                        {complianceScore.score}/100
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Affectations</span>
+                          <span>{complianceScore.breakdown.machineAssignment.score}/{complianceScore.breakdown.machineAssignment.max}</span>
+                        </div>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 rounded-full"
+                            style={{ width: `${(complianceScore.breakdown.machineAssignment.score / complianceScore.breakdown.machineAssignment.max) * 100}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Traçabilité carburant</span>
+                          <span>{complianceScore.breakdown.fuelTraceability.score}/{complianceScore.breakdown.fuelTraceability.max}</span>
+                        </div>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500 rounded-full"
+                            style={{ width: `${(complianceScore.breakdown.fuelTraceability.score / complianceScore.breakdown.fuelTraceability.max) * 100}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Cohérence périodes</span>
+                          <span>{complianceScore.breakdown.periodCoherence.score}/{complianceScore.breakdown.periodCoherence.max}</span>
+                        </div>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-amber-500 rounded-full"
+                            style={{ width: `${(complianceScore.breakdown.periodCoherence.score / complianceScore.breakdown.periodCoherence.max) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Alertes */}
+                    {complianceScore.alerts.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                          Actions recommandées
+                        </p>
+                        <div className="space-y-1">
+                          {complianceScore.alerts.slice(0, 3).map((alert, idx) => (
+                            <div key={idx} className={`text-xs p-2 rounded flex items-start gap-2 ${alert.type === 'error'
+                              ? 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+                              : alert.type === 'warning'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800'
+                                : 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+                              }`}>
+                              {alert.type === 'error' ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                : alert.type === 'warning' ? <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                  : <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />}
+                              <div>
+                                <span>{alert.message}</span>
+                                {alert.action && (
+                                  <span className="block mt-0.5 font-medium">→ {alert.action}</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Résumé */}
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="p-2 bg-muted/50 rounded">
+                        <div className="font-bold text-lg">{complianceScore.summary.activeSites}</div>
+                        <div className="text-muted-foreground">Chantiers actifs</div>
+                      </div>
+                      <div className="p-2 bg-muted/50 rounded">
+                        <div className="font-bold text-lg">{complianceScore.summary.assignedMachines}/{complianceScore.summary.totalMachines}</div>
+                        <div className="text-muted-foreground">Machines affectées</div>
+                      </div>
+                      <div className="p-2 bg-muted/50 rounded">
+                        <div className="font-bold text-lg">{complianceScore.summary.trackedFuelEntries}/{complianceScore.summary.totalFuelEntries}</div>
+                        <div className="text-muted-foreground">Entrées tracées</div>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    <Fuel className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>{t.common.noData}</p>
+                    <Shield className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Aucune donnée BTP</p>
                     <Button variant="ghost" asChild className="mt-2">
-                      <Link href="/fuel?action=add">{t.fuel.addEntry}</Link>
+                      <Link href="/construction-sites">Créer un chantier</Link>
                     </Button>
                   </div>
                 )}
               </CardContent>
             </Card>
 
+            {/* Actions rapides */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">{t.dashboard.quickActions}</CardTitle>
@@ -583,14 +839,15 @@ export default function DashboardPage() {
               <CardContent className="pt-0">
                 <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                        <Calculator className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-sm">{t.reports.rate}</p>
-                        <p className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400">
-                          {displayedRate.toFixed(4)} CHF/L
+                        <p className="font-medium text-sm text-blue-800 dark:text-blue-300">Disclaimer OFDF</p>
+                        <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                          MineralTax structure la traçabilité requise par l'OFDF.<br />
+                          La décision finale appartient à l'OFDF.
                         </p>
                       </div>
                     </div>
