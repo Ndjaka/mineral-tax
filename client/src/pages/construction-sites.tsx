@@ -45,8 +45,16 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, Building2, MapPin, Calendar, Info, HardHat } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, MapPin, Calendar, Info, HardHat, Wrench, ArrowLeft } from "lucide-react";
 import type { ConstructionSite, Machine, MachineSiteAssignment } from "@shared/schema";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 
 // Schéma de validation frontend
 const siteFormSchema = z.object({
@@ -61,6 +69,22 @@ const siteFormSchema = z.object({
 
 type SiteFormData = z.infer<typeof siteFormSchema>;
 
+// Schéma pour les affectations
+const assignmentFormSchema = z.object({
+    machineId: z.string().min(1, "Machine requise"),
+    startDate: z.string().min(1, "Date de début requise"),
+    endDate: z.string().optional(),
+    comment: z.string().optional(),
+});
+
+type AssignmentFormData = z.infer<typeof assignmentFormSchema>;
+
+// Types de machines agricoles à exclure pour le secteur BTP
+const AGRICULTURE_MACHINE_TYPES = [
+    "tractor", "combine_harvester", "forage_harvester", "sprayer", "seeder",
+    "baler", "tedder", "mower", "trailer", "slurry_tanker", "forestry_tractor", "vineyard_tractor"
+];
+
 export default function ConstructionSitesPage() {
     const { t } = useI18n();
     const { toast } = useToast();
@@ -69,6 +93,12 @@ export default function ConstructionSitesPage() {
     const [editingSite, setEditingSite] = useState<ConstructionSite | null>(null);
     const [siteToDelete, setSiteToDelete] = useState<ConstructionSite | null>(null);
     const [selectedYear, setSelectedYear] = useState<string>("all");
+
+    // États pour le mode détail et affectations
+    const [viewingSite, setViewingSite] = useState<ConstructionSite | null>(null);
+    const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
+    const [assignmentToDelete, setAssignmentToDelete] = useState<(MachineSiteAssignment & { machine?: Machine }) | null>(null);
+    const [deleteAssignmentDialogOpen, setDeleteAssignmentDialogOpen] = useState(false);
 
     const currentYear = new Date().getFullYear();
 
@@ -82,7 +112,16 @@ export default function ConstructionSitesPage() {
         queryKey: ["/api/machines"],
     });
 
-    // Formulaire
+    // Récupération des affectations pour le chantier sélectionné
+    const { data: siteAssignments, isLoading: assignmentsLoading } = useQuery<(MachineSiteAssignment & { machine?: Machine })[]>({
+        queryKey: [`/api/construction-sites/${viewingSite?.id}/assignments`],
+        enabled: !!viewingSite,
+    });
+
+    // Filtrer machines BTP uniquement (exclure types agricoles)
+    const btpMachines = machines?.filter(m => !AGRICULTURE_MACHINE_TYPES.includes(m.type)) || [];
+
+    // Formulaire chantier
     const form = useForm<SiteFormData>({
         resolver: zodResolver(siteFormSchema),
         defaultValues: {
@@ -93,6 +132,17 @@ export default function ConstructionSitesPage() {
             status: "active",
             fiscalYear: currentYear,
             notes: "",
+        },
+    });
+
+    // Formulaire affectation
+    const assignmentForm = useForm<AssignmentFormData>({
+        resolver: zodResolver(assignmentFormSchema),
+        defaultValues: {
+            machineId: "",
+            startDate: "",
+            endDate: "",
+            comment: "",
         },
     });
 
@@ -155,6 +205,45 @@ export default function ConstructionSitesPage() {
             toast({ title: "Chantier supprimé" });
             setSiteToDelete(null);
             setDeleteDialogOpen(false);
+        },
+        onError: (error: any) => {
+            toast({ title: error?.message || "Erreur lors de la suppression", variant: "destructive" });
+        },
+    });
+
+    // Mutation création affectation
+    const createAssignmentMutation = useMutation({
+        mutationFn: async (data: AssignmentFormData & { siteId: string }) => {
+            const response = await apiRequest("POST", "/api/machine-site-assignments", {
+                ...data,
+                startDate: new Date(data.startDate).toISOString(),
+                endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
+            });
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Erreur serveur: réponse invalide");
+            }
+            return await response.json();
+        },
+        onSuccess: async () => {
+            await queryClient.refetchQueries({ queryKey: [`/api/construction-sites/${viewingSite?.id}/assignments`] });
+            toast({ title: "Machine affectée au chantier" });
+            setAssignmentDialogOpen(false);
+            assignmentForm.reset();
+        },
+        onError: (error: any) => {
+            toast({ title: error?.message || "Erreur lors de l'affectation", variant: "destructive" });
+        },
+    });
+
+    // Mutation suppression affectation
+    const deleteAssignmentMutation = useMutation({
+        mutationFn: (id: string) => apiRequest("DELETE", `/api/machine-site-assignments/${id}`),
+        onSuccess: async () => {
+            await queryClient.refetchQueries({ queryKey: [`/api/construction-sites/${viewingSite?.id}/assignments`] });
+            toast({ title: "Affectation supprimée" });
+            setAssignmentToDelete(null);
+            setDeleteAssignmentDialogOpen(false);
         },
         onError: (error: any) => {
             toast({ title: error?.message || "Erreur lors de la suppression", variant: "destructive" });
@@ -366,6 +455,15 @@ export default function ConstructionSitesPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setViewingSite(site)}
+                                            className="text-blue-600 hover:text-blue-700"
+                                        >
+                                            <Wrench className="h-4 w-4 mr-1" />
+                                            Affectations
+                                        </Button>
+                                        <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleOpenDialog(site)}
@@ -547,6 +645,257 @@ export default function ConstructionSitesPage() {
                         <AlertDialogCancel>Annuler</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => siteToDelete && deleteMutation.mutate(siteToDelete.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Supprimer
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Dialog détail chantier avec affectations */}
+            <Dialog open={!!viewingSite} onOpenChange={(open) => !open && setViewingSite(null)}>
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <ArrowLeft
+                                className="h-5 w-5 cursor-pointer hover:text-blue-600"
+                                onClick={() => setViewingSite(null)}
+                            />
+                            <Building2 className="h-5 w-5 text-blue-600" />
+                            {viewingSite?.name}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {viewingSite && (
+                        <div className="space-y-6">
+                            {/* Infos chantier */}
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span className="text-muted-foreground">Lieu:</span>
+                                    <span className="ml-2 font-medium">{viewingSite.location || "-"}</span>
+                                </div>
+                                <div>
+                                    <span className="text-muted-foreground">Statut:</span>
+                                    <Badge variant={viewingSite.status === "active" ? "default" : "secondary"} className="ml-2">
+                                        {viewingSite.status === "active" ? "En cours" : "Terminé"}
+                                    </Badge>
+                                </div>
+                                <div>
+                                    <span className="text-muted-foreground">Période:</span>
+                                    <span className="ml-2 font-medium">
+                                        {formatDate(viewingSite.startDate)} - {viewingSite.endDate ? formatDate(viewingSite.endDate) : "En cours"}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-muted-foreground">Année fiscale:</span>
+                                    <Badge variant="outline" className="ml-2">{viewingSite.fiscalYear}</Badge>
+                                </div>
+                            </div>
+
+                            {/* Section affectations */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                                        <Wrench className="h-5 w-5 text-blue-600" />
+                                        Machines affectées
+                                    </h3>
+                                    <Button
+                                        size="sm"
+                                        onClick={() => {
+                                            assignmentForm.reset({
+                                                machineId: "",
+                                                startDate: viewingSite.startDate ? new Date(viewingSite.startDate).toISOString().split("T")[0] : "",
+                                                endDate: "",
+                                                comment: "",
+                                            });
+                                            setAssignmentDialogOpen(true);
+                                        }}
+                                        className="bg-blue-600 hover:bg-blue-700"
+                                    >
+                                        <Plus className="h-4 w-4 mr-1" />
+                                        Affecter machine
+                                    </Button>
+                                </div>
+
+                                {assignmentsLoading ? (
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-12 w-full" />
+                                        <Skeleton className="h-12 w-full" />
+                                    </div>
+                                ) : siteAssignments && siteAssignments.length > 0 ? (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Machine</TableHead>
+                                                <TableHead>Période</TableHead>
+                                                <TableHead>Commentaire</TableHead>
+                                                <TableHead className="w-20">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {siteAssignments.map((assignment) => (
+                                                <TableRow key={assignment.id}>
+                                                    <TableCell className="font-medium">
+                                                        {assignment.machine?.name || "Machine inconnue"}
+                                                        <span className="text-xs text-muted-foreground ml-2">
+                                                            ({assignment.machine?.type})
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {formatDate(assignment.startDate)}
+                                                        {assignment.endDate && ` - ${formatDate(assignment.endDate)}`}
+                                                    </TableCell>
+                                                    <TableCell className="text-muted-foreground">
+                                                        {assignment.comment || "-"}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => {
+                                                                setAssignmentToDelete(assignment);
+                                                                setDeleteAssignmentDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-red-500" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                ) : (
+                                    <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                                        <Wrench className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                        <p>Aucune machine affectée à ce chantier</p>
+                                        <p className="text-sm">Cliquez sur "Affecter machine" pour commencer</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog ajout affectation */}
+            <Dialog open={assignmentDialogOpen} onOpenChange={setAssignmentDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Affecter une machine</DialogTitle>
+                    </DialogHeader>
+                    <Form {...assignmentForm}>
+                        <form onSubmit={assignmentForm.handleSubmit((data) => {
+                            if (viewingSite) {
+                                createAssignmentMutation.mutate({ ...data, siteId: viewingSite.id });
+                            }
+                        })} className="space-y-4">
+                            <FormField
+                                control={assignmentForm.control}
+                                name="machineId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Machine BTP *</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Sélectionner une machine" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {btpMachines.length > 0 ? (
+                                                    btpMachines.map((machine) => (
+                                                        <SelectItem key={machine.id} value={machine.id}>
+                                                            {machine.name} ({machine.type})
+                                                        </SelectItem>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-2 text-sm text-muted-foreground text-center">
+                                                        Aucune machine BTP disponible.
+                                                        <br />
+                                                        Créez des machines dans le Parc machines.
+                                                    </div>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={assignmentForm.control}
+                                    name="startDate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Date début *</FormLabel>
+                                            <FormControl>
+                                                <Input type="date" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={assignmentForm.control}
+                                    name="endDate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Date fin</FormLabel>
+                                            <FormControl>
+                                                <Input type="date" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <FormField
+                                control={assignmentForm.control}
+                                name="comment"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Commentaire</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Notes sur l'affectation..."
+                                                className="resize-none"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setAssignmentDialogOpen(false)}>
+                                    Annuler
+                                </Button>
+                                <Button type="submit" disabled={createAssignmentMutation.isPending}>
+                                    Affecter
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog suppression affectation */}
+            <AlertDialog open={deleteAssignmentDialogOpen} onOpenChange={setDeleteAssignmentDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer cette affectation ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            La machine "{assignmentToDelete?.machine?.name}" ne sera plus affectée à ce chantier.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => assignmentToDelete && deleteAssignmentMutation.mutate(assignmentToDelete.id)}
                             className="bg-red-600 hover:bg-red-700"
                         >
                             Supprimer
