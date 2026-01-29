@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { requireVerifiedEmail as isAuthenticated } from "./auth/routes";
-import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, insertCompanyProfileSchema, type Machine, type FuelEntry, type Invoice, type CompanyProfile, REIMBURSEMENT_RATE_CHF_PER_LITER, calculateReimbursement } from "@shared/schema";
+import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, insertCompanyProfileSchema, agriculturalSurfaceSchema, type Machine, type FuelEntry, type Invoice, type CompanyProfile, type AgriculturalSurface, REIMBURSEMENT_RATE_CHF_PER_LITER, calculateReimbursement } from "@shared/schema";
 import { z } from "zod";
 import PDFDocument from "pdfkit";
 import { getUncachableStripeClient } from "./stripeClient";
@@ -1099,6 +1099,286 @@ export async function registerRoutes(
       } else {
         res.status(500).json({ error: "Erreur de chat" });
       }
+    }
+  });
+
+  // ========================================
+  // SURFACES AGRICOLES (données déclaratives uniquement)
+  // Aucun calcul de remboursement - conformité Art. 18 LMin
+  // ========================================
+
+  // GET - Liste des surfaces de l'utilisateur
+  app.get("/api/agricultural-surfaces", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const surfaces = await storage.getAgriculturalSurfaces(userId);
+      res.json(surfaces);
+    } catch (error) {
+      console.error("Error fetching agricultural surfaces:", error);
+      res.status(500).json({ message: "Failed to fetch surfaces" });
+    }
+  });
+
+  // GET - Détail d'une surface
+  app.get("/api/agricultural-surfaces/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const surface = await storage.getAgriculturalSurface(req.params.id, userId);
+      if (!surface) {
+        return res.status(404).json({ message: "Surface not found" });
+      }
+      res.json(surface);
+    } catch (error) {
+      console.error("Error fetching agricultural surface:", error);
+      res.status(500).json({ message: "Failed to fetch surface" });
+    }
+  });
+
+  // POST - Créer une surface
+  app.post("/api/agricultural-surfaces", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = agriculturalSurfaceSchema.parse(req.body);
+      const surface = await storage.createAgriculturalSurface({
+        ...data,
+        userId,
+      });
+      res.status(201).json(surface);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error creating agricultural surface:", error);
+      res.status(500).json({ message: "Failed to create surface" });
+    }
+  });
+
+  // PATCH - Modifier une surface
+  app.patch("/api/agricultural-surfaces/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = agriculturalSurfaceSchema.partial().parse(req.body);
+      const surface = await storage.updateAgriculturalSurface(req.params.id, userId, data);
+      if (!surface) {
+        return res.status(404).json({ message: "Surface not found" });
+      }
+      res.json(surface);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating agricultural surface:", error);
+      res.status(500).json({ message: "Failed to update surface" });
+    }
+  });
+
+  // DELETE - Supprimer une surface
+  app.delete("/api/agricultural-surfaces/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const deleted = await storage.deleteAgriculturalSurface(req.params.id, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Surface not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting agricultural surface:", error);
+      res.status(500).json({ message: "Failed to delete surface" });
+    }
+  });
+
+  // ==================== CHANTIERS BTP ====================
+  // Traçabilité machine ↔ chantier ↔ carburant (aucun calcul fiscal)
+
+  const constructionSiteSchema = z.object({
+    name: z.string().min(1, "Nom requis"),
+    location: z.string().optional(),
+    startDate: z.string().or(z.date()),
+    endDate: z.string().or(z.date()).optional().nullable(),
+    status: z.enum(["active", "completed"]).default("active"),
+    fiscalYear: z.number().int().min(2020).max(2100),
+    notes: z.string().optional(),
+  });
+
+  // GET - Liste des chantiers
+  app.get("/api/construction-sites", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const sites = await storage.getConstructionSites(userId);
+      res.json(sites);
+    } catch (error) {
+      console.error("Error fetching construction sites:", error);
+      res.status(500).json({ message: "Failed to fetch construction sites" });
+    }
+  });
+
+  // GET - Détail d'un chantier
+  app.get("/api/construction-sites/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const site = await storage.getConstructionSite(req.params.id, userId);
+      if (!site) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+      res.json(site);
+    } catch (error) {
+      console.error("Error fetching construction site:", error);
+      res.status(500).json({ message: "Failed to fetch construction site" });
+    }
+  });
+
+  // POST - Créer un chantier
+  app.post("/api/construction-sites", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = constructionSiteSchema.parse(req.body);
+      const site = await storage.createConstructionSite({
+        ...data,
+        userId,
+        startDate: parseDate(data.startDate),
+        endDate: data.endDate ? parseDate(data.endDate) : null,
+      });
+      res.status(201).json(site);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error creating construction site:", error);
+      res.status(500).json({ message: "Failed to create construction site" });
+    }
+  });
+
+  // PATCH - Modifier un chantier
+  app.patch("/api/construction-sites/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = constructionSiteSchema.partial().parse(req.body);
+      const updateData: any = { ...data };
+      if (data.startDate) updateData.startDate = parseDate(data.startDate);
+      if (data.endDate) updateData.endDate = parseDate(data.endDate);
+
+      const site = await storage.updateConstructionSite(req.params.id, userId, updateData);
+      if (!site) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+      res.json(site);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating construction site:", error);
+      res.status(500).json({ message: "Failed to update construction site" });
+    }
+  });
+
+  // DELETE - Supprimer un chantier
+  app.delete("/api/construction-sites/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const deleted = await storage.deleteConstructionSite(req.params.id, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting construction site:", error);
+      res.status(500).json({ message: "Failed to delete construction site" });
+    }
+  });
+
+  // ==================== AFFECTATIONS MACHINE ↔ CHANTIER ====================
+
+  const assignmentSchema = z.object({
+    machineId: z.string().min(1, "Machine requise"),
+    siteId: z.string().min(1, "Chantier requis"),
+    startDate: z.string().or(z.date()),
+    endDate: z.string().or(z.date()).optional().nullable(),
+    comment: z.string().optional(),
+  });
+
+  // GET - Liste des affectations
+  app.get("/api/machine-site-assignments", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const assignments = await storage.getMachineSiteAssignments(userId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  });
+
+  // GET - Affectations par chantier
+  app.get("/api/construction-sites/:id/assignments", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      // Vérifier que le chantier appartient à l'utilisateur
+      const site = await storage.getConstructionSite(req.params.id, userId);
+      if (!site) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+      const assignments = await storage.getMachineSiteAssignmentsBySite(req.params.id);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching site assignments:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  });
+
+  // POST - Créer une affectation (avec validation chevauchement)
+  app.post("/api/machine-site-assignments", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = assignmentSchema.parse(req.body);
+
+      // Vérifier que la machine et le chantier appartiennent à l'utilisateur
+      const machine = await storage.getMachine(data.machineId, userId);
+      if (!machine) {
+        return res.status(400).json({ message: "Machine non trouvée" });
+      }
+
+      const site = await storage.getConstructionSite(data.siteId, userId);
+      if (!site) {
+        return res.status(400).json({ message: "Chantier non trouvé" });
+      }
+
+      const startDate = parseDate(data.startDate);
+      const endDate = data.endDate ? parseDate(data.endDate) : null;
+
+      // Vérifier le chevauchement de périodes
+      const hasOverlap = await storage.checkAssignmentOverlap(data.machineId, startDate, endDate);
+      if (hasOverlap) {
+        return res.status(400).json({
+          message: "Cette machine est déjà affectée à un autre chantier sur cette période"
+        });
+      }
+
+      const assignment = await storage.createMachineSiteAssignment({
+        ...data,
+        startDate,
+        endDate,
+      });
+      res.status(201).json(assignment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error creating assignment:", error);
+      res.status(500).json({ message: "Failed to create assignment" });
+    }
+  });
+
+  // DELETE - Supprimer une affectation
+  app.delete("/api/machine-site-assignments/:id", isAuthenticated, async (req, res) => {
+    try {
+      const deleted = await storage.deleteMachineSiteAssignment(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Affectation not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+      res.status(500).json({ message: "Failed to delete assignment" });
     }
   });
 

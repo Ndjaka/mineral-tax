@@ -22,7 +22,8 @@ export async function setupVite(server: Server, app: Express) {
       ...viteLogger,
       error: (msg, options) => {
         viteLogger.error(msg, options);
-        process.exit(1);
+        // Don't exit on error in dev mode - let the server continue running
+        // process.exit(1);
       },
     },
     server: serverOptions,
@@ -33,6 +34,11 @@ export async function setupVite(server: Server, app: Express) {
 
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
+
+    // Ne pas servir HTML pour les routes API - elles doivent retourner 404 JSON
+    if (url.startsWith("/api/")) {
+      return res.status(404).json({ message: "Route not found" });
+    }
 
     try {
       const clientTemplate = path.resolve(

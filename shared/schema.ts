@@ -7,6 +7,7 @@ export * from "./models/auth";
 export * from "./models/chat";
 
 export const machineTypeEnum = pgEnum("machine_type", [
+  // === Types BTP/Construction ===
   "excavator",
   "spider_excavator",
   "loader",
@@ -21,6 +22,20 @@ export const machineTypeEnum = pgEnum("machine_type", [
   "generator",
   "compressor",
   "concrete_pump",
+  // === Types Agriculture ===
+  "tractor",
+  "combine_harvester",
+  "forage_harvester",
+  "sprayer",
+  "seeder",
+  "baler",
+  "tedder",
+  "mower",
+  "trailer",
+  "slurry_tanker",
+  "forestry_tractor",
+  "vineyard_tractor",
+  // === Générique ===
   "other"
 ]);
 
@@ -69,6 +84,42 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "inactive"
 ]);
 
+// === Agriculture - Types de cultures (conformité forfaitaire) ===
+export const cultureTypeEnum = pgEnum("culture_type", [
+  "cereals",          // Céréales
+  "vegetables",       // Légumes
+  "vineyard",         // Vigne
+  "fruit_trees",      // Arbres fruitiers
+  "pasture",          // Pâturages
+  "fodder",           // Fourrages
+  "industrial_crops", // Cultures industrielles
+  "other_crops"       // Autres cultures
+]);
+
+// === BTP - Statut des chantiers ===
+export const siteStatusEnum = pgEnum("site_status", [
+  "active",     // Chantier en cours
+  "completed"   // Chantier terminé
+]);
+
+// === Table Surfaces Agricoles (suivi conformité, pas calcul) ===
+export const agriculturalSurfaces = pgTable("agricultural_surfaces", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+
+  // Surfaces déclarées (informatives uniquement)
+  totalHectares: real("total_hectares").notNull(),
+  cultureType: cultureTypeEnum("culture_type"),
+  usageDescription: text("usage_description"),
+  irrigation: boolean("irrigation").default(false),
+
+  // Période fiscale
+  declarationYear: integer("declaration_year").notNull(),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const machines = pgTable("machines", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
@@ -88,6 +139,38 @@ export const machines = pgTable("machines", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// === BTP - Table Chantiers (traçabilité, pas calcul) ===
+export const constructionSites = pgTable("construction_sites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+
+  // Informations du chantier
+  name: text("name").notNull(),
+  location: text("location"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  status: siteStatusEnum("status").notNull().default("active"),
+  fiscalYear: integer("fiscal_year").notNull(),
+  notes: text("notes"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// === BTP - Affectations Machine ↔ Chantier ===
+export const machineSiteAssignments = pgTable("machine_site_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  machineId: varchar("machine_id").notNull(),
+  siteId: varchar("site_id").notNull(),
+
+  // Période d'affectation
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  comment: text("comment"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const fuelEntries = pgTable("fuel_entries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
@@ -103,6 +186,8 @@ export const fuelEntries = pgTable("fuel_entries", {
   bd: text("bd"),
   stat: text("stat"),
   ci: text("ci"),
+  // Lien optionnel vers un chantier BTP (traçabilité)
+  siteId: varchar("site_id"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -231,6 +316,18 @@ export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
   updatedAt: true,
 });
 
+// === Schémas Chantiers BTP ===
+export const insertConstructionSiteSchema = createInsertSchema(constructionSites).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMachineSiteAssignmentSchema = createInsertSchema(machineSiteAssignments).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertMachine = z.infer<typeof insertMachineSchema>;
 export type Machine = typeof machines.$inferSelect;
 
@@ -242,6 +339,13 @@ export type Report = typeof reports.$inferSelect;
 
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type Subscription = typeof subscriptions.$inferSelect;
+
+// === Types Chantiers BTP ===
+export type InsertConstructionSite = z.infer<typeof insertConstructionSiteSchema>;
+export type ConstructionSite = typeof constructionSites.$inferSelect;
+
+export type InsertMachineSiteAssignment = z.infer<typeof insertMachineSiteAssignmentSchema>;
+export type MachineSiteAssignment = typeof machineSiteAssignments.$inferSelect;
 
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   id: true,
@@ -325,3 +429,30 @@ export function calculateReimbursement(volumeLiters: number): number {
   return roundToCentimes(volumeLiters * REIMBURSEMENT_RATE_CHF_PER_LITER);
 }
 
+// === Types et schémas pour Surfaces Agricoles (données déclaratives) ===
+export const cultureTypes = [
+  "cereals",
+  "vegetables",
+  "vineyard",
+  "fruit_trees",
+  "pasture",
+  "fodder",
+  "industrial_crops",
+  "other_crops"
+] as const;
+
+export type CultureType = typeof cultureTypes[number];
+
+export type AgriculturalSurface = typeof agriculturalSurfaces.$inferSelect;
+export type InsertAgriculturalSurface = typeof agriculturalSurfaces.$inferInsert;
+
+// Schéma de validation pour création/modification (données déclaratives uniquement)
+export const agriculturalSurfaceSchema = z.object({
+  totalHectares: z.coerce.number().positive("La surface doit être positive"),
+  cultureType: z.enum(cultureTypes).optional(),
+  usageDescription: z.string().optional(),
+  irrigation: z.boolean().default(false),
+  declarationYear: z.coerce.number().min(2020).max(2100),
+});
+
+export type AgriculturalSurfaceFormData = z.infer<typeof agriculturalSurfaceSchema>;

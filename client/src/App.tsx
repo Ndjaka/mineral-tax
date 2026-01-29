@@ -43,6 +43,8 @@ import VerifyEmailPage from "@/pages/verify-email";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import HowItWorksPage from "@/pages/how-it-works";
+import AgriculturalSurfacesPage from "@/pages/agricultural-surfaces";
+import ConstructionSitesPage from "@/pages/construction-sites";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -93,6 +95,8 @@ function AuthenticatedRouter() {
         <Route path="/" component={DashboardPage} />
         <Route path="/dashboard" component={DashboardPage} />
         <Route path="/fleet" component={FleetPage} />
+        <Route path="/agricultural-surfaces" component={AgriculturalSurfacesPage} />
+        <Route path="/construction-sites" component={ConstructionSitesPage} />
         <Route path="/fuel" component={FuelPage} />
         <Route path="/calculator" component={CalculatorPage} />
         <Route path="/reports" component={ReportsPage} />

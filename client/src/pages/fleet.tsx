@@ -47,11 +47,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Truck, Search, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Truck, Search, AlertTriangle, Tractor, TreePine } from "lucide-react";
 import { StatsBar } from "@/components/stats-bar";
+import { useSector } from "@/lib/sector-context";
 import type { Machine } from "@shared/schema";
 
-const machineTypesEngins = [
+// === Types BTP/Construction ===
+const machineTypesBTP_Engins = [
   { value: "excavator", emoji: "🚜" },
   { value: "spider_excavator", emoji: "🕷️" },
   { value: "loader", emoji: "🚛" },
@@ -62,7 +64,7 @@ const machineTypesEngins = [
   { value: "roller", emoji: "🚧" },
 ] as const;
 
-const machineTypesAutres = [
+const machineTypesBTP_Autres = [
   { value: "dumper", emoji: "🚚" },
   { value: "forklift", emoji: "📦" },
   { value: "crusher", emoji: "🪨" },
@@ -72,7 +74,29 @@ const machineTypesAutres = [
   { value: "other", emoji: "🔧" },
 ] as const;
 
+// === Types Agriculture ===
+const machineTypesAgri_Recolte = [
+  { value: "tractor", emoji: "🚜" },
+  { value: "combine_harvester", emoji: "🌾" },
+  { value: "forage_harvester", emoji: "🌿" },
+  { value: "baler", emoji: "🎁" },
+  { value: "mower", emoji: "✂️" },
+  { value: "tedder", emoji: "🌀" },
+] as const;
+
+const machineTypesAgri_Autres = [
+  { value: "sprayer", emoji: "💧" },
+  { value: "seeder", emoji: "🌱" },
+  { value: "trailer", emoji: "🚛" },
+  { value: "slurry_tanker", emoji: "🛢️" },
+  { value: "forestry_tractor", emoji: "🌲" },
+  { value: "vineyard_tractor", emoji: "🍇" },
+  { value: "other", emoji: "🔧" },
+] as const;
+
+// === Compatibilité - Tous les types (pour validation schema) ===
 const machineTypes = [
+  // BTP
   "excavator",
   "spider_excavator",
   "loader",
@@ -87,6 +111,20 @@ const machineTypes = [
   "generator",
   "compressor",
   "concrete_pump",
+  // Agriculture
+  "tractor",
+  "combine_harvester",
+  "forage_harvester",
+  "sprayer",
+  "seeder",
+  "baler",
+  "tedder",
+  "mower",
+  "trailer",
+  "slurry_tanker",
+  "forestry_tractor",
+  "vineyard_tractor",
+  // Générique
   "other",
 ] as const;
 
@@ -137,6 +175,8 @@ export default function FleetPage() {
   const { t } = useI18n();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { sector } = useSector();
+  const isAgri = sector === 'agriculture';
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
@@ -147,9 +187,9 @@ export default function FleetPage() {
     resolver: zodResolver(machineFormSchema),
     defaultValues: {
       name: "",
-      type: "excavator",
+      type: isAgri ? "tractor" : "excavator",
       customType: "",
-      taxasActivity: "construction",
+      taxasActivity: isAgri ? "agriculture_with_direct" : "construction",
       licensePlate: "",
       plateColor: "none",
       chassisNumber: "",
@@ -323,11 +363,19 @@ export default function FleetPage() {
             {machines?.length || 0} {t.dashboard.activeMachines.toLowerCase()}
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()} data-testid="button-add-machine">
+        <Button onClick={() => handleOpenDialog()} data-testid="button-add-machine" className={isAgri ? "bg-green-600 hover:bg-green-700" : ""}>
           <Plus className="h-4 w-4 mr-2" />
           {t.fleet.addMachine}
         </Button>
       </div>
+
+      {/* Badge secteur Agriculture */}
+      {isAgri && (
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-800 text-sm font-medium border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700">
+          <TreePine className="h-4 w-4" />
+          <span>Agriculture – régime forfaitaire (Art. 18 LMin)</span>
+        </div>
+      )}
 
       <StatsBar />
 
@@ -477,22 +525,45 @@ export default function FleetPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Engins de chantier</SelectLabel>
-                          {machineTypesEngins.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.emoji} {getMachineTypeLabel(type.value)}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel>Autres équipements</SelectLabel>
-                          {machineTypesAutres.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.emoji} {getMachineTypeLabel(type.value)}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
+                        {isAgri ? (
+                          <>
+                            <SelectGroup>
+                              <SelectLabel>🌾 Récolte & Fenaison</SelectLabel>
+                              {machineTypesAgri_Recolte.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.emoji} {getMachineTypeLabel(type.value)}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel>🚜 Autres équipements agricoles</SelectLabel>
+                              {machineTypesAgri_Autres.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.emoji} {getMachineTypeLabel(type.value)}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </>
+                        ) : (
+                          <>
+                            <SelectGroup>
+                              <SelectLabel>🏗️ Engins de chantier</SelectLabel>
+                              {machineTypesBTP_Engins.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.emoji} {getMachineTypeLabel(type.value)}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel>⚙️ Autres équipements</SelectLabel>
+                              {machineTypesBTP_Autres.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.emoji} {getMachineTypeLabel(type.value)}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

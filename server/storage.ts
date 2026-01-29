@@ -6,6 +6,9 @@ import {
   invoices,
   companyProfiles,
   users,
+  agriculturalSurfaces,
+  constructionSites,
+  machineSiteAssignments,
   type Machine,
   type InsertMachine,
   type FuelEntry,
@@ -19,13 +22,19 @@ import {
   type CompanyProfile,
   type InsertCompanyProfile,
   type User,
+  type AgriculturalSurface,
+  type InsertAgriculturalSurface,
+  type ConstructionSite,
+  type InsertConstructionSite,
+  type MachineSiteAssignment,
+  type InsertMachineSiteAssignment,
   REIMBURSEMENT_RATE_CHF_PER_LITER,
   calculateReimbursement,
   calculateReimbursementBySectorAndDate,
   getApplicableRate,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, or, lt, gt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(userId: string): Promise<User | undefined>;
@@ -94,6 +103,27 @@ export interface IStorage {
 
   getCompanyProfile(userId: string): Promise<CompanyProfile | undefined>;
   createOrUpdateCompanyProfile(data: InsertCompanyProfile): Promise<CompanyProfile>;
+
+  // Surfaces Agricoles (données déclaratives uniquement)
+  getAgriculturalSurfaces(userId: string): Promise<AgriculturalSurface[]>;
+  getAgriculturalSurface(id: string, userId: string): Promise<AgriculturalSurface | undefined>;
+  createAgriculturalSurface(data: InsertAgriculturalSurface): Promise<AgriculturalSurface>;
+  updateAgriculturalSurface(id: string, userId: string, data: Partial<InsertAgriculturalSurface>): Promise<AgriculturalSurface | undefined>;
+  deleteAgriculturalSurface(id: string, userId: string): Promise<boolean>;
+
+  // Chantiers BTP (traçabilité uniquement)
+  getConstructionSites(userId: string): Promise<ConstructionSite[]>;
+  getConstructionSite(id: string, userId: string): Promise<ConstructionSite | undefined>;
+  createConstructionSite(data: InsertConstructionSite): Promise<ConstructionSite>;
+  updateConstructionSite(id: string, userId: string, data: Partial<InsertConstructionSite>): Promise<ConstructionSite | undefined>;
+  deleteConstructionSite(id: string, userId: string): Promise<boolean>;
+
+  // Affectations Machine ↔ Chantier
+  getMachineSiteAssignments(userId: string): Promise<(MachineSiteAssignment & { machine?: Machine; site?: ConstructionSite })[]>;
+  getMachineSiteAssignmentsBySite(siteId: string): Promise<(MachineSiteAssignment & { machine?: Machine })[]>;
+  createMachineSiteAssignment(data: InsertMachineSiteAssignment): Promise<MachineSiteAssignment>;
+  deleteMachineSiteAssignment(id: string): Promise<boolean>;
+  checkAssignmentOverlap(machineId: string, startDate: Date, endDate: Date | null, excludeId?: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -641,6 +671,156 @@ export class DatabaseStorage implements IStorage {
     const [profile] = await db.insert(companyProfiles).values(data).returning();
     return profile;
   }
+
+  // ========================================
+  // SURFACES AGRICOLES (données déclaratives)
+  // ========================================
+
+  async getAgriculturalSurfaces(userId: string): Promise<AgriculturalSurface[]> {
+    return db.select().from(agriculturalSurfaces)
+      .where(eq(agriculturalSurfaces.userId, userId))
+      .orderBy(desc(agriculturalSurfaces.declarationYear));
+  }
+
+  async getAgriculturalSurface(id: string, userId: string): Promise<AgriculturalSurface | undefined> {
+    const [surface] = await db.select().from(agriculturalSurfaces)
+      .where(and(eq(agriculturalSurfaces.id, id), eq(agriculturalSurfaces.userId, userId)));
+    return surface;
+  }
+
+  async createAgriculturalSurface(data: InsertAgriculturalSurface): Promise<AgriculturalSurface> {
+    const [surface] = await db.insert(agriculturalSurfaces).values(data).returning();
+    return surface;
+  }
+
+  async updateAgriculturalSurface(id: string, userId: string, data: Partial<InsertAgriculturalSurface>): Promise<AgriculturalSurface | undefined> {
+    const [surface] = await db.update(agriculturalSurfaces)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(agriculturalSurfaces.id, id), eq(agriculturalSurfaces.userId, userId)))
+      .returning();
+    return surface;
+  }
+
+  async deleteAgriculturalSurface(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(agriculturalSurfaces)
+      .where(and(eq(agriculturalSurfaces.id, id), eq(agriculturalSurfaces.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // === Chantiers BTP (traçabilité uniquement) ===
+
+  async getConstructionSites(userId: string): Promise<ConstructionSite[]> {
+    return await db.select()
+      .from(constructionSites)
+      .where(eq(constructionSites.userId, userId))
+      .orderBy(desc(constructionSites.createdAt));
+  }
+
+  async getConstructionSite(id: string, userId: string): Promise<ConstructionSite | undefined> {
+    const [site] = await db.select()
+      .from(constructionSites)
+      .where(and(eq(constructionSites.id, id), eq(constructionSites.userId, userId)));
+    return site;
+  }
+
+  async createConstructionSite(data: InsertConstructionSite): Promise<ConstructionSite> {
+    const [site] = await db.insert(constructionSites).values(data).returning();
+    return site;
+  }
+
+  async updateConstructionSite(id: string, userId: string, data: Partial<InsertConstructionSite>): Promise<ConstructionSite | undefined> {
+    const [site] = await db.update(constructionSites)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(constructionSites.id, id), eq(constructionSites.userId, userId)))
+      .returning();
+    return site;
+  }
+
+  async deleteConstructionSite(id: string, userId: string): Promise<boolean> {
+    // Supprimer d'abord les affectations liées
+    await db.delete(machineSiteAssignments).where(eq(machineSiteAssignments.siteId, id));
+    const result = await db.delete(constructionSites)
+      .where(and(eq(constructionSites.id, id), eq(constructionSites.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // === Affectations Machine ↔ Chantier ===
+
+  async getMachineSiteAssignments(userId: string): Promise<(MachineSiteAssignment & { machine?: Machine; site?: ConstructionSite })[]> {
+    const assignments = await db.select()
+      .from(machineSiteAssignments)
+      .orderBy(desc(machineSiteAssignments.createdAt));
+
+    // Enrichir avec machine et site
+    const enriched = await Promise.all(assignments.map(async (a) => {
+      const [machine] = await db.select().from(machines).where(eq(machines.id, a.machineId));
+      const [site] = await db.select().from(constructionSites).where(eq(constructionSites.id, a.siteId));
+      // Filtrer par userId via la machine
+      if (machine?.userId !== userId) return null;
+      return { ...a, machine, site };
+    }));
+
+    return enriched.filter(Boolean) as (MachineSiteAssignment & { machine?: Machine; site?: ConstructionSite })[];
+  }
+
+  async getMachineSiteAssignmentsBySite(siteId: string): Promise<(MachineSiteAssignment & { machine?: Machine })[]> {
+    const assignments = await db.select()
+      .from(machineSiteAssignments)
+      .where(eq(machineSiteAssignments.siteId, siteId))
+      .orderBy(desc(machineSiteAssignments.startDate));
+
+    // Enrichir avec machine
+    const enriched = await Promise.all(assignments.map(async (a) => {
+      const [machine] = await db.select().from(machines).where(eq(machines.id, a.machineId));
+      return { ...a, machine };
+    }));
+
+    return enriched;
+  }
+
+  async createMachineSiteAssignment(data: InsertMachineSiteAssignment): Promise<MachineSiteAssignment> {
+    const [assignment] = await db.insert(machineSiteAssignments).values(data).returning();
+    return assignment;
+  }
+
+  async deleteMachineSiteAssignment(id: string): Promise<boolean> {
+    const result = await db.delete(machineSiteAssignments)
+      .where(eq(machineSiteAssignments.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async checkAssignmentOverlap(machineId: string, startDate: Date, endDate: Date | null, excludeId?: string): Promise<boolean> {
+    // Vérifier si une affectation existe pour cette machine avec des dates qui se chevauchent
+    const existingAssignments = await db.select()
+      .from(machineSiteAssignments)
+      .where(eq(machineSiteAssignments.machineId, machineId));
+
+    for (const existing of existingAssignments) {
+      // Ignorer l'affectation en cours d'édition
+      if (excludeId && existing.id === excludeId) continue;
+
+      const existingStart = new Date(existing.startDate);
+      const existingEnd = existing.endDate ? new Date(existing.endDate) : null;
+
+      // Logique de chevauchement :
+      // Deux périodes se chevauchent si : start1 <= end2 ET start2 <= end1
+      // Avec gestion des dates nulles (période ouverte = infini)
+      const newStart = startDate;
+      const newEnd = endDate;
+
+      // Si existant n'a pas de fin → toujours en cours
+      // Si nouveau n'a pas de fin → toujours en cours
+      const overlaps = (
+        (existingEnd === null || newStart <= existingEnd) &&
+        (newEnd === null || existingStart <= newEnd)
+      );
+
+      if (overlaps) return true;
+    }
+
+    return false;
+  }
 }
 
 export const storage = new DatabaseStorage();
+

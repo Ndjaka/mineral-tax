@@ -26,10 +26,11 @@ import {
   HardHat,
   Info,
   Clock,
+  Leaf,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Banner2026 } from "@/components/banner-2026";
-import type { Machine, FuelEntry, Report, Invoice } from "@shared/schema";
+import type { Machine, FuelEntry, Report, Invoice, AgriculturalSurface } from "@shared/schema";
 import { calculateReimbursement } from "@shared/schema";
 import { useSector } from "@/lib/sector-context";
 import {
@@ -128,6 +129,16 @@ export default function DashboardPage() {
     queryKey: ["/api/dashboard/trends"],
   });
 
+  // Surfaces agricoles (secteur Agriculture uniquement)
+  const { data: agriculturalSurfaces } = useQuery<AgriculturalSurface[]>({
+    queryKey: ["/api/agricultural-surfaces"],
+    enabled: isAgri,
+  });
+
+  // Calculs surfaces agricoles (UX uniquement, aucun calcul financier)
+  const totalHectares = agriculturalSurfaces?.reduce((sum, s) => sum + s.totalHectares, 0) || 0;
+  const cultureTypesCount = new Set(agriculturalSurfaces?.map(s => s.cultureType).filter(Boolean)).size;
+
   const downloadInvoice = (invoiceId: string) => {
     window.open(`/api/invoices/${invoiceId}/pdf`, "_blank");
   };
@@ -143,7 +154,8 @@ export default function DashboardPage() {
     return new Intl.NumberFormat("de-CH").format(num);
   };
 
-  const summaryCards = [
+  // === Cartes BTP (avec calculs CHF/litres) ===
+  const summaryCardsBTP = [
     {
       title: t.dashboard.totalReimbursement,
       value: stats ? formatCurrency(stats.estimatedReimbursement) : "-",
@@ -174,17 +186,54 @@ export default function DashboardPage() {
     },
   ];
 
+  // === Cartes Agriculture (conformité uniquement, AUCUN calcul CHF/litres) ===
+  const summaryCardsAgriculture = [
+    {
+      title: "Machines agricoles",
+      value: stats?.totalMachines ?? "-",
+      icon: TreePine,
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+    },
+    {
+      title: "Score de conformité",
+      // Score indicatif basé sur complétude des données
+      value: stats?.totalMachines && stats.totalMachines > 0 ? "En cours" : "À compléter",
+      icon: CheckCircle,
+      color: "text-amber-600",
+      bgColor: "bg-amber-100",
+    },
+    {
+      title: "Surfaces déclarées",
+      value: `${totalHectares.toFixed(1)} ha`,
+      icon: BarChart3,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
+    },
+    {
+      title: "Types de cultures",
+      value: cultureTypesCount,
+      icon: TreePine,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-100",
+    },
+  ];
+
+  // Sélection des cartes selon le secteur
+  const summaryCards = isAgri ? summaryCardsAgriculture : summaryCardsBTP;
+
   const quickActions = [
     {
       title: t.dashboard.addMachine,
       href: "/fleet?action=add",
       icon: Truck,
     },
-    {
+    // Scanner ticket - uniquement secteur BTP (OCR désactivé pour Agriculture)
+    ...(sector !== 'agriculture' ? [{
       title: t.dashboard.scanTicket || "Scanner un ticket",
       href: "/fuel?action=scan",
       icon: Camera,
-    },
+    }] : []),
     {
       title: t.dashboard.exportTaxasCsv || "Exporter CSV Taxas",
       href: "/reports?action=export",
@@ -235,25 +284,30 @@ export default function DashboardPage() {
           </Alert>
         )}
 
-        {/* Information CO2 pour secteur agricole */}
+        {/* Badge secteur Agriculture */}
         {isAgri && (
-          <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
-            <Info className="h-4 w-4 text-green-600 dark:text-green-400" />
-            <AlertTitle className="text-green-800 dark:text-green-300">Information secteur agricole</AlertTitle>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-800 text-sm font-medium border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700">
+            <TreePine className="h-4 w-4" />
+            <span>Agriculture – régime forfaitaire (Art. 18 LMin)</span>
+          </div>
+        )}
+
+        {/* Disclaimer secteur agricole - Outil de vérification */}
+        {isAgri && (
+          <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800 border-l-4 border-l-green-500">
+            <Leaf className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <AlertTitle className="text-green-800 dark:text-green-300">Outil de vérification</AlertTitle>
             <AlertDescription className="text-green-700 dark:text-green-400">
-              Le taux de remboursement de <strong>0.3405 CHF/L</strong> concerne uniquement l'impôt fédéral sur les huiles minérales (OFDF).
-              Les exploitations agricoles bénéficient également de la redistribution de la taxe CO2, calculée proportionnellement à la masse salariale AVS.
-              Pour connaître le montant de votre redistribution CO2, contactez votre caisse de compensation AVS ou consultez{' '}
-              <a href="https://www.admin.ch/gov/fr/start/documentation/communiques.msg-id-89545.html" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-green-900 dark:hover:text-green-200">
-                admin.ch/bafu/co2
-              </a>.
+              Ce tableau de bord affiche des <strong>indicateurs de cohérence</strong> uniquement.
+              Le remboursement agricole est calculé par l'OFDF sur la base des <strong>forfaits liés aux surfaces</strong> (Art. 18 LMin),
+              pas sur la consommation de carburant. Ce dashboard ne calcule et n'affiche aucun montant.
             </AlertDescription>
           </Alert>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {summaryCards.map((card, index) => (
-            <Card key={index}>
+            <Card key={index} className={isAgri ? "border-l-4 border-l-green-500" : ""}>
               <CardContent className="p-6">
                 {statsLoading ? (
                   <div className="space-y-3">
@@ -278,7 +332,8 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {trends && trends.length > 0 && (
+        {/* Graphique tendances - uniquement secteur BTP (affiche litres/CHF) */}
+        {!isAgri && trends && trends.length > 0 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -372,106 +427,179 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between gap-2">
-              <CardTitle className="text-lg">{t.dashboard.recentEntries}</CardTitle>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/fuel">{t.common.view}</Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {entriesLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
+        {/* Contenu principal selon secteur */}
+        {isAgri ? (
+          /* === Secteur Agriculture : Contenu conformité uniquement === */
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Carte surfaces agricoles */}
+            <Card className="lg:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <TreePine className="h-5 w-5 text-green-600" />
+                  <CardTitle className="text-lg">Surfaces exploitées</CardTitle>
                 </div>
-              ) : recentEntries && recentEntries.length > 0 ? (
-                <div className="space-y-3">
-                  {recentEntries.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                      data-testid={`fuel-entry-${entry.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          <Fuel className="h-4 w-4 text-primary" />
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/agricultural-surfaces">Gérer</Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  <TreePine className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-600" />
+                  <p className="font-medium">Déclarez vos surfaces agricoles</p>
+                  <p className="text-sm mt-1">
+                    Les surfaces déclarées permettent de vérifier la cohérence de votre dossier.
+                  </p>
+                  <Button variant="outline" asChild className="mt-4">
+                    <Link href="/agricultural-surfaces">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter des surfaces
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Actions et aide Agriculture */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">{t.dashboard.quickActions}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {quickActions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    className="w-full justify-start gap-3"
+                    asChild
+                    data-testid={`button-quick-action-${index}`}
+                  >
+                    <Link href={action.href}>
+                      <action.icon className="h-4 w-4" />
+                      {action.title}
+                    </Link>
+                  </Button>
+                ))}
+              </CardContent>
+
+              {/* Information forfaitaire Agriculture */}
+              <CardContent className="pt-0">
+                <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                        <Info className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm text-green-800 dark:text-green-300">Calcul forfaitaire</p>
+                        <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                          Le remboursement agricole est déterminé par l'OFDF sur la base des surfaces exploitées,
+                          pas sur la consommation réelle de carburant.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          /* === Secteur BTP : Contenu avec calculs litres/CHF === */
+          <div className="grid lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between gap-2">
+                <CardTitle className="text-lg">{t.dashboard.recentEntries}</CardTitle>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/fuel">{t.common.view}</Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {entriesLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : recentEntries && recentEntries.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentEntries.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                        data-testid={`fuel-entry-${entry.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-primary/10">
+                            <Fuel className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{entry.machine?.name || "-"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(entry.invoiceDate).toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-sm">{entry.machine?.name || "-"}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(entry.invoiceDate).toLocaleDateString()}
+                        <div className="text-right">
+                          <p className="font-mono font-medium">{formatNumber(entry.volumeLiters)} L</p>
+                          <p className="text-xs text-primary font-mono">
+                            {formatCurrency(calculateReimbursement(entry.volumeLiters))}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-mono font-medium">{formatNumber(entry.volumeLiters)} L</p>
-                        <p className="text-xs text-primary font-mono">
-                          {formatCurrency(calculateReimbursement(entry.volumeLiters))}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Fuel className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>{t.common.noData}</p>
+                    <Button variant="ghost" asChild className="mt-2">
+                      <Link href="/fuel?action=add">{t.fuel.addEntry}</Link>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">{t.dashboard.quickActions}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {quickActions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    className="w-full justify-start gap-3"
+                    asChild
+                    data-testid={`button-quick-action-${index}`}
+                  >
+                    <Link href={action.href}>
+                      <action.icon className="h-4 w-4" />
+                      {action.title}
+                    </Link>
+                  </Button>
+                ))}
+              </CardContent>
+
+              <CardContent className="pt-0">
+                <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <Calculator className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{t.reports.rate}</p>
+                        <p className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400">
+                          {displayedRate.toFixed(4)} CHF/L
                         </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Fuel className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>{t.common.noData}</p>
-                  <Button variant="ghost" asChild className="mt-2">
-                    <Link href="/fuel?action=add">{t.fuel.addEntry}</Link>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t.dashboard.quickActions}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {quickActions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="w-full justify-start gap-3"
-                  asChild
-                  data-testid={`button-quick-action-${index}`}
-                >
-                  <Link href={action.href}>
-                    <action.icon className="h-4 w-4" />
-                    {action.title}
-                  </Link>
-                </Button>
-              ))}
-            </CardContent>
-
-            <CardContent className="pt-0">
-              <Card className={`${isAgri ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800" : "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${isAgri ? "bg-green-100 dark:bg-green-900/30" : "bg-blue-100 dark:bg-blue-900/30"}`}>
-                      <Calculator className={`h-5 w-5 ${isAgri ? "text-green-600 dark:text-green-400" : "text-blue-600 dark:text-blue-400"}`} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{t.reports.rate}</p>
-                      <p className={`text-xl font-bold font-mono ${isAgri ? "text-green-600 dark:text-green-400" : "text-blue-600 dark:text-blue-400"}`}>
-                        {displayedRate.toFixed(4)} CHF/L
-                      </p>
-                      {isAgri && (
-                        <p className="text-xs text-green-700 dark:text-green-400 mt-1">
-                          Taux agricole 2026
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </CardContent>
-          </Card>
-        </div>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </>
   );

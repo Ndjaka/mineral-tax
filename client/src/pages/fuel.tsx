@@ -57,7 +57,7 @@ import { StatsBar } from "@/components/stats-bar";
 import { Progress } from "@/components/ui/progress";
 import { RateIndicator } from "@/components/RateIndicator";
 import { GainSimulator } from "@/components/GainSimulator";
-import type { Machine, FuelEntry } from "@shared/schema";
+import type { Machine, FuelEntry, ConstructionSite } from "@shared/schema";
 import { calculateReimbursement, calculateReimbursementBySectorAndDate } from "@shared/schema";
 import { extractTextFromImage } from "@/lib/ocr";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -77,6 +77,7 @@ const fuelEntryFormSchema = z.object({
   bd: z.string().optional(),
   stat: z.string().optional(),
   ci: z.string().optional(),
+  siteId: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -127,6 +128,7 @@ export default function FuelPage() {
       bd: "",
       stat: "",
       ci: "",
+      siteId: "",
       notes: "",
     },
   });
@@ -142,6 +144,14 @@ export default function FuelPage() {
   const { data: machines } = useQuery<Machine[]>({
     queryKey: ["/api/machines"],
   });
+
+  // Chantiers BTP (uniquement en secteur BTP)
+  const isBtp = sector === "btp";
+  const { data: constructionSites } = useQuery<ConstructionSite[]>({
+    queryKey: ["/api/construction-sites"],
+    enabled: isBtp,
+  });
+  const activeSites = constructionSites?.filter(s => s.status === "active") || [];
 
   const { data: entries, isLoading } = useQuery<(FuelEntry & { machine?: Machine })[]>({
     queryKey: ["/api/fuel-entries"],
@@ -213,6 +223,7 @@ export default function FuelPage() {
         bd: (entry as any).bd || "",
         stat: (entry as any).stat || "",
         ci: (entry as any).ci || "",
+        siteId: (entry as any).siteId || "",
         notes: entry.notes || "",
       });
     } else {
@@ -230,6 +241,7 @@ export default function FuelPage() {
         bd: "",
         stat: "",
         ci: "",
+        siteId: "",
         notes: "",
       });
     }
@@ -324,31 +336,34 @@ export default function FuelPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <GainSimulator />
-          <Button
-            disabled={isScanning}
-            className="relative bg-primary hover:bg-primary/90"
-            data-testid="button-scan-ticket"
-          >
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleScan}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+          {/* OCR uniquement pour secteur BTP - masqué pour Agriculture */}
+          {sector !== 'agriculture' && (
+            <Button
               disabled={isScanning}
-            />
-            {isScanning ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {t.fuel.ocrAnalyzing || "Analyse OFDF..."}
-              </>
-            ) : (
-              <>
-                <Camera className="h-5 w-5 mr-2" />
-                {t.fuel.scanTicket || "Scanner"}
-              </>
-            )}
-          </Button>
+              className="relative bg-primary hover:bg-primary/90"
+              data-testid="button-scan-ticket"
+            >
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleScan}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                disabled={isScanning}
+              />
+              {isScanning ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {t.fuel.ocrAnalyzing || "Analyse OFDF..."}
+                </>
+              ) : (
+                <>
+                  <Camera className="h-5 w-5 mr-2" />
+                  {t.fuel.scanTicket || "Scanner"}
+                </>
+              )}
+            </Button>
+          )}
           <Button onClick={() => handleOpenDialog()} data-testid="button-add-fuel-entry">
             <Plus className="h-4 w-4 mr-2" />
             {t.fuel.addEntry}
@@ -371,7 +386,19 @@ export default function FuelPage() {
         </Alert>
       )}
 
-      {isScanning && (
+      {/* Message informatif secteur agricole - Aucun justificatif requis */}
+      {sector === 'agriculture' && (
+        <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800">
+          <HelpCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
+            Aucun justificatif carburant n'est requis pour la préparation d'une demande agricole.
+            Le remboursement est calculé par l'OFDF sur la base des forfaits liés aux surfaces.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Barre de progression OCR - uniquement secteur BTP */}
+      {sector !== 'agriculture' && isScanning && (
         <Card>
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
@@ -525,6 +552,41 @@ export default function FuelPage() {
                   </FormItem>
                 )}
               />
+
+              {/* Champ Chantier - BTP uniquement */}
+              {isBtp && (
+                <FormField
+                  control={form.control}
+                  name="siteId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Chantier (optionnel)</FormLabel>
+                      <Select
+                        onValueChange={(val) => field.onChange(val === "none" ? "" : val)}
+                        value={field.value || "none"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un chantier" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Aucun chantier</SelectItem>
+                          {activeSites.map((site) => (
+                            <SelectItem key={site.id} value={site.id}>
+                              {site.name}
+                              {site.location && (
+                                <span className="ml-2 text-xs text-muted-foreground">({site.location})</span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField

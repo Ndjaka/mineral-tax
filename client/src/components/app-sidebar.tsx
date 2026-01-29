@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
+import { useSector } from "@/lib/sector-context";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +16,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   LayoutDashboard,
   Truck,
   Fuel,
@@ -27,26 +34,52 @@ import {
   Send,
   Building2,
   HelpCircle,
+  TreePine,
 } from "lucide-react";
+
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: React.ElementType;
+  disabledInAgri?: boolean;  // Désactivé en Agriculture
+  agriOnly?: boolean;        // Visible uniquement en Agriculture
+  btpOnly?: boolean;         // Visible uniquement en BTP
+}
 
 export function AppSidebar() {
   const { t } = useI18n();
   const { user, logout } = useAuth();
   const [location] = useLocation();
+  const { sector } = useSector();
+  const isAgri = sector === "agriculture";
 
-  const menuItems = [
+  // Tooltip pour les items désactivés en Agriculture
+  const agriDisabledTooltip = "Fonctionnalité non applicable au secteur Agriculture (Art. 18 LMin – remboursement forfaitaire)";
+
+  const menuItems: MenuItem[] = [
     { title: t.nav.dashboard, url: "/", icon: LayoutDashboard },
     { title: t.nav.fleet, url: "/fleet", icon: Truck },
-    { title: t.nav.fuelEntry, url: "/fuel", icon: Fuel },
-    { title: t.calculator.title, url: "/calculator", icon: Calculator },
-    { title: t.nav.reports, url: "/reports", icon: FileText },
-    { title: t.nav.taxas, url: "/taxas", icon: Send },
+    { title: t.agriculturalSurfaces?.title || "Surfaces agricoles", url: "/agricultural-surfaces", icon: TreePine, agriOnly: true },
+    { title: "Chantiers", url: "/construction-sites", icon: Building2, btpOnly: true },
+    { title: t.nav.fuelEntry, url: "/fuel", icon: Fuel, disabledInAgri: true },
+    { title: t.calculator.title, url: "/calculator", icon: Calculator, disabledInAgri: true },
+    { title: t.nav.reports, url: "/reports", icon: FileText, disabledInAgri: true },
+    { title: t.nav.taxas, url: "/taxas", icon: Send, disabledInAgri: true },
     { title: t.company.title, url: "/company", icon: Building2 },
     { title: t.nav.subscription, url: "/subscription", icon: CreditCard },
     { title: t.nav.settings, url: "/settings", icon: Settings },
     { title: t.nav.howItWorks, url: "/comment-ca-marche", icon: HelpCircle },
     { title: t.nav.terms, url: "/terms", icon: ScrollText },
   ];
+
+  // Filtrer les items selon le secteur
+  const filteredMenuItems = menuItems.filter((item) => {
+    // Masquer les items "agriOnly" si on n'est pas en Agriculture
+    if (item.agriOnly && !isAgri) return false;
+    // Masquer les items "btpOnly" si on est en Agriculture
+    if (item.btpOnly && isAgri) return false;
+    return true;
+  });
 
   const userInitials = user
     ? `${user.firstName?.charAt(0) || ""}${user.lastName?.charAt(0) || ""}`.toUpperCase() || "U"
@@ -57,36 +90,74 @@ export function AppSidebar() {
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <Link href="/">
           <div className="flex items-center gap-3 cursor-pointer" data-testid="link-logo">
-            <div className="w-10 h-10 rounded-lg bg-[#003366] flex items-center justify-center">
-              <span className="text-white font-bold text-lg">MT</span>
+            <div className="relative">
+              <div className="w-10 h-10 rounded-lg bg-[#003366] flex items-center justify-center">
+                <span className="text-white font-bold text-lg">MT</span>
+              </div>
+              {/* Indicateur vert secteur Agriculture */}
+              {isAgri && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-900" />
+              )}
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-sm">MineralTax</span>
-              <span className="text-xs text-muted-foreground">Swiss</span>
+              <span className={`text-xs ${isAgri ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
+                {isAgri ? "Agriculture" : "Swiss"}
+              </span>
             </div>
           </div>
         </Link>
       </SidebarHeader>
-      
+
       <SidebarContent className="px-2 py-4">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === item.url}
-                    data-testid={`nav-item-${item.url.replace("/", "") || "dashboard"}`}
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <TooltipProvider>
+              <SidebarMenu>
+                {filteredMenuItems.map((item) => {
+                  const isDisabled = isAgri && item.disabledInAgri;
+                  const Icon = item.icon;
+
+                  if (isDisabled) {
+                    // Item désactivé avec tooltip
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className="flex items-center gap-2 px-3 py-2 text-muted-foreground/50 cursor-not-allowed select-none"
+                              data-testid={`nav-item-${item.url.replace("/", "") || "dashboard"}-disabled`}
+                            >
+                              <Icon className="h-4 w-4" />
+                              <span>{item.title}</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[250px]">
+                            <p className="text-xs">{agriDisabledTooltip}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuItem>
+                    );
+                  }
+
+                  // Item normal cliquable
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === item.url}
+                        data-testid={`nav-item-${item.url.replace("/", "") || "dashboard"}`}
+                      >
+                        <Link href={item.url}>
+                          <Icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </TooltipProvider>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
