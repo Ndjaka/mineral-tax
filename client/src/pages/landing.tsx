@@ -204,238 +204,88 @@ export default function LandingPage() {
         <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted/30">
           <div className="absolute inset-0 bg-grid-pattern opacity-5" />
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-                  {t.landing.heroTitle}
-                </h1>
+            <div className="max-w-3xl mx-auto text-center space-y-8">
+              {/* H1 SEO optimisé */}
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+                Préparez votre dossier Taxas sans erreurs ni stress
+              </h1>
 
-                <p className="text-xl text-muted-foreground max-w-lg">
-                  {t.landing.heroSubtitle}
-                </p>
+              {/* Sous-titre */}
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                MineralTax est un assistant suisse qui structure et vérifie vos données
+                avant la saisie manuelle sur la plateforme officielle Taxas.
+              </p>
 
-                <p className="text-sm font-medium text-primary bg-primary/10 px-3 py-2 rounded-md inline-block">
-                  {t.landing.exclusiveClaim || "L'unique solution automatisée en Suisse pour le remboursement via Taxas."}
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" asChild data-testid="button-cta-primary">
-                    <Link href="/register">{t.landing.cta}</Link>
-                  </Button>
-                  <Button size="lg" variant="outline" asChild data-testid="button-cta-secondary">
-                    <a href="#comment-ca-marche">{t.landing.ctaSecondary}</a>
-                  </Button>
-                </div>
-
-                <p className="text-sm text-muted-foreground">
-                  {t.landing.ctaSubtext}
-                </p>
-
-                <div className="flex flex-wrap gap-4">
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>{t.landing.badge1}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>{t.landing.badge2}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>{t.landing.badge3}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>{t.landing.badge4}</span>
-                  </div>
-                </div>
+              {/* CTA principal */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button size="lg" asChild data-testid="button-cta-primary">
+                  <Link href="/register">Commencer gratuitement</Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild data-testid="button-cta-secondary">
+                  <a href="#comment-ca-marche">Comment ça marche ?</a>
+                </Button>
               </div>
 
-              <div className="relative lg:pl-8">
-                <div className="relative">
-                  <Card className="bg-card/50 backdrop-blur border-2">
-                    <CardContent className="p-6 space-y-5">
-                      {/* Sector Selector */}
-                      <div className="flex gap-2 p-1 bg-muted rounded-lg">
-                        <button
-                          onClick={() => setSelectedSector("agriculture")}
-                          className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedSector === "agriculture"
-                            ? "bg-green-600 text-white shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          🌾 Agriculture
-                        </button>
-                        <button
-                          onClick={() => setSelectedSector("btp")}
-                          className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedSector === "btp"
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          🏗️ BTP
-                        </button>
-                      </div>
-
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-muted-foreground mb-2">
-                          {t.landing.sliderLabel || "Votre consommation annuelle de diesel"}
-                        </p>
-                        <p className="text-3xl font-bold font-mono text-foreground">
-                          {formatNumber(volumeLiters)} L
-                        </p>
-                      </div>
-
-                      <Slider
-                        value={[volumeLiters]}
-                        onValueChange={(value) => setVolumeLiters(value[0])}
-                        min={1000}
-                        max={100000}
-                        step={1000}
-                        className="py-4"
-                        data-testid="slider-volume"
-                      />
-
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>1'000 L</span>
-                        <span>100'000 L</span>
-                      </div>
-
-                      <div className="h-px bg-border" />
-
-                      <div className="text-center space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                          {t.landing.sliderResult || "Vous pouvez récupérer"}
-                        </p>
-                        <p className={`text-4xl md:text-5xl font-bold font-mono ${selectedSector === "agriculture" ? "text-green-600" : "text-blue-600"
-                          }`} data-testid="text-calculated-reimbursement">
-                          {formatCurrency(calculatedReimbursement)}
-                        </p>
-                        <div className="space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">
-                            Taux {selectedSector === "agriculture" ? "Agriculture" : "BTP/Industrie"} 2026
-                          </p>
-                          <p className={`text-sm font-bold ${selectedSector === "agriculture" ? "text-green-600" : "text-blue-600"
-                            }`}>
-                            {selectedSector === "agriculture" ? "60.05" : "34.06"} cts/L
-                          </p>
-                        </div>
-                        {selectedSector === "agriculture" && (
-                          <div className="mt-3 p-2 bg-green-50 dark:bg-green-950/20 rounded-md">
-                            <p className="text-xs text-green-700 dark:text-green-400 font-medium">
-                              ✨ Taux agricole majoré : +76% vs BTP
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <Button className="w-full" size="lg" asChild>
-                        <a href="/api/login" data-testid="button-cta-calculator">
-                          {t.landing.sliderCta || "Commencer gratuitement"}
-                        </a>
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <div className="absolute -z-10 -top-4 -right-4 w-full h-full bg-primary/10 rounded-lg" />
-                </div>
+              {/* Micro-rassurance compacte */}
+              <div className="flex flex-wrap justify-center gap-4 pt-4 text-sm text-muted-foreground">
+                <span>✔ Aucun calcul fiscal</span>
+                <span>✔ Aucune transmission automatique</span>
+                <span>✔ Données hébergées en Suisse</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Statistics Section */}
-        <section className="py-16 bg-gradient-to-b from-background to-muted/20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{(t.landing as any).statsTitle || "En chiffres"}</h2>
-              <p className="text-lg text-muted-foreground">
-                {(t.landing as any).statsSubtitle || "Résultats concrets et temps économisé"}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <Card className="text-center hover-elevate transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="mb-2">
-                    <span className="text-4xl font-bold text-primary">6'810</span>
-                    <span className="text-2xl font-semibold text-primary ml-1">CHF</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{(t.landing as any).statsReimbursement || "Remboursement moyen*"}</p>
-                </CardContent>
-              </Card>
-
-              <Card className="text-center hover-elevate transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="mb-2">
-                    <span className="text-4xl font-bold text-green-600 dark:text-green-500">95</span>
-                    <span className="text-2xl font-semibold text-green-600 dark:text-green-500 ml-1">%</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{(t.landing as any).statsConformity || "Taux de conformité"}</p>
-                </CardContent>
-              </Card>
-
-              <Card className="text-center hover-elevate transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="mb-2">
-                    <span className="text-4xl font-bold text-blue-600 dark:text-blue-500">3</span>
-                    <span className="text-2xl font-semibold text-blue-600 dark:text-blue-500 ml-1">h</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{(t.landing as any).statsTimeSaved || "Temps économisé"}</p>
-                </CardContent>
-              </Card>
-
-              <Card className="text-center hover-elevate transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="mb-2">
-                    <span className="text-4xl font-bold text-amber-600 dark:text-amber-500">50+</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{(t.landing as any).statsCompanies || "Entreprises actives"}</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <p className="text-xs text-muted-foreground text-center mt-6">
-              {(t.landing as any).statsNote || "* Basé sur une consommation annuelle moyenne de 20'000 litres au taux OFDF de 0.3405 CHF/L"}
+        {/* === SECTION 2 : PROBLÈME (COURT, FACTUEL) === */}
+        <section className="py-16 bg-gradient-to-b from-background to-muted/20" id="probleme">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold mb-6">
+              Chaque année, des milliers de dossiers sont incomplets ou abandonnés
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Par manque de temps ou par peur de faire une erreur,
+              de nombreuses entreprises renoncent à déposer leur demande
+              ou risquent un refus lors d'un contrôle.
             </p>
           </div>
         </section>
 
-        <section className="py-12 bg-amber-50 dark:bg-amber-950/20" id="aide-agate">
+        {/* === SECTION 3 : LA SOLUTION MINERALTAX (3 BÉNÉFICES) === */}
+        <section className="py-16 bg-muted/30" id="solution">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-2 text-amber-800 dark:text-amber-200">
-                {(t.landing as any).seoHelpTitle || "Aide : Login CH Agate Taxas - Problèmes fréquents"}
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">
+                La solution MineralTax
               </h2>
-              <p className="text-amber-700 dark:text-amber-300">
-                {(t.landing as any).seoHelpSubtitle || "Vous n'arrivez pas à vous connecter au portail Agate ou à utiliser Taxas ? Vous n'êtes pas seul(e)."}
-              </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="bg-background">
-                <CardContent className="p-5 space-y-2">
-                  <h3 className="font-semibold">{(t.landing as any).seoHelp1Title || "Problème de login Agate ?"}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {(t.landing as any).seoHelp1Desc || "Le portail ePortal/Agate peut être complexe. MineralTax vous permet de préparer vos données hors ligne."}
+            <div className="grid md:grid-cols-3 gap-8">
+              <Card className="hover-elevate transition-all duration-200 border-2 border-green-200 dark:border-green-800">
+                <CardContent className="p-8 text-center">
+                  <div className="text-4xl mb-4">🗂️</div>
+                  <h3 className="text-xl font-semibold mb-3">Données structurées</h3>
+                  <p className="text-muted-foreground">
+                    Vos surfaces, machines et affectations sont organisées de manière cohérente.
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-background">
-                <CardContent className="p-5 space-y-2">
-                  <h3 className="font-semibold">{(t.landing as any).seoHelp2Title || "Enregistrement Taxas bloqué ?"}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {(t.landing as any).seoHelp2Desc || "L'inscription sur Taxas nécessite plusieurs étapes. Utilisez MineralTax pour préparer vos données."}
+              <Card className="hover-elevate transition-all duration-200 border-2 border-blue-200 dark:border-blue-800">
+                <CardContent className="p-8 text-center">
+                  <div className="text-4xl mb-4">🔍</div>
+                  <h3 className="text-xl font-semibold mb-3">Préparation vérifiée</h3>
+                  <p className="text-muted-foreground">
+                    MineralTax met en évidence les données manquantes ou incohérentes.
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-background">
-                <CardContent className="p-5 space-y-2">
-                  <h3 className="font-semibold">{(t.landing as any).seoHelp3Title || "Formulaire 45.35 compliqué ?"}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {(t.landing as any).seoHelp3Desc || "MineralTax génère automatiquement un PDF conforme au formulaire 45.35."}
+              <Card className="hover-elevate transition-all duration-200 border-2 border-purple-200 dark:border-purple-800">
+                <CardContent className="p-8 text-center">
+                  <div className="text-4xl mb-4">📄</div>
+                  <h3 className="text-xl font-semibold mb-3">Journal de préparation</h3>
+                  <p className="text-muted-foreground">
+                    Un document horodaté attestant que votre dossier a été préparé sérieusement avant la saisie sur Taxas.
                   </p>
                 </CardContent>
               </Card>
@@ -443,23 +293,55 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* === SECTION 4 : DIFFÉRENCIATION LÉGALE === */}
+        <section className="py-12 bg-background" id="positionnement">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold">Un assistant, pas un calculateur fiscal</h2>
+            </div>
+            <Card className="border-2 border-primary/30 bg-muted/10">
+              <CardContent className="p-8">
+                <p className="text-muted-foreground mb-6">
+                  MineralTax :
+                </p>
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center gap-3 text-muted-foreground">
+                    <span className="text-red-500 font-bold">•</span>
+                    <span>ne calcule aucun remboursement</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-muted-foreground">
+                    <span className="text-red-500 font-bold">•</span>
+                    <span>ne transmet aucune donnée à l'administration</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-muted-foreground">
+                    <span className="text-red-500 font-bold">•</span>
+                    <span>ne valide aucune conformité légale</span>
+                  </li>
+                </ul>
+                <p className="text-muted-foreground font-medium">
+                  Il vous aide uniquement à préparer vos données avant la saisie manuelle sur Taxas.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+
+        {/* === SECTION 5 : COMMENT ÇA MARCHE (4 ÉTAPES) === */}
         <section className="py-20 bg-muted/30" id="comment-ca-marche">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{t.landing.howItWorksTitle}</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                {t.landing.howItWorksSubtitle}
-              </p>
+              <h2 className="text-3xl font-bold mb-4">Comment ça marche ?</h2>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
                   1
                 </div>
-                <h3 className="text-xl font-semibold">{t.landing.step1Title}</h3>
-                <p className="text-muted-foreground">
-                  {t.landing.step1Desc}
+                <h3 className="text-xl font-semibold">Saisissez vos données</h3>
+                <p className="text-muted-foreground text-sm">
+                  Surfaces, machines, chantiers ou consommations (selon votre activité).
                 </p>
               </div>
 
@@ -467,9 +349,9 @@ export default function LandingPage() {
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
                   2
                 </div>
-                <h3 className="text-xl font-semibold">{t.landing.step2Title}</h3>
-                <p className="text-muted-foreground">
-                  {t.landing.step2Desc}
+                <h3 className="text-xl font-semibold">Suivez le parcours</h3>
+                <p className="text-muted-foreground text-sm">
+                  Une checklist guidée vous indique ce qu'il reste à compléter.
                 </p>
               </div>
 
@@ -477,387 +359,102 @@ export default function LandingPage() {
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
                   3
                 </div>
-                <h3 className="text-xl font-semibold">{t.landing.step3Title}</h3>
-                <p className="text-muted-foreground">
-                  {t.landing.step3Desc}
+                <h3 className="text-xl font-semibold">Générez le Journal</h3>
+                <p className="text-muted-foreground text-sm">
+                  Document interne, explicable à une fiduciaire ou en cas de contrôle.
+                </p>
+              </div>
+
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
+                  4
+                </div>
+                <h3 className="text-xl font-semibold">Exportez et saisissez</h3>
+                <p className="text-muted-foreground text-sm">
+                  Vous restez seul responsable de la déclaration officielle sur Taxas.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-20" id="pour-qui">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* === SECTION 6 : POUR QUI ? === */}
+        <section className="py-16" id="pour-qui">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{t.landing.forWhoTitle}</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                {t.landing.forWhoSubtitle}
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="hover-elevate transition-all duration-200">
-                <CardContent className="p-6 space-y-3">
-                  <h3 className="text-lg font-semibold">{t.landing.forWho1Title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.forWho1Desc}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="hover-elevate transition-all duration-200">
-                <CardContent className="p-6 space-y-3">
-                  <h3 className="text-lg font-semibold">{t.landing.forWho2Title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.forWho2Desc}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="hover-elevate transition-all duration-200">
-                <CardContent className="p-6 space-y-3">
-                  <h3 className="text-lg font-semibold">{t.landing.forWho3Title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.forWho3Desc}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="hover-elevate transition-all duration-200">
-                <CardContent className="p-6 space-y-3">
-                  <h3 className="text-lg font-semibold">{t.landing.forWho4Title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.forWho4Desc}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-20 bg-muted/30" id="quest-ce-que-la-taxe">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{t.landing.whatIsTaxTitle}</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                {t.landing.whatIsTaxSubtitle}
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="hover-elevate transition-all duration-200">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <HelpCircle className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{t.landing.whatIsTax1Title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.whatIsTax1Desc}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="hover-elevate transition-all duration-200">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Building2 className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{t.landing.whatIsTax2Title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.whatIsTax2Desc}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="hover-elevate transition-all duration-200">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <ClipboardList className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{t.landing.whatIsTax3Title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.whatIsTax3Desc}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="hover-elevate transition-all duration-200">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Banknote className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{t.landing.whatIsTax4Title}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.whatIsTax4Desc}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-20" id="comment-fonctionne">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{t.landing.howTaxWorksTitle}</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                {t.landing.howTaxWorksSubtitle}
-              </p>
+              <h2 className="text-3xl font-bold mb-4">Pour qui ?</h2>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              {features.map((feature, index) => (
-                <Card key={index} className="hover-elevate transition-all duration-200">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <feature.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="text-lg font-semibold">{feature.title}</h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              <Card className="hover-elevate transition-all duration-200 text-center">
+                <CardContent className="p-6 space-y-3">
+                  <div className="text-4xl">🌾</div>
+                  <h3 className="text-lg font-semibold">Exploitations agricoles</h3>
+                </CardContent>
+              </Card>
+
+              <Card className="hover-elevate transition-all duration-200 text-center">
+                <CardContent className="p-6 space-y-3">
+                  <div className="text-4xl">🏗️</div>
+                  <h3 className="text-lg font-semibold">Entreprises de construction (BTP)</h3>
+                </CardContent>
+              </Card>
+
+              <Card className="hover-elevate transition-all duration-200 text-center">
+                <CardContent className="p-6 space-y-3">
+                  <div className="text-4xl">🚜</div>
+                  <h3 className="text-lg font-semibold">Machines hors route</h3>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
 
-        <section className="py-20 bg-muted/30" id="demande-remboursement">
+        {/* === SECTION 7 : PREUVE & CONFIANCE === */}
+        <section className="py-16 bg-muted/30" id="confiance-v1">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{t.landing.howToClaimTitle}</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                {t.landing.howToClaimSubtitle}
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
-                  1
-                </div>
-                <h3 className="text-xl font-semibold">{t.landing.claimStep1Title}</h3>
-                <p className="text-muted-foreground">
-                  {t.landing.claimStep1Desc}
-                </p>
-              </div>
-
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
-                  2
-                </div>
-                <h3 className="text-xl font-semibold">{t.landing.claimStep2Title}</h3>
-                <p className="text-muted-foreground">
-                  {t.landing.claimStep2Desc}
-                </p>
-              </div>
-
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto text-2xl font-bold">
-                  3
-                </div>
-                <h3 className="text-xl font-semibold">{t.landing.claimStep3Title}</h3>
-                <p className="text-muted-foreground">
-                  {t.landing.claimStep3Desc}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-20" id="conformite-ofdf">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 text-sm font-medium mb-6">
-                <ShieldCheck className="h-5 w-5" />
-                <span>{t.landing.ofdfBadge || "Génère des fichiers compatibles OFDF 2026"}</span>
-              </div>
-              <h2 className="text-3xl font-bold mb-4">{t.landing.ofdfTitle || "Compatible avec l'administration suisse"}</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                {t.landing.ofdfSubtitle || "MineralTax génère des fichiers conformes aux exigences de l'OFDF. Vos données transitent en toute sécurité vers ePortal et Taxas."}
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="text-center">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <FileCheck className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{t.landing.ofdfStep1Title || "1. Préparez vos données"}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.ofdfStep1Desc || "Saisissez vos machines et consommations dans MineralTax. L'application vérifie automatiquement la conformité."}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="text-center">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <ArrowRight className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{t.landing.ofdfStep2Title || "2. Exportez le rapport"}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.ofdfStep2Desc || "Générez un PDF conforme au formulaire 45.35 et un CSV compatible Taxas pour votre déclaration."}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="text-center">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <Shield className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{t.landing.ofdfStep3Title || "3. Soumettez via ePortal"}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t.landing.ofdfStep3Desc || "Connectez-vous à ePortal.admin.ch avec votre CH-Login et importez vos fichiers dans Taxas."}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="mt-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                {t.landing.ofdfNote || "MineralTax ne transmet pas directement vos données à l'administration. Vous gardez le contrôle total de vos soumissions."}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-20 bg-muted/30" id="audit-conformite">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400 text-sm font-medium">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>{t.landing.auditBadge || "Tranquillité d'esprit"}</span>
-                </div>
-                <h2 className="text-3xl font-bold">{t.landing.auditTitle || "Nous vérifions vos erreurs"}</h2>
-                <p className="text-lg text-muted-foreground">
-                  {t.landing.auditSubtitle || "Avant chaque soumission, notre système analyse automatiquement vos données pour détecter les incohérences."}
-                </p>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>{t.landing.auditCheck1 || "Détection des doublons de factures"}</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>{t.landing.auditCheck2 || "Vérification des volumes anormaux"}</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>{t.landing.auditCheck3 || "Validation des catégories Taxas"}</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>{t.landing.auditCheck4 || "Contrôle des dates et périodes"}</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Card className="bg-card border-2">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">{t.landing.auditResultTitle || "Audit de conformité"}</p>
-                      <p className="text-sm text-muted-foreground">{t.landing.auditResultSubtitle || "Aucune erreur détectée"}</p>
-                    </div>
-                  </div>
-                  <div className="h-px bg-border" />
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t.landing.auditItemMachines || "Machines vérifiées"}</span>
-                      <span className="font-mono text-green-600">12 / 12</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t.landing.auditItemEntries || "Entrées analysées"}</span>
-                      <span className="font-mono text-green-600">156 / 156</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t.landing.auditItemDuplicates || "Doublons détectés"}</span>
-                      <span className="font-mono text-green-600">0</span>
-                    </div>
-                  </div>
-                  <div className="h-px bg-border" />
-                  <Button className="w-full" disabled>
-                    {t.landing.auditReady || "Prêt pour soumission"}
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Trust & Security Section */}
-        <section className="py-20" id="confiance">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{t.landing.trustTitle}</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                {t.landing.trustSubtitle}
-              </p>
+              <h2 className="text-3xl font-bold mb-4">Preuve & Confiance</h2>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="hover-elevate">
-                <CardContent className="p-6 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                    <ShieldCheck className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h3 className="font-semibold">{t.landing.trust1Title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t.landing.trust1Desc}
-                  </p>
+              <Card className="text-center hover-elevate">
+                <CardContent className="p-6 space-y-3">
+                  <div className="text-3xl">🇨🇭</div>
+                  <h3 className="font-semibold">Données hébergées en Suisse</h3>
                 </CardContent>
               </Card>
 
-              <Card className="hover-elevate">
-                <CardContent className="p-6 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto">
-                    <Lock className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <h3 className="font-semibold">{t.landing.trust2Title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t.landing.trust2Desc}
-                  </p>
+              <Card className="text-center hover-elevate">
+                <CardContent className="p-6 space-y-3">
+                  <div className="text-3xl">🔒</div>
+                  <h3 className="font-semibold">Aucune transmission automatique</h3>
                 </CardContent>
               </Card>
 
-              <Card className="hover-elevate">
-                <CardContent className="p-6 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto">
-                    <FileCheck className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <h3 className="font-semibold">{t.landing.trust3Title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t.landing.trust3Desc}
-                  </p>
+              <Card className="text-center hover-elevate">
+                <CardContent className="p-6 space-y-3">
+                  <div className="text-3xl">✅</div>
+                  <h3 className="font-semibold">Compatible avec Taxas</h3>
                 </CardContent>
               </Card>
 
-              <Card className="hover-elevate">
-                <CardContent className="p-6 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
-                    <Building2 className="h-6 w-6 text-amber-600" />
-                  </div>
-                  <h3 className="font-semibold">{t.landing.trust4Title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t.landing.trust4Desc}
-                  </p>
+              <Card className="text-center hover-elevate">
+                <CardContent className="p-6 space-y-3">
+                  <div className="text-3xl">🔐</div>
+                  <h3 className="font-semibold">Outil privé, non officiel</h3>
                 </CardContent>
               </Card>
             </div>
 
+            {/* Lien officiel Taxas/OFDF */}
             <div className="mt-10 p-6 bg-muted/50 rounded-lg border">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <Shield className="h-8 w-8 text-primary" />
                   <div>
-                    <p className="font-semibold">{t.landing.officialLink}</p>
-                    <p className="text-sm text-muted-foreground">{t.landing.officialLinkSubtitle}</p>
+                    <p className="font-semibold">Portail officiel OFDF</p>
+                    <p className="text-sm text-muted-foreground">Accédez à la plateforme Taxas</p>
                   </div>
                 </div>
                 <Button variant="outline" asChild>
@@ -867,7 +464,7 @@ export default function LandingPage() {
                     rel="noopener noreferrer"
                     data-testid="link-taxas-official"
                   >
-                    {t.landing.accessTaxas} <ArrowRight className="ml-2 h-4 w-4" />
+                    Accéder à Taxas <ArrowRight className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
               </div>
@@ -875,47 +472,72 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* === SECTION 7 : URGENCE RÉGLEMENTAIRE === */}
+        <section className="py-12 bg-amber-50 dark:bg-amber-950/20" id="urgence-2026">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-sm font-medium mb-6">
+              <span className="text-lg">⚠️</span>
+              <span>Changement réglementaire</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-amber-900 dark:text-amber-200">
+              Taxas devient obligatoire dès 2026
+            </h2>
+            <p className="text-lg text-amber-700 dark:text-amber-300 max-w-2xl mx-auto">
+              Préparer ses données à l'avance évite les erreurs et le stress de dernière minute.
+            </p>
+            <div className="mt-6">
+              <Button size="lg" asChild>
+                <Link href="/register">Préparer mon dossier maintenant</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
 
-        {/* FAQ Section */}
+
+        {/* === SECTION 8 : FAQ (OBJECTIONS) === */}
         <section className="py-20 bg-muted/30" id="faq">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{t.landing.faqTitle}</h2>
+              <h2 className="text-3xl font-bold mb-4">Questions fréquentes</h2>
             </div>
 
             <div className="space-y-6">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">{t.landing.faq1Question}</h3>
+                  <h3 className="text-lg font-semibold mb-2">MineralTax calcule-t-il le remboursement ?</h3>
                   <p className="text-muted-foreground">
-                    {t.landing.faq1Answer}
+                    <strong>Non.</strong> MineralTax structure et vérifie vos données, mais ne calcule pas de montant de remboursement.
+                    Le calcul officiel est effectué par l'OFDF via la plateforme Taxas.
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">{t.landing.faq2Question}</h3>
+                  <h3 className="text-lg font-semibold mb-2">Est-ce reconnu par l'OFDF ?</h3>
                   <p className="text-muted-foreground">
-                    {t.landing.faq2Answer}
+                    MineralTax est un <strong>outil de préparation indépendant</strong>. Il n'est pas validé ni certifié par l'OFDF.
+                    La demande officielle doit être effectuée via le portail Taxas.
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">{t.landing.faq3Question}</h3>
+                  <h3 className="text-lg font-semibold mb-2">Puis-je travailler avec ma fiduciaire ?</h3>
                   <p className="text-muted-foreground">
-                    {t.landing.faq3Answer}
+                    <strong>Oui.</strong> Vous pouvez partager votre Journal de Préparation (PDF) avec votre fiduciaire ou comptable
+                    pour faciliter la saisie dans Taxas.
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">{t.landing.faq4Question}</h3>
+                  <h3 className="text-lg font-semibold mb-2">Mes données sont-elles sécurisées ?</h3>
                   <p className="text-muted-foreground">
-                    {t.landing.faq4Answer}
+                    <strong>Oui.</strong> Vos données sont hébergées en Suisse, protégées par chiffrement.
+                    Aucune donnée n'est transmise à des tiers ni à l'administration sans votre action.
                   </p>
                 </CardContent>
               </Card>
@@ -923,60 +545,16 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-20 bg-muted/30">
-          <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
-            <Card className="border-2 border-primary/30 shadow-lg">
-              <CardHeader className="text-center pb-4">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <Star className="h-6 w-6 text-primary fill-primary" />
-                  <span className="text-sm font-semibold text-primary uppercase tracking-wider">
-                    Prix de lancement annuel
-                  </span>
-                </div>
-                <CardTitle className="text-5xl font-bold mb-2">
-                  250 <span className="text-2xl font-normal text-muted-foreground">CHF</span>
-                </CardTitle>
-                <CardDescription className="text-base">{t.landing.perYear}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-3">
-                    <div className="p-1 rounded-full bg-primary/10 shrink-0">
-                      <Check className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">{t.landing.feature1Title}</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="p-1 rounded-full bg-primary/10 shrink-0">
-                      <Check className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">{t.landing.feature2Title}</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="p-1 rounded-full bg-primary/10 shrink-0">
-                      <Check className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">{t.landing.feature3Title}</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="p-1 rounded-full bg-primary/10 shrink-0">
-                      <Check className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">{t.reports.downloadPdf}</span>
-                  </li>
-                </ul>
+        {/* === SECTION 10 : CTA FINAL === */}
+        <section className="py-20 bg-gradient-to-b from-background to-primary/5">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold mb-6">
+              Prêt à préparer votre dossier sereinement ?
+            </h2>
 
-                <div className="pt-2">
-                  <Button size="lg" className="w-full" asChild data-testid="button-cta-final">
-                    <Link href="/register">{t.landing.cta}</Link>
-                  </Button>
-                </div>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  {t.landing.ctaSubtext}
-                </p>
-              </CardContent>
-            </Card>
+            <Button size="lg" asChild data-testid="button-cta-final">
+              <Link href="/register">Commencer gratuitement</Link>
+            </Button>
           </div>
         </section>
       </main>

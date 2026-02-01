@@ -1310,6 +1310,335 @@ export class DatabaseStorage implements IStorage {
       },
     };
   }
+
+  /**
+   * Génère le Journal de Préparation MineralTax
+   * Document attestant la structuration des données avant saisie Taxas
+   * Aucun calcul financier - uniquement traçabilité et cohérence
+   */
+  async generatePreparationJournal(userId: string, fiscalYear: number): Promise<{
+    journalId: string;
+    generatedAt: Date;
+    company: {
+      name: string;
+      sector: 'agriculture' | 'btp';
+      ide?: string;
+    };
+    fiscalYear: number;
+    agriculture?: {
+      surfaces: { count: number; totalHectares: number; years: number[] };
+      cultures: { count: number; types: string[] };
+      machines: { count: number };
+      mention: string;
+    };
+    btp?: {
+      activeSites: { count: number; names: string[] };
+      machineAssignments: { count: number };
+      fuelEntries: { count: number; totalLiters: number };
+      periods: { earliest: Date | null; latest: Date | null };
+      mention: string;
+    };
+    scores: {
+      agriculture?: { score: number; level: string; incomplete: string[] };
+      btp?: { score: number; level: string; incomplete: string[] };
+    };
+    chronology: {
+      dataEntryPeriod: { start: Date | null; end: Date | null };
+      mention: string;
+    };
+    disclaimer: string;
+  }> {
+    // Générer UUID v4
+    const journalId = crypto.randomUUID();
+    const generatedAt = new Date();
+
+    // Récupérer les données utilisateur
+    const user = await this.getUser(userId);
+    const company = await this.getCompanyProfile(userId);
+    const sector = user?.activitySector || 'btp';
+
+    // Données Agriculture
+    const surfaces = await this.getAgriculturalSurfaces(userId);
+    const agriMachines = await this.getMachines(userId);
+
+    // Données BTP
+    const allSites = await this.getConstructionSites(userId);
+    const activeSites = allSites.filter(s => s.status === 'active');
+    const assignments = await this.getMachineSiteAssignments(userId);
+    const fuelEntries = await this.getFuelEntries(userId);
+    const btpFuelEntries = fuelEntries.filter(e => e.siteId != null);
+
+    // Calcul des scores
+    const agriScore = sector === 'agriculture' ? await this.calculateAgricultureCoherenceScore(userId) : null;
+    const btpScore = sector === 'btp' ? await this.calculateBtpComplianceScore(userId) : null;
+
+    // Chronologie des données
+    const allDates: Date[] = [];
+    surfaces.forEach(s => s.createdAt && allDates.push(new Date(s.createdAt)));
+    fuelEntries.forEach(e => e.createdAt && allDates.push(new Date(e.createdAt)));
+    allSites.forEach(s => s.createdAt && allDates.push(new Date(s.createdAt)));
+
+    const sortedDates = allDates.sort((a, b) => a.getTime() - b.getTime());
+    const earliestEntry = sortedDates[0] || null;
+    const latestEntry = sortedDates[sortedDates.length - 1] || null;
+
+    // Construire les sections
+    const agricultureData = sector === 'agriculture' ? {
+      surfaces: {
+        count: surfaces.length,
+        totalHectares: surfaces.reduce((sum, s) => sum + Number(s.totalHectares || 0), 0),
+        years: Array.from(new Set(surfaces.map(s => s.declarationYear).filter(Boolean))) as number[],
+      },
+      cultures: {
+        count: new Set(surfaces.map(s => s.cultureType).filter(Boolean)).size,
+        types: Array.from(new Set(surfaces.map(s => s.cultureType).filter(Boolean))) as string[],
+      },
+      machines: { count: agriMachines.length },
+      mention: "Données déclaratives – Art. 18 LMin",
+    } : undefined;
+
+    const btpData = sector === 'btp' ? {
+      activeSites: {
+        count: activeSites.length,
+        names: activeSites.map(s => s.name),
+      },
+      machineAssignments: { count: assignments.length },
+      fuelEntries: {
+        count: btpFuelEntries.length,
+        totalLiters: btpFuelEntries.reduce((sum, e) => sum + Number(e.volumeLiters || 0), 0),
+      },
+      periods: {
+        earliest: btpFuelEntries.length > 0
+          ? new Date(Math.min(...btpFuelEntries.map(e => new Date(e.invoiceDate).getTime())))
+          : null,
+        latest: btpFuelEntries.length > 0
+          ? new Date(Math.max(...btpFuelEntries.map(e => new Date(e.invoiceDate).getTime())))
+          : null,
+      },
+      mention: "Traçabilité hors-route – préparation OFDF",
+    } : undefined;
+
+    // Éléments incomplets
+    const agriIncomplete: string[] = [];
+    if (agriScore) {
+      if (agriScore.breakdown.surfaces.score < agriScore.breakdown.surfaces.max) {
+        agriIncomplete.push("Surfaces agricoles à compléter");
+      }
+      if (agriScore.breakdown.cultures.score < agriScore.breakdown.cultures.max) {
+        agriIncomplete.push("Types de cultures à renseigner");
+      }
+      if (agriScore.breakdown.machines.score < agriScore.breakdown.machines.max) {
+        agriIncomplete.push("Machines agricoles à enregistrer");
+      }
+    }
+
+    const btpIncomplete: string[] = [];
+    if (btpScore) {
+      if (btpScore.breakdown.machineAssignment.score < btpScore.breakdown.machineAssignment.max) {
+        btpIncomplete.push("Machines sans affectation chantier");
+      }
+      if (btpScore.breakdown.fuelTraceability.score < btpScore.breakdown.fuelTraceability.max) {
+        btpIncomplete.push("Entrées carburant non liées");
+      }
+      if (btpScore.breakdown.periodCoherence.score < btpScore.breakdown.periodCoherence.max) {
+        btpIncomplete.push("Incohérences de périodes");
+      }
+    }
+
+    return {
+      journalId,
+      generatedAt,
+      company: {
+        name: company?.companyName || user?.firstName || "Non renseigné",
+        sector: sector as 'agriculture' | 'btp',
+        ide: company?.ideNumber || undefined,
+      },
+      fiscalYear,
+      agriculture: agricultureData,
+      btp: btpData,
+      scores: {
+        agriculture: agriScore ? {
+          score: agriScore.score,
+          level: agriScore.level === 'bon' ? 'Bon' : agriScore.level === 'a_completer' ? 'À compléter' : 'Incomplet',
+          incomplete: agriIncomplete,
+        } : undefined,
+        btp: btpScore ? {
+          score: btpScore.score,
+          level: btpScore.level === 'conforme' ? 'Conforme' : btpScore.level === 'a_corriger' ? 'À corriger' : 'Non conforme',
+          incomplete: btpIncomplete,
+        } : undefined,
+      },
+      chronology: {
+        dataEntryPeriod: { start: earliestEntry, end: latestEntry },
+        mention: "Données saisies progressivement sur l'année",
+      },
+      disclaimer: `Ce document ne constitue pas une déclaration fiscale, ni une validation par l'OFDF. Il s'agit d'un outil interne de préparation destiné à structurer les données avant saisie manuelle sur la plateforme officielle Taxas. La responsabilité des données déclarées incombe exclusivement à l'entreprise.`,
+    };
+  }
+
+  /**
+   * Calcule la progression de l'utilisateur vers la génération du Journal de Préparation
+   * Parcours pédagogique - aucun calcul financier
+   */
+  async getPreparationProgress(userId: string): Promise<{
+    sector: 'agriculture' | 'btp';
+    overallProgress: number;
+    stepsCompleted: number;
+    stepsTotal: number;
+    isJournalReady: boolean;
+    steps: {
+      agriculture?: {
+        surface: { completed: boolean; count: number; message: string; link: string };
+        cultures: { completed: boolean; count: number; total: number; message: string; link: string };
+        fiscalYear: { completed: boolean; year: number | null; message: string; link: string };
+        machines: { completed: boolean; count: number; message: string; link: string; optional: boolean };
+      };
+      btp?: {
+        sites: { completed: boolean; count: number; message: string; link: string };
+        machines: { completed: boolean; count: number; message: string; link: string };
+        assignments: { completed: boolean; count: number; message: string; link: string };
+        fuelEntries: { completed: boolean; count: number; message: string; link: string };
+      };
+    };
+    completionMessage: string;
+  }> {
+    const user = await this.getUser(userId);
+    const sector = (user?.activitySector || 'btp') as 'agriculture' | 'btp';
+
+    if (sector === 'agriculture') {
+      // === AGRICULTURE ===
+      const surfaces = await this.getAgriculturalSurfaces(userId);
+      const machines = await this.getMachines(userId);
+
+      const surfaceCount = surfaces.length;
+      const surfaceCompleted = surfaceCount > 0;
+
+      const surfacesWithCulture = surfaces.filter(s => s.cultureType != null).length;
+      const culturesCompleted = surfaceCount > 0 && surfacesWithCulture === surfaceCount;
+
+      const surfacesWithYear = surfaces.filter(s => s.declarationYear != null);
+      const fiscalYearCompleted = surfacesWithYear.length > 0;
+      const fiscalYear = surfacesWithYear.length > 0 ? surfacesWithYear[0].declarationYear : null;
+
+      const machineCount = machines.length;
+      const machinesCompleted = machineCount > 0;
+
+      // 3 étapes obligatoires + 1 optionnelle
+      const obligatoryCompleted = [surfaceCompleted, culturesCompleted, fiscalYearCompleted].filter(Boolean).length;
+      const stepsTotal = 4;
+      const stepsCompleted = obligatoryCompleted + (machinesCompleted ? 1 : 0);
+
+      // Journal prêt si les 3 obligatoires sont OK
+      const isJournalReady = obligatoryCompleted === 3;
+      const overallProgress = Math.round((stepsCompleted / stepsTotal) * 100);
+
+      return {
+        sector,
+        overallProgress,
+        stepsCompleted,
+        stepsTotal,
+        isJournalReady,
+        steps: {
+          agriculture: {
+            surface: {
+              completed: surfaceCompleted,
+              count: surfaceCount,
+              message: surfaceCompleted ? `${surfaceCount} surface(s) déclarée(s)` : "Ajoutez au moins une surface agricole",
+              link: "/agricultural-surfaces",
+            },
+            cultures: {
+              completed: culturesCompleted,
+              count: surfacesWithCulture,
+              total: surfaceCount,
+              message: culturesCompleted
+                ? "Toutes les surfaces ont un type de culture"
+                : `${surfaceCount - surfacesWithCulture} surface(s) sans type de culture`,
+              link: "/agricultural-surfaces",
+            },
+            fiscalYear: {
+              completed: fiscalYearCompleted,
+              year: fiscalYear,
+              message: fiscalYearCompleted ? `Année ${fiscalYear} sélectionnée` : "Sélectionnez une année fiscale",
+              link: "/agricultural-surfaces",
+            },
+            machines: {
+              completed: machinesCompleted,
+              count: machineCount,
+              message: machinesCompleted ? `${machineCount} machine(s) enregistrée(s)` : "Ajoutez vos machines agricoles (optionnel)",
+              link: "/fleet",
+              optional: true,
+            },
+          },
+        },
+        completionMessage: isJournalReady
+          ? "Votre dossier est prêt à être structuré dans un Journal de Préparation."
+          : "Complétez les étapes ci-dessus pour générer votre Journal.",
+      };
+    } else {
+      // === BTP ===
+      const sites = await this.getConstructionSites(userId);
+      const machines = await this.getMachines(userId);
+      const assignments = await this.getMachineSiteAssignments(userId);
+      const fuelEntries = await this.getFuelEntries(userId);
+
+      const siteCount = sites.length;
+      const sitesCompleted = siteCount > 0;
+
+      const machineCount = machines.length;
+      const machinesCompleted = machineCount > 0;
+
+      const assignmentCount = assignments.length;
+      const assignmentsCompleted = assignmentCount > 0;
+
+      const fuelCount = fuelEntries.length;
+      const fuelCompleted = fuelCount > 0;
+
+      const stepsTotal = 4;
+      const stepsCompleted = [sitesCompleted, machinesCompleted, assignmentsCompleted, fuelCompleted].filter(Boolean).length;
+
+      const isJournalReady = stepsCompleted === stepsTotal;
+      const overallProgress = Math.round((stepsCompleted / stepsTotal) * 100);
+
+      return {
+        sector,
+        overallProgress,
+        stepsCompleted,
+        stepsTotal,
+        isJournalReady,
+        steps: {
+          btp: {
+            sites: {
+              completed: sitesCompleted,
+              count: siteCount,
+              message: sitesCompleted ? `${siteCount} chantier(s) créé(s)` : "Créez au moins un chantier",
+              link: "/construction-sites",
+            },
+            machines: {
+              completed: machinesCompleted,
+              count: machineCount,
+              message: machinesCompleted ? `${machineCount} machine(s) enregistrée(s)` : "Ajoutez au moins une machine BTP",
+              link: "/fleet",
+            },
+            assignments: {
+              completed: assignmentsCompleted,
+              count: assignmentCount,
+              message: assignmentsCompleted ? `${assignmentCount} affectation(s) machine ↔ chantier` : "Affectez une machine à un chantier",
+              link: "/construction-sites",
+            },
+            fuelEntries: {
+              completed: fuelCompleted,
+              count: fuelCount,
+              message: fuelCompleted ? `${fuelCount} entrée(s) carburant` : "Saisissez au moins une entrée carburant",
+              link: "/fuel",
+            },
+          },
+        },
+        completionMessage: isJournalReady
+          ? "Votre dossier est prêt à être structuré dans un Journal de Préparation."
+          : "Complétez les étapes ci-dessus pour générer votre Journal.",
+      };
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

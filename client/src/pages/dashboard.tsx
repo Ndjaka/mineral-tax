@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
@@ -32,9 +32,22 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  FileDown,
+  Compass,
+  ChevronRight,
+  ListChecks,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Banner2026 } from "@/components/banner-2026";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import type { Machine, FuelEntry, Report, Invoice, AgriculturalSurface, ConstructionSite } from "@shared/schema";
 import { calculateReimbursement } from "@shared/schema";
 import { useSector } from "@/lib/sector-context";
@@ -73,6 +86,11 @@ export default function DashboardPage() {
   // Taux uniforme pour tous les secteurs
   const isAgri = sector === "agriculture";
   const displayedRate = 0.3405;
+
+  // Journal de Préparation states
+  const [journalConfirmed, setJournalConfirmed] = useState(false);
+  const [journalYear, setJournalYear] = useState(new Date().getFullYear());
+  const [journalLoading, setJournalLoading] = useState(false);
   const sectorTitle = isAgri ? "Secteur Agricole" : "Secteur BTP/Industrie";
   const SectorIcon = isAgri ? TreePine : HardHat;
 
@@ -204,6 +222,34 @@ export default function DashboardPage() {
     enabled: isAgri,
   });
 
+  // Progression du Parcours de Préparation (pédagogique - aucun calcul)
+  interface PreparationProgress {
+    sector: 'agriculture' | 'btp';
+    overallProgress: number;
+    stepsCompleted: number;
+    stepsTotal: number;
+    isJournalReady: boolean;
+    steps: {
+      agriculture?: {
+        surface: { completed: boolean; count: number; message: string; link: string };
+        cultures: { completed: boolean; count: number; total: number; message: string; link: string };
+        fiscalYear: { completed: boolean; year: number | null; message: string; link: string };
+        machines: { completed: boolean; count: number; message: string; link: string; optional: boolean };
+      };
+      btp?: {
+        sites: { completed: boolean; count: number; message: string; link: string };
+        machines: { completed: boolean; count: number; message: string; link: string };
+        assignments: { completed: boolean; count: number; message: string; link: string };
+        fuelEntries: { completed: boolean; count: number; message: string; link: string };
+      };
+    };
+    completionMessage: string;
+  }
+
+  const { data: preparationProgress, isLoading: progressLoading } = useQuery<PreparationProgress>({
+    queryKey: ["/api/preparation/progress"],
+  });
+
   const downloadInvoice = (invoiceId: string) => {
     window.open(`/api/invoices/${invoiceId}/pdf`, "_blank");
   };
@@ -286,6 +332,53 @@ export default function DashboardPage() {
 
   // Sélection des cartes selon le secteur
   const summaryCards = isAgri ? summaryCardsAgriculture : summaryCardsBTP;
+
+  // Téléchargement du Journal de Préparation
+  const handleDownloadJournal = async () => {
+    if (!journalConfirmed) {
+      toast({
+        title: "Confirmation requise",
+        description: t.dashboard.preparationJournalConfirm,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setJournalLoading(true);
+    try {
+      const response = await fetch(`/api/preparation-journal/${journalYear}/pdf`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la génération du journal");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `journal-preparation-${journalYear}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Journal téléchargé",
+        description: `Journal de Préparation ${journalYear} téléchargé avec succès.`,
+      });
+    } catch (error) {
+      console.error("Error downloading journal:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de télécharger le journal.",
+        variant: "destructive",
+      });
+    } finally {
+      setJournalLoading(false);
+    }
+  };
 
   const quickActions = [
     {
@@ -857,6 +950,375 @@ export default function DashboardPage() {
             </Card>
           </div>
         )}
+
+
+        {/* === Parcours de Préparation (Carte compacte + Drawer) === */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Card className="mt-6 border-teal-200 dark:border-teal-800 cursor-pointer hover:shadow-lg transition-shadow group">
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-full ${preparationProgress?.isJournalReady
+                    ? 'bg-green-100 dark:bg-green-950/50'
+                    : 'bg-teal-100 dark:bg-teal-950/50'
+                    }`}>
+                    <ListChecks className={`h-6 w-6 ${preparationProgress?.isJournalReady
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-teal-600 dark:text-teal-400'
+                      }`} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-base">{t.dashboard.guidedTourTitle}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {preparationProgress?.isJournalReady
+                        ? "✅ Dossier prêt"
+                        : `${preparationProgress?.stepsCompleted || 0}/${preparationProgress?.stepsTotal || 4} étapes complétées`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {/* Mini barre de progression */}
+                  {preparationProgress && (
+                    <div className="hidden sm:block w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all ${preparationProgress.isJournalReady
+                          ? 'bg-green-500'
+                          : preparationProgress.overallProgress >= 50
+                            ? 'bg-teal-500'
+                            : 'bg-amber-500'
+                          }`}
+                        style={{ width: `${preparationProgress.overallProgress}%` }}
+                      />
+                    </div>
+                  )}
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                </div>
+              </CardContent>
+            </Card>
+          </SheetTrigger>
+
+          <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader className="pb-4 border-b">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-teal-100 dark:bg-teal-950/50">
+                  <Compass className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                </div>
+                <div>
+                  <SheetTitle>{t.dashboard.guidedTourTitle}</SheetTitle>
+                  <SheetDescription>{t.dashboard.guidedTourDesc}</SheetDescription>
+                </div>
+              </div>
+            </SheetHeader>
+
+            <div className="py-6 space-y-6">
+              {/* Barre de progression */}
+              {preparationProgress && (
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="font-medium">{t.dashboard.guidedTourProgress}</span>
+                    <span className={preparationProgress.isJournalReady ? 'text-green-600' : 'text-muted-foreground'}>
+                      {preparationProgress.stepsCompleted}/{preparationProgress.stepsTotal}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                    <div
+                      className={`h-3 rounded-full transition-all ${preparationProgress.isJournalReady
+                        ? 'bg-green-500'
+                        : preparationProgress.overallProgress >= 50
+                          ? 'bg-teal-500'
+                          : 'bg-amber-500'
+                        }`}
+                      style={{ width: `${preparationProgress.overallProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Étape suivante recommandée */}
+              {preparationProgress && !preparationProgress.isJournalReady && (
+                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                    📌 Étape suivante recommandée
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                    {preparationProgress.steps?.agriculture
+                      ? Object.values(preparationProgress.steps.agriculture).find(s => !s.completed && !('optional' in s && s.optional))?.message
+                      || Object.values(preparationProgress.steps.agriculture).find(s => !s.completed)?.message
+                      : preparationProgress.steps?.btp
+                        ? Object.values(preparationProgress.steps.btp).find(s => !s.completed)?.message
+                        : "Complétez les étapes ci-dessous"}
+                  </p>
+                </div>
+              )}
+
+              {/* Checklist détaillée */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                  {isAgri ? "🌾 Liste Agriculture" : "🏗️ Liste BTP"}
+                </h4>
+
+                {progressLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                  </div>
+                ) : preparationProgress?.steps?.agriculture ? (
+                  // === Checklist Agriculture ===
+                  <div className="space-y-2">
+                    {Object.entries(preparationProgress.steps.agriculture).map(([key, step]) => (
+                      <Link key={key} href={step.link}>
+                        <div className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${step.completed
+                          ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                          : 'optional' in step && step.optional
+                            ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+                            : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-800'
+                          }`}>
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${step.completed
+                            ? 'bg-green-500 text-white'
+                            : 'optional' in step && step.optional
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-red-500 text-white'
+                            }`}>
+                            {step.completed ? (
+                              <CheckCircle2 className="h-5 w-5" />
+                            ) : 'optional' in step && step.optional ? (
+                              <AlertTriangle className="h-5 w-5" />
+                            ) : (
+                              <XCircle className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-sm font-medium ${step.completed ? 'text-green-800 dark:text-green-300' : 'text-gray-800 dark:text-gray-300'
+                              }`}>
+                              {step.message}
+                            </p>
+                            {'optional' in step && step.optional && !step.completed && (
+                              <span className="text-xs text-amber-600 dark:text-amber-400">{t.dashboard.guidedTourStepOptional}</span>
+                            )}
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : preparationProgress?.steps?.btp ? (
+                  // === Checklist BTP ===
+                  <div className="space-y-2">
+                    {Object.entries(preparationProgress.steps.btp).map(([key, step]) => (
+                      <Link key={key} href={step.link}>
+                        <div className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${step.completed
+                          ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                          : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-800'
+                          }`}>
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${step.completed ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                            }`}>
+                            {step.completed ? (
+                              <CheckCircle2 className="h-5 w-5" />
+                            ) : (
+                              <XCircle className="h-5 w-5" />
+                            )}
+                          </div>
+                          <p className={`text-sm font-medium flex-1 ${step.completed ? 'text-green-800 dark:text-green-300' : 'text-gray-800 dark:text-gray-300'
+                            }`}>
+                            {step.message}
+                          </p>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  // === Checklist de Fallback (toujours visible) ===
+                  <div className="space-y-2">
+                    {isAgri ? (
+                      // Fallback Agriculture
+                      <>
+                        <Link href="/agricultural-surfaces">
+                          <div className="flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-800">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-500 text-white">
+                              <XCircle className="h-5 w-5" />
+                            </div>
+                            <p className="text-sm font-medium flex-1 text-gray-800 dark:text-gray-300">
+                              Ajoutez au moins une surface agricole
+                            </p>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                        <Link href="/agricultural-surfaces">
+                          <div className="flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-800">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-500 text-white">
+                              <XCircle className="h-5 w-5" />
+                            </div>
+                            <p className="text-sm font-medium flex-1 text-gray-800 dark:text-gray-300">
+                              Renseignez le type de culture pour chaque surface
+                            </p>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                        <Link href="/agricultural-surfaces">
+                          <div className="flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-800">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-500 text-white">
+                              <XCircle className="h-5 w-5" />
+                            </div>
+                            <p className="text-sm font-medium flex-1 text-gray-800 dark:text-gray-300">
+                              Sélectionnez une année fiscale
+                            </p>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                        <Link href="/fleet">
+                          <div className="flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-amber-500 text-white">
+                              <AlertTriangle className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-300">
+                                Ajoutez vos machines agricoles
+                              </p>
+                              <span className="text-xs text-amber-600 dark:text-amber-400">{t.dashboard.guidedTourStepOptional}</span>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                      </>
+                    ) : (
+                      // Fallback BTP
+                      <>
+                        <Link href="/construction-sites">
+                          <div className="flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-800">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-500 text-white">
+                              <XCircle className="h-5 w-5" />
+                            </div>
+                            <p className="text-sm font-medium flex-1 text-gray-800 dark:text-gray-300">
+                              Créez au moins un chantier
+                            </p>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                        <Link href="/fleet">
+                          <div className="flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-800">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-500 text-white">
+                              <XCircle className="h-5 w-5" />
+                            </div>
+                            <p className="text-sm font-medium flex-1 text-gray-800 dark:text-gray-300">
+                              Ajoutez au moins une machine BTP
+                            </p>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                        <Link href="/construction-sites">
+                          <div className="flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-800">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-500 text-white">
+                              <XCircle className="h-5 w-5" />
+                            </div>
+                            <p className="text-sm font-medium flex-1 text-gray-800 dark:text-gray-300">
+                              Affectez une machine à un chantier
+                            </p>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                        <Link href="/fuel">
+                          <div className="flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-800">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-500 text-white">
+                              <XCircle className="h-5 w-5" />
+                            </div>
+                            <p className="text-sm font-medium flex-1 text-gray-800 dark:text-gray-300">
+                              Saisissez au moins une entrée carburant
+                            </p>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Message de complétion */}
+              {preparationProgress && (
+                <div className={`p-4 rounded-lg text-center ${preparationProgress.isJournalReady
+                  ? 'bg-green-100 dark:bg-green-950/50 border border-green-200 dark:border-green-800'
+                  : 'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+                  }`}>
+                  <p className={`text-sm font-medium ${preparationProgress.isJournalReady ? 'text-green-800 dark:text-green-300' : 'text-gray-600 dark:text-gray-400'
+                    }`}>
+                    {preparationProgress.isJournalReady
+                      ? "🎉 " + t.dashboard.guidedTourReady
+                      : t.dashboard.guidedTourIncomplete}
+                  </p>
+                </div>
+              )}
+
+              {/* Disclaimer pédagogique */}
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  ℹ️ Ce parcours est purement pédagogique. Il ne calcule aucun montant et ne valide aucune conformité légale.
+                </p>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* === Journal de Préparation === */}
+        <Card className="mt-6 border-purple-200 dark:border-purple-800">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <FileDown className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <CardTitle className="text-lg">{t.dashboard.preparationJournalTitle}</CardTitle>
+            </div>
+            <p className="text-sm text-muted-foreground">{t.dashboard.preparationJournalDesc}</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Sélection année fiscale */}
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium">{t.dashboard.preparationJournalYear}</label>
+              <select
+                value={journalYear}
+                onChange={(e) => setJournalYear(parseInt(e.target.value))}
+                className="px-3 py-2 border rounded-md bg-background text-sm"
+              >
+                {[2024, 2025, 2026].map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Case à cocher obligatoire */}
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
+              <Checkbox
+                id="journal-confirm"
+                checked={journalConfirmed}
+                onCheckedChange={(checked) => setJournalConfirmed(checked === true)}
+                className="mt-0.5"
+              />
+              <label htmlFor="journal-confirm" className="text-sm text-purple-800 dark:text-purple-300 cursor-pointer leading-relaxed">
+                {t.dashboard.preparationJournalConfirm}
+              </label>
+            </div>
+
+            {/* Bouton téléchargement */}
+            <Button
+              onClick={handleDownloadJournal}
+              disabled={!journalConfirmed || journalLoading}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {journalLoading ? (
+                <>Génération en cours...</>
+              ) : (
+                <>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  {t.dashboard.preparationJournalDownload}
+                </>
+              )}
+            </Button>
+
+            {/* Disclaimer */}
+            <p className="text-xs text-muted-foreground text-center">
+              Ce document ne constitue pas une déclaration fiscale. La responsabilité incombe à l'entreprise.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </>
   );

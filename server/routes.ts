@@ -7,6 +7,7 @@ import { z } from "zod";
 import PDFDocument from "pdfkit";
 import { getUncachableStripeClient } from "./stripeClient";
 import { streamChatResponse } from "./chatAssistant";
+import { fileStorageService, type FileCategory } from "./services/fileStorage";
 
 import { formatTaxasNumber, formatTaxasDate, sanitizeTaxasText, mapFuelTypeToProductCode, mapMachineTypeToCode, getTaxasRate, generateTaxasCSV, generateTaxasSignature } from "./taxas-export.js";
 async function getOrCreateStripePrice(stripe: any): Promise<string> {
@@ -1213,6 +1214,318 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error calculating agriculture coherence score:", error);
       res.status(500).json({ message: "Failed to calculate coherence score" });
+    }
+  });
+
+  // ==================== JOURNAL DE PRÉPARATION ====================
+  // Document attestant la structuration des données avant saisie Taxas
+  // Aucun calcul financier - preuve de bonne foi pour fiduciaires
+
+  // GET - Générer le Journal de Préparation PDF
+  app.get("/api/preparation-journal/:year/pdf", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const fiscalYear = parseInt(req.params.year, 10);
+
+      if (isNaN(fiscalYear) || fiscalYear < 2020 || fiscalYear > 2100) {
+        return res.status(400).json({ message: "Année fiscale invalide" });
+      }
+
+      const journal = await storage.generatePreparationJournal(userId, fiscalYear);
+
+      console.log(`[API] GET /api/preparation-journal/${fiscalYear}/pdf - Journal ID: ${journal.journalId}`);
+
+      // Générer le PDF
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 50,
+        info: {
+          Title: `Journal de Préparation MineralTax - ${fiscalYear}`,
+          Author: 'MineralTax Swiss',
+          Subject: 'Préparation données fiscales',
+        }
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=journal-preparation-${fiscalYear}-${journal.journalId.slice(0, 8)}.pdf`);
+      doc.pipe(res);
+
+      // === EN-TÊTE ===
+      doc.fontSize(20).fillColor('#16a34a').text('Journal de Préparation MineralTax', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.fontSize(12).fillColor('#666').text('(Version explicable à une fiduciaire)', { align: 'center' });
+      doc.moveDown(1);
+
+      // === FINALITÉ ===
+      doc.fontSize(10).fillColor('#333')
+        .text('Ce document atteste que l\'entreprise a structuré, vérifié et organisé ses données avant la saisie manuelle sur la plateforme officielle Taxas.', { align: 'justify' });
+      doc.moveDown(0.5);
+      doc.fontSize(9).fillColor('#666')
+        .text('Il ne remplace pas : la déclaration fiscale, les calculs officiels, la responsabilité du déclarant.', { align: 'center', oblique: true });
+      doc.moveDown(1);
+
+      // === SECTION 1: INFORMATIONS GÉNÉRALES ===
+      doc.fontSize(14).fillColor('#16a34a').text('1. Informations générales');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#333');
+      doc.text(`Entreprise : ${journal.company.name}`);
+      doc.text(`Secteur : ${journal.company.sector === 'agriculture' ? 'Agriculture' : 'BTP'}`);
+      if (journal.company.ide) doc.text(`IDE : ${journal.company.ide}`);
+      doc.text(`Année fiscale : ${journal.fiscalYear}`);
+      doc.text(`Date de génération : ${journal.generatedAt.toLocaleString('fr-CH')}`);
+      doc.text(`Identifiant unique : ${journal.journalId}`);
+      doc.moveDown(0.3);
+      doc.fontSize(9).fillColor('#666').text('➡️ Valeur fiduciaire : Traçabilité du moment où le dossier a été préparé (preuve de bonne foi).', { oblique: true });
+      doc.moveDown(1);
+
+      // === SECTION 2 ou 3: DONNÉES SECTORIELLES ===
+      if (journal.agriculture) {
+        doc.fontSize(14).fillColor('#16a34a').text('2. Données structurées – Agriculture');
+        doc.moveDown(0.3);
+        doc.fontSize(10).fillColor('#333');
+        doc.text(`Surfaces agricoles déclarées : ${journal.agriculture.surfaces.count}`);
+        doc.text(`Total hectares : ${journal.agriculture.surfaces.totalHectares.toFixed(1)} ha`);
+        doc.text(`Années couvertes : ${journal.agriculture.surfaces.years.join(', ') || 'Aucune'}`);
+        doc.text(`Types de cultures : ${journal.agriculture.cultures.count} (${journal.agriculture.cultures.types.join(', ') || 'Non renseigné'})`);
+        doc.text(`Machines agricoles : ${journal.agriculture.machines.count}`);
+        doc.moveDown(0.3);
+        doc.fontSize(9).fillColor('#059669').text(`📋 ${journal.agriculture.mention}`, { oblique: true });
+        doc.moveDown(0.3);
+        doc.fontSize(9).fillColor('#666').text('➡️ Valeur fiduciaire : Les données sont cohérentes entre elles, même si les montants sont calculés ailleurs.', { oblique: true });
+        doc.moveDown(1);
+      }
+
+      if (journal.btp) {
+        doc.fontSize(14).fillColor('#2563eb').text('3. Données structurées – BTP');
+        doc.moveDown(0.3);
+        doc.fontSize(10).fillColor('#333');
+        doc.text(`Chantiers actifs : ${journal.btp.activeSites.count}`);
+        if (journal.btp.activeSites.names.length > 0) {
+          doc.text(`Liste : ${journal.btp.activeSites.names.slice(0, 5).join(', ')}${journal.btp.activeSites.names.length > 5 ? '...' : ''}`);
+        }
+        doc.text(`Affectations machines : ${journal.btp.machineAssignments.count}`);
+        doc.text(`Entrées carburant liées : ${journal.btp.fuelEntries.count} (${journal.btp.fuelEntries.totalLiters.toFixed(0)} L)`);
+        if (journal.btp.periods.earliest && journal.btp.periods.latest) {
+          doc.text(`Période couverte : ${journal.btp.periods.earliest.toLocaleDateString('fr-CH')} – ${journal.btp.periods.latest.toLocaleDateString('fr-CH')}`);
+        }
+        doc.moveDown(0.3);
+        doc.fontSize(9).fillColor('#2563eb').text(`📋 ${journal.btp.mention}`, { oblique: true });
+        doc.moveDown(0.3);
+        doc.fontSize(9).fillColor('#666').text('➡️ Valeur fiduciaire : La traçabilité est prête avant toute discussion sur l\'éligibilité.', { oblique: true });
+        doc.moveDown(1);
+      }
+
+      // === SECTION 4: SCORES ===
+      doc.fontSize(14).fillColor('#f59e0b').text('4. Scores & indicateurs (sans valeur juridique)');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#333');
+
+      if (journal.scores.agriculture) {
+        doc.text(`Score de cohérence Agriculture : ${journal.scores.agriculture.score}/100 – ${journal.scores.agriculture.level}`);
+        if (journal.scores.agriculture.incomplete.length > 0) {
+          doc.fontSize(9).fillColor('#dc2626').text(`  ⚠️ À vérifier : ${journal.scores.agriculture.incomplete.join(', ')}`);
+        }
+      }
+      if (journal.scores.btp) {
+        doc.text(`Score de conformité BTP : ${journal.scores.btp.score}/100 – ${journal.scores.btp.level}`);
+        if (journal.scores.btp.incomplete.length > 0) {
+          doc.fontSize(9).fillColor('#dc2626').text(`  ⚠️ À vérifier : ${journal.scores.btp.incomplete.join(', ')}`);
+        }
+      }
+      doc.moveDown(0.3);
+      doc.fontSize(9).fillColor('#666').text('⚠️ Les scores mesurent la qualité de préparation des données, pas l\'acceptation par l\'administration.', { oblique: true });
+      doc.moveDown(1);
+
+      // === SECTION 5: CHRONOLOGIE ===
+      doc.fontSize(14).fillColor('#8b5cf6').text('5. Analyse chronologique (preuve de sérieux)');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#333');
+      if (journal.chronology.dataEntryPeriod.start && journal.chronology.dataEntryPeriod.end) {
+        doc.text(`Période de saisie : ${journal.chronology.dataEntryPeriod.start.toLocaleDateString('fr-CH')} – ${journal.chronology.dataEntryPeriod.end.toLocaleDateString('fr-CH')}`);
+      } else {
+        doc.text('Période de saisie : Aucune donnée enregistrée');
+      }
+      doc.text(`Mention : ${journal.chronology.mention}`);
+      doc.moveDown(0.3);
+      doc.fontSize(9).fillColor('#666').text('➡️ Très fort en cas de contrôle : Prouve que les données n\'ont pas été "inventées à la dernière minute".', { oblique: true });
+      doc.moveDown(1);
+
+      // === SECTION 6: DISCLAIMER ===
+      doc.fontSize(14).fillColor('#dc2626').text('6. Déclaration légale');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#333')
+        .text(journal.disclaimer, { align: 'justify' });
+      doc.moveDown(1);
+
+      // === SECTION 7: VALIDATION ===
+      doc.fontSize(14).fillColor('#333').text('7. Validation utilisateur');
+      doc.moveDown(0.5);
+      doc.fontSize(10);
+      doc.text('Nom du déclarant : ___________________________________');
+      doc.moveDown(0.3);
+      doc.text('Date : _______________');
+      doc.moveDown(0.5);
+      doc.rect(doc.x, doc.y, 12, 12).stroke();
+      doc.text('  Je confirme que les données saisies reflètent fidèlement la situation de mon entreprise.', doc.x + 18, doc.y - 10);
+      doc.moveDown(1);
+
+      // === PIED DE PAGE ===
+      doc.moveDown(2);
+      doc.fontSize(10).fillColor('#16a34a').text('🟢 En une phrase pour une fiduciaire', { align: 'center' });
+      doc.moveDown(0.3);
+      doc.fontSize(11).fillColor('#333')
+        .text('MineralTax ne calcule rien à votre place. Il vous garantit que les données que vous recevez sont complètes, structurées et cohérentes.', { align: 'center', oblique: true });
+
+      doc.end();
+
+    } catch (error) {
+      console.error("Error generating preparation journal:", error);
+      res.status(500).json({ message: "Failed to generate preparation journal" });
+    }
+  });
+
+  // GET - Données du Journal (pour prévisualisation frontend)
+  app.get("/api/preparation-journal/:year/data", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const fiscalYear = parseInt(req.params.year, 10);
+
+      if (isNaN(fiscalYear) || fiscalYear < 2020 || fiscalYear > 2100) {
+        return res.status(400).json({ message: "Année fiscale invalide" });
+      }
+
+      const journal = await storage.generatePreparationJournal(userId, fiscalYear);
+      res.json(journal);
+    } catch (error) {
+      console.error("Error fetching preparation journal data:", error);
+      res.status(500).json({ message: "Failed to fetch preparation journal data" });
+    }
+  });
+
+  // ==================== STOCKAGE FICHIERS ====================
+  // Gestion sécurisée des fichiers utilisateurs (S3 ou local)
+  // Aucun accès public - signed URLs ou proxy backend uniquement
+
+  // GET - Info stockage (debug)
+  app.get("/api/storage/info", isAuthenticated, async (req, res) => {
+    const info = fileStorageService.getInfo();
+    res.json(info);
+  });
+
+  // POST - Upload fichier
+  app.post("/api/files/:category", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const category = req.params.category as FileCategory;
+
+      // Vérifier la catégorie
+      if (!["receipts", "documents", "journals"].includes(category)) {
+        return res.status(400).json({ message: "Catégorie invalide" });
+      }
+
+      // Récupérer le fichier depuis le body (base64)
+      const { filename, mimeType, data } = req.body;
+
+      if (!filename || !mimeType || !data) {
+        return res.status(400).json({ message: "Données fichier manquantes (filename, mimeType, data)" });
+      }
+
+      // Décoder le base64
+      const buffer = Buffer.from(data, "base64");
+
+      // Upload
+      const result = await fileStorageService.upload(userId, category, buffer, mimeType, filename);
+
+      if (!result.success) {
+        return res.status(400).json({ message: result.error });
+      }
+
+      console.log(`[API] POST /api/files/${category} - Fichier uploadé: ${result.key}`);
+
+      res.json({
+        success: true,
+        key: result.key,
+        url: result.url,
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "Erreur lors de l'upload du fichier" });
+    }
+  });
+
+  // GET - Télécharger un fichier (signed URL)
+  app.get("/api/files/:key(*)", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const key = req.params.key;
+
+      if (!key) {
+        return res.status(400).json({ message: "Clé fichier manquante" });
+      }
+
+      // Générer signed URL
+      const result = await fileStorageService.getSignedUrl(userId, key);
+
+      if (!result.success) {
+        return res.status(result.error === "Accès non autorisé" ? 403 : 404).json({
+          message: result.error,
+        });
+      }
+
+      console.log(`[API] GET /api/files/${key} - Signed URL générée`);
+
+      res.json({
+        success: true,
+        url: result.url,
+      });
+    } catch (error) {
+      console.error("Error getting file URL:", error);
+      res.status(500).json({ message: "Erreur lors de la récupération du fichier" });
+    }
+  });
+
+  // DELETE - Supprimer un fichier
+  app.delete("/api/files/:key(*)", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const key = req.params.key;
+
+      if (!key) {
+        return res.status(400).json({ message: "Clé fichier manquante" });
+      }
+
+      const result = await fileStorageService.delete(userId, key);
+
+      if (!result.success) {
+        return res.status(result.error === "Accès non autorisé" ? 403 : 500).json({
+          message: result.error,
+        });
+      }
+
+      console.log(`[API] DELETE /api/files/${key} - Fichier supprimé`);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      res.status(500).json({ message: "Erreur lors de la suppression du fichier" });
+    }
+  });
+
+  // ==================== PARCOURS DE PRÉPARATION ====================
+  // Assistant de progression pédagogique - aucun calcul financier
+
+  // GET - Progression vers le Journal de Préparation
+  app.get("/api/preparation/progress", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const progress = await storage.getPreparationProgress(userId);
+
+      console.log(`[API] GET /api/preparation/progress - ${progress.stepsCompleted}/${progress.stepsTotal} (${progress.overallProgress}%)`);
+
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching preparation progress:", error);
+      res.status(500).json({ message: "Failed to fetch preparation progress" });
     }
   });
 
