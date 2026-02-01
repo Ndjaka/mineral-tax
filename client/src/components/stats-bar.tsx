@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
-import { Truck, Fuel, TrendingUp } from "lucide-react";
+import { Truck, Fuel, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardStats {
@@ -19,13 +19,6 @@ export function StatsBar() {
     queryKey: ["/api/dashboard/stats"],
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("de-CH", {
-      style: "currency",
-      currency: "CHF",
-    }).format(amount);
-  };
-
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat("de-CH").format(num);
   };
@@ -42,6 +35,11 @@ export function StatsBar() {
 
   if (!stats) return null;
 
+  // Indicateur de préparation basé sur les données (pas de calcul financier)
+  const preparationStatus = stats.totalMachines > 0 && stats.eligibleVolume > 0
+    ? "Données prêtes"
+    : "À compléter";
+
   const items = [
     {
       icon: Fuel,
@@ -51,11 +49,11 @@ export function StatsBar() {
       testId: "eligible-volume",
     },
     {
-      icon: TrendingUp,
-      label: t.dashboard.totalReimbursement,
-      value: formatCurrency(stats.estimatedReimbursement),
-      color: "text-primary",
-      testId: "reimbursement",
+      icon: CheckCircle2,
+      label: "État de préparation",
+      value: preparationStatus,
+      color: preparationStatus === "Données prêtes" ? "text-green-600" : "text-amber-600",
+      testId: "preparation-status",
     },
     {
       icon: Truck,

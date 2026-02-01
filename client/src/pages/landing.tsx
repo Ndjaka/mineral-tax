@@ -493,6 +493,127 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* === SECTION PRICING === */}
+        <section className="py-20 bg-background" id="pricing">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Tarifs simples et transparents</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Un abonnement annuel par entreprise. Pas de frais cachés, pas de calcul fiscal.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {/* Offre Agriculture */}
+              <Card className="border-2 border-green-500/30 hover-elevate transition-all duration-200">
+                <CardHeader className="text-center pb-4">
+                  <div className="text-4xl mb-3">🌾</div>
+                  <CardTitle className="text-xl mb-2">Agriculture</CardTitle>
+                  <div className="text-4xl font-bold text-green-600">
+                    150 <span className="text-lg font-normal text-muted-foreground">CHF/an</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>Gestion des surfaces agricoles</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>Gestion des machines agricoles</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>Score de cohérence (Art. 18 LMin)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>Parcours guidé de préparation</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>Journal de préparation PDF</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>Export CSV compatible Taxas</span>
+                    </li>
+                  </ul>
+                  <div className="pt-4 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      Le remboursement agricole est calculé par l'OFDF selon des normes forfaitaires.
+                      MineralTax ne calcule aucun montant.
+                    </p>
+                  </div>
+                  <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+                    <Link href="/register?sector=agriculture">Commencer</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Offre BTP */}
+              <Card className="border-2 border-blue-500/30 hover-elevate transition-all duration-200">
+                <CardHeader className="text-center pb-4">
+                  <div className="text-4xl mb-3">🏗️</div>
+                  <CardTitle className="text-xl mb-2">BTP / Construction</CardTitle>
+                  <div className="text-4xl font-bold text-blue-600">
+                    390 <span className="text-lg font-normal text-muted-foreground">CHF/an</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <span>Gestion des machines BTP</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <span>Gestion des chantiers</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <span>Affectations machines ↔ chantiers</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <span>Traçabilité carburant</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <span>Score de conformité BTP</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <span>Journal renforcé + Export CSV</span>
+                    </li>
+                  </ul>
+                  <div className="pt-4 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      MineralTax structure et trace les données.
+                      La validation finale appartient à l'OFDF.
+                    </p>
+                  </div>
+                  <Button asChild className="w-full">
+                    <Link href="/register?sector=btp">Commencer</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Positionnement légal */}
+            <div className="mt-12 max-w-2xl mx-auto text-center">
+              <div className="inline-flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">✗ Pas de calcul fiscal</span>
+                <span className="flex items-center gap-1">✗ Pas de simulation</span>
+                <span className="flex items-center gap-1">✗ Pas de déclaration</span>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Outil de préparation défendable en cas de contrôle
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* === SECTION 8 : FAQ (OBJECTIONS) === */}
         <section className="py-20 bg-muted/30" id="faq">

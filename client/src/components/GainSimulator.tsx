@@ -21,7 +21,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RateIndicator } from "./RateIndicator";
 import { calculateReimbursementBySectorAndDate } from "@shared/schema";
 
+// FEATURE FLAG: Désactivé pour V1
+// Raison: Positionnement MineralTax = outil de préparation, pas de calcul
+// - Aucun montant CHF ne doit être affiché
+// - Les calculs sont effectués exclusivement par l'OFDF via Taxas
+const GAIN_SIMULATOR_ENABLED = false;
+
 export function GainSimulator() {
+    // Composant désactivé pour V1
+    if (!GAIN_SIMULATOR_ENABLED) {
+        return null;
+    }
+
     const [open, setOpen] = useState(false);
     const [volume, setVolume] = useState("");
     const [date, setDate] = useState<Date | null>(null);

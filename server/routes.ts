@@ -10,8 +10,35 @@ import { streamChatResponse } from "./chatAssistant";
 import { fileStorageService, type FileCategory } from "./services/fileStorage";
 
 import { formatTaxasNumber, formatTaxasDate, sanitizeTaxasText, mapFuelTypeToProductCode, mapMachineTypeToCode, getTaxasRate, generateTaxasCSV, generateTaxasSignature } from "./taxas-export.js";
-async function getOrCreateStripePrice(stripe: any): Promise<string> {
-  const productName = "MineralTax Swiss - Abonnement Annuel";
+// Pricing sectoriel : Agriculture 150 CHF, BTP 390 CHF
+type Sector = "agriculture" | "btp";
+
+const SECTOR_PRICING = {
+  agriculture: {
+    amount: 15000, // 150 CHF en centimes
+    name: "MineralTax Agriculture",
+    description: "Préparation des données agricoles - Art. 18 LMin",
+  },
+  btp: {
+    amount: 39000, // 390 CHF en centimes
+    name: "MineralTax BTP",
+    description: "Traçabilité et conformité BTP - Chantiers & machines",
+  },
+};
+
+async function getOrCreateStripePrice(stripe: any, sector: Sector = "btp"): Promise<string> {
+  // Vérifier d'abord les variables d'environnement
+  const envKey = sector === "agriculture"
+    ? "STRIPE_PRICE_AGRI_SUBSCRIPTION"
+    : "STRIPE_PRICE_BTP_SUBSCRIPTION";
+
+  if (process.env[envKey]) {
+    return process.env[envKey]!;
+  }
+
+  // Fallback: créer le produit/prix dynamiquement
+  const pricing = SECTOR_PRICING[sector];
+  const productName = `${pricing.name} - Abonnement Annuel`;
 
   const existingProducts = await stripe.products.search({
     query: `name:'${productName}'`,
@@ -24,7 +51,7 @@ async function getOrCreateStripePrice(stripe: any): Promise<string> {
   } else {
     const product = await stripe.products.create({
       name: productName,
-      description: "Abonnement annuel MineralTax Swiss - Gestion des remboursements de l'impôt sur les huiles minérales",
+      description: pricing.description,
     });
     productId = product.id;
   }
@@ -35,7 +62,7 @@ async function getOrCreateStripePrice(stripe: any): Promise<string> {
   });
 
   const matchingPrice = existingPrices.data.find(
-    (p: any) => p.unit_amount === 25000 && p.currency === "chf" && p.recurring?.interval === "year"
+    (p: any) => p.unit_amount === pricing.amount && p.currency === "chf" && p.recurring?.interval === "year"
   );
 
   if (matchingPrice) {
@@ -44,7 +71,7 @@ async function getOrCreateStripePrice(stripe: any): Promise<string> {
 
   const price = await stripe.prices.create({
     product: productId,
-    unit_amount: 25000,
+    unit_amount: pricing.amount,
     currency: "chf",
     recurring: { interval: "year" },
   });
@@ -52,8 +79,19 @@ async function getOrCreateStripePrice(stripe: any): Promise<string> {
   return price.id;
 }
 
-async function getOrCreateOneTimePrice(stripe: any): Promise<string> {
-  const productName = "MineralTax Swiss - Licence Annuelle";
+async function getOrCreateOneTimePrice(stripe: any, sector: Sector = "btp"): Promise<string> {
+  // Vérifier d'abord les variables d'environnement
+  const envKey = sector === "agriculture"
+    ? "STRIPE_PRICE_AGRI_ONETIME"
+    : "STRIPE_PRICE_BTP_ONETIME";
+
+  if (process.env[envKey]) {
+    return process.env[envKey]!;
+  }
+
+  // Fallback: créer le produit/prix dynamiquement
+  const pricing = SECTOR_PRICING[sector];
+  const productName = `${pricing.name} - Licence Annuelle`;
 
   const existingProducts = await stripe.products.search({
     query: `name:'${productName}'`,
@@ -66,7 +104,7 @@ async function getOrCreateOneTimePrice(stripe: any): Promise<string> {
   } else {
     const product = await stripe.products.create({
       name: productName,
-      description: "Licence annuelle MineralTax Swiss - Paiement unique (Twint, carte, virement)",
+      description: `${pricing.description} - Paiement unique`,
     });
     productId = product.id;
   }
@@ -77,7 +115,7 @@ async function getOrCreateOneTimePrice(stripe: any): Promise<string> {
   });
 
   const matchingPrice = existingPrices.data.find(
-    (p: any) => p.unit_amount === 25000 && p.currency === "chf" && !p.recurring
+    (p: any) => p.unit_amount === pricing.amount && p.currency === "chf" && !p.recurring
   );
 
   if (matchingPrice) {
@@ -86,7 +124,7 @@ async function getOrCreateOneTimePrice(stripe: any): Promise<string> {
 
   const price = await stripe.prices.create({
     product: productId,
-    unit_amount: 25000,
+    unit_amount: pricing.amount,
     currency: "chf",
   });
 
@@ -765,7 +803,9 @@ export async function registerRoutes(
 
       const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-      const priceId = await getOrCreateStripePrice(stripe);
+      // Récupérer le secteur depuis le body de la requête (envoyé par le frontend)
+      const userSector = (req.body?.sector as Sector) || "btp";
+      const priceId = await getOrCreateStripePrice(stripe, userSector);
 
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
@@ -807,7 +847,9 @@ export async function registerRoutes(
 
       const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-      const priceId = await getOrCreateOneTimePrice(stripe);
+      // Récupérer le secteur depuis le body de la requête (envoyé par le frontend)
+      const userSector = (req.body?.sector as Sector) || "btp";
+      const priceId = await getOrCreateOneTimePrice(stripe, userSector);
 
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
@@ -1236,9 +1278,10 @@ export async function registerRoutes(
 
       // Vérifier si des données existent pour cette année
       const stats = await storage.getDashboardStats(userId);
+      const surfaces = await storage.getAgriculturalSurfaces(userId);
       const hasData = stats && (
         stats.totalMachines > 0 ||
-        stats.totalSurfaces > 0 ||
+        surfaces.length > 0 ||
         stats.totalFuelEntries > 0
       );
 
@@ -1262,14 +1305,16 @@ export async function registerRoutes(
 
       console.log(`[API] GET /api/preparation-journal/${fiscalYear}/pdf - Journal ID: ${journal.journalId}`);
 
-      // Générer le PDF
+      // Générer le PDF - Structure professionnelle pour fiduciaires
       const doc = new PDFDocument({
         size: 'A4',
-        margin: 50,
+        margin: 60,
+        bufferPages: true,
         info: {
           Title: `Journal de Préparation MineralTax - ${fiscalYear}`,
           Author: 'MineralTax Swiss',
           Subject: 'Préparation données fiscales',
+          Keywords: 'mineraltax, préparation, taxas',
         }
       });
 
@@ -1277,131 +1322,294 @@ export async function registerRoutes(
       res.setHeader('Content-Disposition', `attachment; filename=journal-preparation-${fiscalYear}-${journal.journalId.slice(0, 8)}.pdf`);
       doc.pipe(res);
 
-      // === EN-TÊTE ===
-      doc.fontSize(20).fillColor('#16a34a').text('Journal de Préparation MineralTax', { align: 'center' });
+      // Couleurs professionnelles
+      const colors = {
+        green: '#16a34a',
+        greenLight: '#dcfce7',
+        orange: '#ea580c',
+        orangeLight: '#ffedd5',
+        blue: '#2563eb',
+        blueLight: '#dbeafe',
+        red: '#991b1b',
+        redLight: '#fee2e2',
+        gray: '#6b7280',
+        darkGray: '#374151',
+        lightGray: '#e5e7eb',
+        black: '#111827',
+      };
+
+      const pageWidth = 595 - 120; // A4 width - margins
+      const leftMargin = 60;
+      const rightMargin = 535;
+
+      // Helper: ligne de séparation fine
+      const drawSeparator = () => {
+        doc.moveTo(leftMargin, doc.y).lineTo(rightMargin, doc.y).strokeColor(colors.lightGray).lineWidth(0.5).stroke();
+        doc.moveDown(0.5);
+      };
+
+      // Helper: encadré avec fond coloré
+      const drawColoredBox = (x: number, y: number, width: number, height: number, fillColor: string, strokeColor: string) => {
+        doc.rect(x, y, width, height).fillAndStroke(fillColor, strokeColor);
+      };
+
+      // Helper: tableau 2 colonnes
+      const drawTable = (data: [string, string][], startY: number) => {
+        const colWidth1 = 180;
+        const colWidth2 = 280;
+        const rowHeight = 18;
+        let y = startY;
+
+        doc.fontSize(10);
+        for (const [label, value] of data) {
+          doc.fillColor(colors.gray).text(label, leftMargin + 5, y + 4, { width: colWidth1 });
+          doc.fillColor(colors.black).text(value, leftMargin + colWidth1 + 10, y + 4, { width: colWidth2 });
+          y += rowHeight;
+        }
+        return y;
+      };
+
+      // ========================================
+      // PAGE 1 : CONTEXTE & DONNÉES
+      // ========================================
+
+      // --- HEADER VISUEL ---
+      doc.fontSize(22).fillColor(colors.green).text('Journal de Préparation MineralTax', { align: 'center' });
+      doc.moveDown(0.4);
+      doc.fontSize(12).fillColor(colors.gray).text('(Version explicable à une fiduciaire)', { align: 'center' });
+      doc.moveDown(1);
+
+      // Encadré gris clair d'introduction
+      const introBoxY = doc.y;
+      drawColoredBox(leftMargin, introBoxY, pageWidth, 45, colors.lightGray, colors.gray);
+      doc.fontSize(10).fillColor(colors.darkGray).text(
+        'Ce document atteste que l\'entreprise a structuré, vérifié et organisé ses données avant la saisie manuelle sur la plateforme officielle Taxas.',
+        leftMargin + 10, introBoxY + 12, { width: pageWidth - 20, align: 'center' }
+      );
+      doc.y = introBoxY + 55;
+
+      // Ligne de séparation
+      drawSeparator();
       doc.moveDown(0.5);
-      doc.fontSize(12).fillColor('#666').text('(Version explicable à une fiduciaire)', { align: 'center' });
-      doc.moveDown(1);
 
-      // === FINALITÉ ===
-      doc.fontSize(10).fillColor('#333')
-        .text('Ce document atteste que l\'entreprise a structuré, vérifié et organisé ses données avant la saisie manuelle sur la plateforme officielle Taxas.', { align: 'justify' });
+      // --- SECTION 1 : INFORMATIONS GÉNÉRALES ---
+      doc.fontSize(13).fillColor(colors.green).text('1. Informations générales');
+      doc.moveDown(0.4);
+
+      // Tableau 2 colonnes
+      const infoData: [string, string][] = [
+        ['Entreprise', journal.company.name],
+        ['Secteur', journal.company.sector === 'agriculture' ? 'Agriculture' : 'BTP / Industrie'],
+        ['Année fiscale', String(journal.fiscalYear)],
+        ['Date de génération', journal.generatedAt.toLocaleString('fr-CH')],
+        ['Identifiant unique', journal.journalId],
+      ];
+      if (journal.company.ide) {
+        infoData.splice(2, 0, ['IDE', journal.company.ide]);
+      }
+
+      const tableEndY = drawTable(infoData, doc.y);
+      doc.y = tableEndY + 15;
       doc.moveDown(0.5);
-      doc.fontSize(9).fillColor('#666')
-        .text('Il ne remplace pas : la déclaration fiscale, les calculs officiels, la responsabilité du déclarant.', { align: 'center', oblique: true });
-      doc.moveDown(1);
 
-      // === SECTION 1: INFORMATIONS GÉNÉRALES ===
-      doc.fontSize(14).fillColor('#16a34a').text('1. Informations générales');
-      doc.moveDown(0.3);
-      doc.fontSize(10).fillColor('#333');
-      doc.text(`Entreprise : ${journal.company.name}`);
-      doc.text(`Secteur : ${journal.company.sector === 'agriculture' ? 'Agriculture' : 'BTP'}`);
-      if (journal.company.ide) doc.text(`IDE : ${journal.company.ide}`);
-      doc.text(`Année fiscale : ${journal.fiscalYear}`);
-      doc.text(`Date de génération : ${journal.generatedAt.toLocaleString('fr-CH')}`);
-      doc.text(`Identifiant unique : ${journal.journalId}`);
-      doc.moveDown(0.3);
-      doc.fontSize(9).fillColor('#666').text('➡️ Valeur fiduciaire : Traçabilité du moment où le dossier a été préparé (preuve de bonne foi).', { oblique: true });
-      doc.moveDown(1);
+      // --- SECTION 2 : DONNÉES STRUCTURÉES ---
+      doc.fontSize(13).fillColor(colors.green).text('2. Données structurées');
+      doc.moveDown(0.4);
 
-      // === SECTION 2 ou 3: DONNÉES SECTORIELLES ===
       if (journal.agriculture) {
-        doc.fontSize(14).fillColor('#16a34a').text('2. Données structurées – Agriculture');
-        doc.moveDown(0.3);
-        doc.fontSize(10).fillColor('#333');
-        doc.text(`Surfaces agricoles déclarées : ${journal.agriculture.surfaces.count}`);
-        doc.text(`Total hectares : ${journal.agriculture.surfaces.totalHectares.toFixed(1)} ha`);
-        doc.text(`Années couvertes : ${journal.agriculture.surfaces.years.join(', ') || 'Aucune'}`);
-        doc.text(`Types de cultures : ${journal.agriculture.cultures.count} (${journal.agriculture.cultures.types.join(', ') || 'Non renseigné'})`);
-        doc.text(`Machines agricoles : ${journal.agriculture.machines.count}`);
-        doc.moveDown(0.3);
-        doc.fontSize(9).fillColor('#059669').text(`📋 ${journal.agriculture.mention}`, { oblique: true });
-        doc.moveDown(0.3);
-        doc.fontSize(9).fillColor('#666').text('➡️ Valeur fiduciaire : Les données sont cohérentes entre elles, même si les montants sont calculés ailleurs.', { oblique: true });
-        doc.moveDown(1);
+        doc.fontSize(11).fillColor(colors.darkGray).text('Agriculture', { underline: true });
+        doc.moveDown(0.4);
+
+        // Bullet points espacés
+        const agriItems = [
+          `Surfaces agricoles déclarées : ${journal.agriculture.surfaces.count}`,
+          `Total hectares : ${journal.agriculture.surfaces.totalHectares.toFixed(1)} ha`,
+          `Années couvertes : ${journal.agriculture.surfaces.years.join(', ') || 'Aucune'}`,
+          `Types de cultures : ${journal.agriculture.cultures.count} (${journal.agriculture.cultures.types.join(', ') || 'Non renseigné'})`,
+          `Machines agricoles : ${journal.agriculture.machines.count}`,
+        ];
+
+        doc.fontSize(10).fillColor(colors.darkGray);
+        for (const item of agriItems) {
+          doc.text(`   •  ${item}`);
+          doc.moveDown(0.2);
+        }
+        doc.moveDown(0.5);
+
+        // Encadré vert clair
+        const agriBoxY = doc.y;
+        drawColoredBox(leftMargin, agriBoxY, pageWidth, 35, colors.greenLight, colors.green);
+        doc.fontSize(9).fillColor(colors.green).text(
+          'Données déclaratives – Art. 18 LMin',
+          leftMargin + 10, agriBoxY + 8, { width: pageWidth - 20 }
+        );
+        doc.fontSize(9).fillColor(colors.gray).text(
+          'Valeur fiduciaire : les données sont cohérentes entre elles.',
+          leftMargin + 10, agriBoxY + 20, { width: pageWidth - 20, oblique: true }
+        );
+        doc.y = agriBoxY + 45;
       }
 
       if (journal.btp) {
-        doc.fontSize(14).fillColor('#2563eb').text('3. Données structurées – BTP');
-        doc.moveDown(0.3);
-        doc.fontSize(10).fillColor('#333');
-        doc.text(`Chantiers actifs : ${journal.btp.activeSites.count}`);
+        doc.fontSize(11).fillColor(colors.darkGray).text('BTP / Industrie', { underline: true });
+        doc.moveDown(0.4);
+
+        const btpItems = [
+          `Chantiers actifs : ${journal.btp.activeSites.count}`,
+          `Affectations machines : ${journal.btp.machineAssignments.count}`,
+          `Entrées carburant : ${journal.btp.fuelEntries.count} (${journal.btp.fuelEntries.totalLiters.toFixed(0)} L)`,
+        ];
+
         if (journal.btp.activeSites.names.length > 0) {
-          doc.text(`Liste : ${journal.btp.activeSites.names.slice(0, 5).join(', ')}${journal.btp.activeSites.names.length > 5 ? '...' : ''}`);
+          btpItems.push(`Chantiers : ${journal.btp.activeSites.names.slice(0, 3).join(', ')}${journal.btp.activeSites.names.length > 3 ? '...' : ''}`);
         }
-        doc.text(`Affectations machines : ${journal.btp.machineAssignments.count}`);
-        doc.text(`Entrées carburant liées : ${journal.btp.fuelEntries.count} (${journal.btp.fuelEntries.totalLiters.toFixed(0)} L)`);
+
         if (journal.btp.periods.earliest && journal.btp.periods.latest) {
-          doc.text(`Période couverte : ${journal.btp.periods.earliest.toLocaleDateString('fr-CH')} – ${journal.btp.periods.latest.toLocaleDateString('fr-CH')}`);
+          btpItems.push(`Période : ${journal.btp.periods.earliest.toLocaleDateString('fr-CH')} – ${journal.btp.periods.latest.toLocaleDateString('fr-CH')}`);
+        }
+
+        doc.fontSize(10).fillColor(colors.darkGray);
+        for (const item of btpItems) {
+          doc.text(`   •  ${item}`);
+          doc.moveDown(0.2);
+        }
+        doc.moveDown(0.5);
+
+        // Encadré bleu clair (BTP)
+        const btpBoxY = doc.y;
+        drawColoredBox(leftMargin, btpBoxY, pageWidth, 25, colors.blueLight, colors.blue);
+        doc.fontSize(9).fillColor(colors.blue).text(
+          'Données de traçabilité — sans calcul financier.',
+          leftMargin + 10, btpBoxY + 8, { width: pageWidth - 20 }
+        );
+        doc.y = btpBoxY + 35;
+      }
+
+      // ========================================
+      // SAUT DE PAGE OBLIGATOIRE
+      // ========================================
+      doc.addPage();
+
+      // ========================================
+      // PAGE 2 : ANALYSE, LÉGAL, VALIDATION
+      // ========================================
+
+      // --- SECTION 3 : SCORES & INDICATEURS ---
+      doc.fontSize(13).fillColor(colors.orange).text('3. Scores et indicateurs');
+      doc.moveDown(0.4);
+
+      // Encadré orange pour le score
+      const scoreBoxY = doc.y;
+      const scoreValue = journal.scores.agriculture?.score || journal.scores.btp?.score || 0;
+      const scoreLevel = journal.scores.agriculture?.level || journal.scores.btp?.level || 'Non calculé';
+
+      drawColoredBox(leftMargin, scoreBoxY, pageWidth, 50, colors.orangeLight, colors.orange);
+      doc.fontSize(14).fillColor(colors.orange).text(
+        journal.scores.agriculture
+          ? `Score de cohérence Agriculture : ${scoreValue} / 100`
+          : `Score de conformité BTP : ${scoreValue} / 100`,
+        leftMargin + 15, scoreBoxY + 12, { width: pageWidth - 30 }
+      );
+      doc.fontSize(11).fillColor(colors.darkGray).text(
+        `État : ${scoreLevel}`,
+        leftMargin + 15, scoreBoxY + 32, { width: pageWidth - 30 }
+      );
+      doc.y = scoreBoxY + 60;
+
+      // Points à vérifier
+      const incomplete = journal.scores.agriculture?.incomplete || journal.scores.btp?.incomplete || [];
+      if (incomplete.length > 0) {
+        doc.fontSize(10).fillColor(colors.darkGray).text('À vérifier :');
+        doc.moveDown(0.2);
+        for (const item of incomplete) {
+          doc.fontSize(10).fillColor(colors.gray).text(`   - ${item}`);
+          doc.moveDown(0.15);
         }
         doc.moveDown(0.3);
-        doc.fontSize(9).fillColor('#2563eb').text(`📋 ${journal.btp.mention}`, { oblique: true });
-        doc.moveDown(0.3);
-        doc.fontSize(9).fillColor('#666').text('➡️ Valeur fiduciaire : La traçabilité est prête avant toute discussion sur l\'éligibilité.', { oblique: true });
-        doc.moveDown(1);
       }
 
-      // === SECTION 4: SCORES ===
-      doc.fontSize(14).fillColor('#f59e0b').text('4. Scores & indicateurs (sans valeur juridique)');
-      doc.moveDown(0.3);
-      doc.fontSize(10).fillColor('#333');
+      // Mention obligatoire
+      doc.fontSize(9).fillColor(colors.gray).text(
+        'Les scores mesurent la qualité de préparation des données, pas l\'acceptation par l\'administration.',
+        { oblique: true }
+      );
+      doc.moveDown(1.5);
 
-      if (journal.scores.agriculture) {
-        doc.text(`Score de cohérence Agriculture : ${journal.scores.agriculture.score}/100 – ${journal.scores.agriculture.level}`);
-        if (journal.scores.agriculture.incomplete.length > 0) {
-          doc.fontSize(9).fillColor('#dc2626').text(`  ⚠️ À vérifier : ${journal.scores.agriculture.incomplete.join(', ')}`);
-        }
-      }
-      if (journal.scores.btp) {
-        doc.text(`Score de conformité BTP : ${journal.scores.btp.score}/100 – ${journal.scores.btp.level}`);
-        if (journal.scores.btp.incomplete.length > 0) {
-          doc.fontSize(9).fillColor('#dc2626').text(`  ⚠️ À vérifier : ${journal.scores.btp.incomplete.join(', ')}`);
-        }
-      }
-      doc.moveDown(0.3);
-      doc.fontSize(9).fillColor('#666').text('⚠️ Les scores mesurent la qualité de préparation des données, pas l\'acceptation par l\'administration.', { oblique: true });
-      doc.moveDown(1);
+      // --- SECTION 4 : ANALYSE CHRONOLOGIQUE ---
+      doc.fontSize(13).fillColor(colors.blue).text('4. Analyse chronologique');
+      doc.moveDown(0.4);
 
-      // === SECTION 5: CHRONOLOGIE ===
-      doc.fontSize(14).fillColor('#8b5cf6').text('5. Analyse chronologique (preuve de sérieux)');
-      doc.moveDown(0.3);
-      doc.fontSize(10).fillColor('#333');
+      // Bloc bleu clair
+      const chronoBoxY = doc.y;
+      drawColoredBox(leftMargin, chronoBoxY, pageWidth, 55, colors.blueLight, colors.blue);
+      doc.fontSize(10).fillColor(colors.darkGray);
+
       if (journal.chronology.dataEntryPeriod.start && journal.chronology.dataEntryPeriod.end) {
-        doc.text(`Période de saisie : ${journal.chronology.dataEntryPeriod.start.toLocaleDateString('fr-CH')} – ${journal.chronology.dataEntryPeriod.end.toLocaleDateString('fr-CH')}`);
+        doc.text(
+          `Période de saisie : ${journal.chronology.dataEntryPeriod.start.toLocaleDateString('fr-CH')} – ${journal.chronology.dataEntryPeriod.end.toLocaleDateString('fr-CH')}`,
+          leftMargin + 10, chronoBoxY + 10, { width: pageWidth - 20 }
+        );
       } else {
-        doc.text('Période de saisie : Aucune donnée enregistrée');
+        doc.text('Période de saisie : Aucune donnée enregistrée', leftMargin + 10, chronoBoxY + 10);
       }
-      doc.text(`Mention : ${journal.chronology.mention}`);
-      doc.moveDown(0.3);
-      doc.fontSize(9).fillColor('#666').text('➡️ Très fort en cas de contrôle : Prouve que les données n\'ont pas été "inventées à la dernière minute".', { oblique: true });
+      doc.text('Données saisies progressivement sur la période.', leftMargin + 10, chronoBoxY + 25, { width: pageWidth - 20 });
+      doc.fontSize(10).fillColor(colors.blue).text(
+        'Élément très utile en cas de contrôle.',
+        leftMargin + 10, chronoBoxY + 40, { width: pageWidth - 20, oblique: true }
+      );
+      doc.y = chronoBoxY + 65;
       doc.moveDown(1);
 
-      // === SECTION 6: DISCLAIMER ===
-      doc.fontSize(14).fillColor('#dc2626').text('6. Déclaration légale');
-      doc.moveDown(0.3);
-      doc.fontSize(10).fillColor('#333')
-        .text(journal.disclaimer, { align: 'justify' });
+      // --- SECTION 5 : DÉCLARATION LÉGALE ---
+      doc.fontSize(13).fillColor(colors.red).text('5. Déclaration légale');
+      doc.moveDown(0.4);
+
+      // Bloc encadré rouge discret
+      const legalBoxY = doc.y;
+      drawColoredBox(leftMargin, legalBoxY, pageWidth, 65, colors.redLight, colors.red);
+      doc.fontSize(10).fillColor(colors.darkGray);
+      doc.text('Ce document est un outil interne de préparation des données.', leftMargin + 10, legalBoxY + 10, { width: pageWidth - 20, lineGap: 3 });
+      doc.text('Il ne constitue ni une déclaration fiscale, ni une validation officielle.', leftMargin + 10, legalBoxY + 27, { width: pageWidth - 20, lineGap: 3 });
+      doc.text('La responsabilité des données déclarées incombe exclusivement à l\'entreprise.', leftMargin + 10, legalBoxY + 44, { width: pageWidth - 20, lineGap: 3 });
+      doc.y = legalBoxY + 75;
       doc.moveDown(1);
 
-      // === SECTION 7: VALIDATION ===
-      doc.fontSize(14).fillColor('#333').text('7. Validation utilisateur');
-      doc.moveDown(0.5);
-      doc.fontSize(10);
-      doc.text('Nom du déclarant : ___________________________________');
-      doc.moveDown(0.3);
-      doc.text('Date : _______________');
-      doc.moveDown(0.5);
-      doc.rect(doc.x, doc.y, 12, 12).stroke();
-      doc.text('  Je confirme que les données saisies reflètent fidèlement la situation de mon entreprise.', doc.x + 18, doc.y - 10);
-      doc.moveDown(1);
+      // --- SECTION 6 : VALIDATION UTILISATEUR ---
+      doc.fontSize(13).fillColor(colors.darkGray).text('6. Validation utilisateur');
+      doc.moveDown(0.4);
 
-      // === PIED DE PAGE ===
-      doc.moveDown(2);
-      doc.fontSize(10).fillColor('#16a34a').text('🟢 En une phrase pour une fiduciaire', { align: 'center' });
-      doc.moveDown(0.3);
-      doc.fontSize(11).fillColor('#333')
-        .text('MineralTax ne calcule rien à votre place. Il vous garantit que les données que vous recevez sont complètes, structurées et cohérentes.', { align: 'center', oblique: true });
+      // Bloc signature avec bordure visible
+      const signBoxY = doc.y;
+      doc.rect(leftMargin, signBoxY, pageWidth, 85).strokeColor(colors.gray).lineWidth(1.5).stroke();
+      doc.fontSize(10).fillColor(colors.darkGray);
+      doc.text('Nom du déclarant : _________________________________________________', leftMargin + 15, signBoxY + 15);
+      doc.text('Date : ________________________', leftMargin + 15, signBoxY + 38);
+
+      // Checkbox
+      doc.rect(leftMargin + 15, signBoxY + 58, 12, 12).strokeColor(colors.darkGray).lineWidth(1).stroke();
+      doc.text('Je confirme que les données saisies reflètent fidèlement la situation de mon entreprise.', leftMargin + 35, signBoxY + 60);
+
+      // ========================================
+      // FOOTER SUR CHAQUE PAGE
+      // ========================================
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 0; i < pageCount; i++) {
+        doc.switchToPage(i);
+
+        // Ligne fine
+        doc.moveTo(leftMargin, 770).lineTo(rightMargin, 770).strokeColor(colors.lightGray).lineWidth(0.5).stroke();
+
+        // Footer centré
+        doc.fontSize(8).fillColor(colors.gray);
+        doc.text(
+          'MineralTax — Outil de préparation de données — Document non déclaratif',
+          leftMargin, 778, { width: pageWidth, align: 'center' }
+        );
+        doc.text(
+          `Page ${i + 1} / ${pageCount}`,
+          leftMargin, 790, { width: pageWidth, align: 'center' }
+        );
+      }
 
       doc.end();
 

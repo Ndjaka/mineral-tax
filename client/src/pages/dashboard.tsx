@@ -318,8 +318,8 @@ export default function DashboardPage() {
       title: "Surfaces déclarées",
       value: `${totalHectares.toFixed(1)} ha`,
       icon: BarChart3,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
+      color: "text-green-600",
+      bgColor: "bg-green-100",
     },
     {
       title: "Types de cultures",
@@ -710,7 +710,7 @@ export default function DashboardPage() {
                           </div>
                           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-blue-500 rounded-full"
+                              className="h-full bg-green-500 rounded-full"
                               style={{ width: `${(agriCoherenceScore.breakdown.machines.score / agriCoherenceScore.breakdown.machines.max) * 100}%` }}
                             />
                           </div>
@@ -728,7 +728,7 @@ export default function DashboardPage() {
                             {agriCoherenceScore.alerts.slice(0, 3).map((alert, idx) => (
                               <div key={idx} className={`text-xs p-2 rounded flex items-start gap-2 ${alert.type === 'warning'
                                 ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800'
-                                : 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+                                : 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
                                 }`}>
                                 {alert.type === 'warning' ? <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
                                   : <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />}

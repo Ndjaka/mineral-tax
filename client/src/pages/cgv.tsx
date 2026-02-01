@@ -26,7 +26,7 @@ export default function CGV() {
         },
         {
           title: "4. Abonnement et tarification",
-          content: `L'abonnement annuel est de CHF 250.- TTC. Un essai gratuit de 10 jours est offert à tout nouvel utilisateur. Pendant l'essai, toutes les fonctionnalités sont accessibles. Après expiration, les exports PDF et CSV sont bloqués jusqu'à souscription.`,
+          content: `L'abonnement annuel est de CHF 150.- (Agriculture) ou CHF 390.- (BTP) TTC. Un essai gratuit de 10 jours est offert à tout nouvel utilisateur. Pendant l'essai, toutes les fonctionnalités sont accessibles. Après expiration, les exports PDF et CSV sont bloqués jusqu'à souscription.`,
         },
         {
           title: "5. Paiement",
@@ -73,7 +73,7 @@ export default function CGV() {
         },
         {
           title: "4. Abonnement und Preise",
-          content: `Das Jahresabonnement kostet CHF 250.- inkl. MwSt. Eine 10-tägige kostenlose Testversion wird jedem neuen Benutzer angeboten. Nach Ablauf werden PDF- und CSV-Exporte bis zur Anmeldung gesperrt.`,
+          content: `Das Jahresabonnement kostet CHF 150.- (Landwirtschaft) oder CHF 390.- (Bau) inkl. MwSt. Eine 10-tägige kostenlose Testversion wird jedem neuen Benutzer angeboten. Nach Ablauf werden PDF- und CSV-Exporte bis zur Anmeldung gesperrt.`,
         },
         {
           title: "5. Zahlung",
@@ -120,7 +120,7 @@ export default function CGV() {
         },
         {
           title: "4. Abbonamento e prezzi",
-          content: `L'abbonamento annuale costa CHF 250.- IVA inclusa. Una prova gratuita di 10 giorni è offerta a ogni nuovo utente.`,
+          content: `L'abbonamento annuale costa CHF 150.- (Agricoltura) o CHF 390.- (Edilizia) IVA inclusa. Una prova gratuita di 10 giorni è offerta a ogni nuovo utente.`,
         },
         {
           title: "5. Pagamento",
@@ -167,7 +167,7 @@ export default function CGV() {
         },
         {
           title: "4. Subscription and pricing",
-          content: `Annual subscription costs CHF 250.- including VAT. A 10-day free trial is offered to every new user.`,
+          content: `Annual subscription costs CHF 150.- (Agriculture) or CHF 390.- (Construction) including VAT. A 10-day free trial is offered to every new user.`,
         },
         {
           title: "5. Payment",

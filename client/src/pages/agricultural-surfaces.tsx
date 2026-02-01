@@ -349,7 +349,7 @@ export default function AgriculturalSurfaces() {
                                                     ({surface.declarationYear})
                                                 </span>
                                                 {surface.irrigation && (
-                                                    <Droplets className="h-4 w-4 text-blue-500" />
+                                                    <Droplets className="h-4 w-4 text-green-500" />
                                                 )}
                                             </div>
                                             <p className="text-lg font-bold font-mono text-green-600">

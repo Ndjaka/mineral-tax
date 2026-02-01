@@ -64,7 +64,7 @@ export function AppSidebar() {
     { title: t.nav.fuelEntry, url: "/fuel", icon: Fuel, btpOnly: true },
     // SUPPRIMÉ V1 : Calculateur (Art. 18 LMin - aucun montant ne doit être affiché)
     // { title: t.calculator.title, url: "/calculator", icon: Calculator, agriOnly: true },
-    { title: t.nav.reports, url: "/reports", icon: FileText },
+    { title: t.nav.reports, url: "/reports", icon: FileText, btpOnly: true },
     { title: t.nav.taxas, url: "/taxas", icon: Send },
     { title: t.company.title, url: "/company", icon: Building2 },
     // MASQUÉ V1 : Abonnement (phase tests gratuite)

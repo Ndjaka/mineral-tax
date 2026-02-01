@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useI18n } from "@/lib/i18n";
@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/accordion";
 import type { Report } from "@shared/schema";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { StatsBar } from "@/components/stats-bar";
 
 type AuditFinding = {
   type: "error" | "warning";
@@ -69,7 +68,7 @@ type ReportFormData = z.infer<typeof reportFormSchema>;
 export default function ReportsPage() {
   const { t, language } = useI18n();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
@@ -77,8 +76,8 @@ export default function ReportsPage() {
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
   const [pendingExportId, setPendingExportId] = useState<string | null>(null);
 
-  // Taux uniforme pour tous les secteurs (impôt sur les huiles minérales uniquement)
-  const uniformRate = 0.3405; // 34.05 cts/L
+  // IMPORTANT: Tous les hooks DOIVENT être déclarés AVANT tout return conditionnel
+  // Cela respecte les règles des hooks React
 
   const form = useForm<ReportFormData>({
     resolver: zodResolver(reportFormSchema),
@@ -90,6 +89,7 @@ export default function ReportsPage() {
 
   const { data: reports, isLoading } = useQuery<Report[]>({
     queryKey: ["/api/reports"],
+    enabled: sector !== "agriculture", // Désactivé pour Agriculture
   });
 
   const generateMutation = useMutation({
@@ -192,6 +192,20 @@ export default function ReportsPage() {
     },
   });
 
+  // Redirection automatique pour le secteur Agriculture
+  // Cette page n'est pas accessible pour Agriculture (Art. 18 LMin - remboursement forfaitaire)
+  useEffect(() => {
+    if (sector === "agriculture") {
+      setLocation("/dashboard");
+    }
+  }, [sector, setLocation]);
+
+  // Si Agriculture, ne rien afficher pendant la redirection
+  // Ce return DOIT être APRÈS tous les hooks
+  if (sector === "agriculture") {
+    return null;
+  }
+
   const handleAudit = () => {
     const values = form.getValues();
     auditMutation.mutate(values);
@@ -201,40 +215,18 @@ export default function ReportsPage() {
     generateMutation.mutate(data);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("de-CH", {
-      style: "currency",
-      currency: "CHF",
-    }).format(amount);
-  };
-
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("de-CH").format(num);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive"> = {
-      draft: "secondary",
-      submitted: "default",
-      approved: "default",
-      rejected: "destructive",
-    };
-    return (
-      <Badge variant={variants[status] || "secondary"}>
-        {t.reports.status[status as keyof typeof t.reports.status] || status}
-      </Badge>
-    );
-  };
+  // SUPPRIMÉ: formatCurrency, formatNumber, getStatusBadge
+  // Ces fonctions affichaient des CHF - non conformes au positionnement MineralTax
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-reports-title">
-            {t.reports.title}
+            Rapport de conformité BTP – Préparation Taxas
           </h1>
           <p className="text-sm md:text-base text-muted-foreground mt-1">
-            {t.reports.formReference}
+            Document interne de préparation et de traçabilité – sans valeur de calcul fiscal
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -244,17 +236,17 @@ export default function ReportsPage() {
           </Button>
           <Button onClick={() => setIsDialogOpen(true)} data-testid="button-generate-report">
             <Plus className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">{t.reports.generate}</span>
+            <span className="hidden sm:inline">Générer un rapport</span>
           </Button>
         </div>
       </div>
 
-      <StatsBar />
-
-      <Alert>
-        <FileText className="h-4 w-4" />
-        <AlertDescription>
-          {t.reports.form4535Notice}
+      {/* Déclaration légale obligatoire */}
+      <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+        <AlertTriangle className="h-4 w-4 text-amber-600" />
+        <AlertDescription className="text-sm">
+          <strong>MineralTax ne calcule rien à votre place.</strong> Ce rapport garantit que vos données
+          sont complètes, structurées et traçables pour votre fiduciaire ou Taxas.
         </AlertDescription>
       </Alert>
 
@@ -272,12 +264,23 @@ export default function ReportsPage() {
       ) : reports && reports.length > 0 ? (
         <div className="space-y-4">
           {reports.map((report) => (
-            <Card key={report.id} className="hover-elevate" data-testid={`card-report-${report.id}`}>
+            <Card key={report.id} className="hover-elevate border-amber-200/50" data-testid={`card-report-${report.id}`}>
               <CardContent className="p-6">
+                {/* Bandeau ancien format */}
+                <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                    <p className="text-xs">
+                      <strong>Ancien format – désactivé.</strong> Ce rapport a été généré avant la refonte conformité.
+                      Il n'est plus utilisé pour la préparation Taxas.
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-lg bg-primary/10">
-                      <FileText className="h-6 w-6 text-primary" />
+                    <div className="p-3 rounded-lg bg-muted">
+                      <FileText className="h-6 w-6 text-muted-foreground" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -285,29 +288,25 @@ export default function ReportsPage() {
                           {new Date(report.periodStart).toLocaleDateString()} -{" "}
                           {new Date(report.periodEnd).toLocaleDateString()}
                         </h3>
-                        {getStatusBadge(report.status)}
+                        <Badge variant="secondary" className="text-amber-700 bg-amber-100">
+                          Ancien format
+                        </Badge>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                         <Calendar className="h-3 w-3" />
                         <span>
-                          {t.common.date}: {new Date(report.createdAt!).toLocaleDateString()}
+                          Créé le {new Date(report.createdAt!).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
                   </div>
 
+                  {/* Suppression des montants CHF et volumes - conformité positionnement */}
                   <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                     <div className="text-left sm:text-right">
-                      <p className="text-xs sm:text-sm text-muted-foreground">{t.reports.eligibleVolume}</p>
-                      <p className="font-mono font-medium">
-                        {formatNumber(report.eligibleVolumeLiters)} L
-                      </p>
-                    </div>
-
-                    <div className="text-left sm:text-right">
-                      <p className="text-xs sm:text-sm text-muted-foreground">{t.reports.reimbursementAmount}</p>
-                      <p className="text-lg sm:text-xl font-bold text-primary font-mono">
-                        {formatCurrency(report.reimbursementAmount)}
+                      <p className="text-xs sm:text-sm text-muted-foreground">Période couverte</p>
+                      <p className="font-mono font-medium text-sm">
+                        {Math.ceil((new Date(report.periodEnd).getTime() - new Date(report.periodStart).getTime()) / (1000 * 60 * 60 * 24))} jours
                       </p>
                     </div>
 
@@ -315,29 +314,10 @@ export default function ReportsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          setPendingExportId(report.id);
-                          setDisclaimerOpen(true);
-                        }}
-                        disabled={exportCsvMutation.isPending}
-                        data-testid={`button-export-csv-${report.id}`}
-                        title={t.reports.exportTaxasDesc}
-                      >
-                        {exportCsvMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <FileSpreadsheet className="h-4 w-4 sm:mr-2" />
-                            <span className="hidden sm:inline">Taxas</span>
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
                         onClick={() => downloadMutation.mutate(report.id)}
                         disabled={downloadMutation.isPending}
                         data-testid={`button-download-${report.id}`}
+                        title="Télécharger (ancien format)"
                       >
                         {downloadMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -504,18 +484,17 @@ export default function ReportsPage() {
                 )}
               />
 
+              {/* SUPPRIMÉ: Carte affichant le taux CHF/L
+                  MineralTax ne doit pas afficher de taux ni de calculs financiers */}
               <Card className="bg-muted/50">
                 <CardContent className="p-4 space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t.reports.rate}</span>
-                    <span className="font-mono font-medium">
-                      {uniformRate.toFixed(4)} CHF/L
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t.settings.language}</span>
+                    <span className="text-muted-foreground">Langue du rapport</span>
                     <span className="font-medium">{language.toUpperCase()}</span>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Ce rapport est un document de traçabilité interne.
+                  </p>
                 </CardContent>
               </Card>
 
@@ -706,10 +685,16 @@ export default function ReportsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Footer OFDF */}
-      <div className="mt-8 flex justify-end">
-        <p className="text-xs text-muted-foreground italic">
-          Fichiers générés selon les directives officielles de l'OFDF
+      {/* Déclaration légale obligatoire (Section 6) */}
+      <div className="mt-8 p-4 bg-muted/50 rounded-lg border">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          <strong>Avertissement légal :</strong> Ce document ne constitue ni une déclaration fiscale,
+          ni un calcul de remboursement, ni une validation par l'OFDF. Il s'agit d'un outil interne
+          de préparation destiné à structurer et vérifier les données avant saisie sur la plateforme
+          officielle Taxas. La responsabilité des données déclarées incombe exclusivement à l'entreprise.
+        </p>
+        <p className="text-xs text-muted-foreground mt-2 italic">
+          Document généré par MineralTax – outil de préparation interne
         </p>
       </div>
     </div>

@@ -170,7 +170,7 @@ export const translations = {
       auditReady: "Prêt pour soumission",
       pricingTitle: "Tarification simple et transparente",
       pricingSubtitle: "Un seul abonnement pour toutes les fonctionnalités",
-      pricingPrice: "CHF 250",
+      pricingPrice: "CHF 150 / CHF 390",
       pricingPeriod: "par an",
       pricingFeature1: "Machines illimitées",
       pricingFeature2: "Entrées de carburant illimitées",
@@ -226,7 +226,7 @@ export const translations = {
     dashboard: {
       welcome: "Bienvenue",
       summary: "Résumé",
-      totalReimbursement: "Remboursement total estimé",
+      totalReimbursement: "État de préparation",
       pendingClaims: "Demandes en cours",
       activeMachines: "Machines actives",
       recentEntries: "Entrées récentes",
@@ -552,7 +552,7 @@ export const translations = {
       section3Title: "3. Responsabilité",
       section3Content: "L'utilisateur est seul responsable de l'exactitude des données saisies (litres, heures moteur, factures). L'éditeur ne pourra être tenu responsable en cas de refus de remboursement par l'administration ou d'erreur de saisie de la part de l'utilisateur.",
       section4Title: "4. Tarifs et Essai",
-      section4Content: "L'abonnement annuel est de 250 CHF. Un essai gratuit de 10 jours est offert sans engagement. À l'issue de cet essai, l'accès aux fonctions d'exportation (PDF/CSV) requiert un paiement.",
+      section4Content: "L'abonnement annuel est de CHF 150.- (Agriculture) ou CHF 390.- (BTP). Un essai gratuit de 10 jours est offert sans engagement. À l'issue de cet essai, l'accès aux fonctions d'exportation (PDF/CSV) requiert un paiement.",
       section5Title: "5. Protection des données (LPD)",
       section5Content: "Les données sont traitées conformément à la Loi fédérale sur la protection des données (LPD). Elles ne sont jamais transmises à des tiers sans accord explicite.",
       section6Title: "6. Droit applicable",
@@ -889,7 +889,7 @@ export const translations = {
     dashboard: {
       welcome: "Willkommen",
       summary: "Zusammenfassung",
-      totalReimbursement: "Geschätzte Gesamtrückerstattung",
+      totalReimbursement: "Vorbereitungsstatus",
       pendingClaims: "Offene Anträge",
       activeMachines: "Aktive Maschinen",
       recentEntries: "Letzte Einträge",
@@ -1552,7 +1552,7 @@ export const translations = {
     dashboard: {
       welcome: "Benvenuto",
       summary: "Riepilogo",
-      totalReimbursement: "Rimborso totale stimato",
+      totalReimbursement: "Stato di preparazione",
       pendingClaims: "Richieste in sospeso",
       activeMachines: "Macchine attive",
       recentEntries: "Voci recenti",
@@ -2207,7 +2207,7 @@ export const translations = {
     dashboard: {
       welcome: "Welcome",
       summary: "Summary",
-      totalReimbursement: "Estimated total reimbursement",
+      totalReimbursement: "Preparation status",
       pendingClaims: "Pending claims",
       activeMachines: "Active machines",
       recentEntries: "Recent entries",
