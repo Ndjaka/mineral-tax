@@ -1,248 +1,68 @@
-import { useState, useEffect } from "react";
-import { useI18n } from "@/lib/i18n";
-import { useSector } from "@/lib/sector-context";
 import { useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Calculator, Info, AlertCircle } from "lucide-react";
-import { RateIndicator } from "@/components/RateIndicator";
-import {
-  calculateReimbursementBySectorAndDate,
-  getApplicableRate,
-  AGRICULTURE_RATE_CHANGE_DATE,
-} from "@shared/schema";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, ArrowLeft, Shield } from "lucide-react";
 
+/**
+ * CALCULATEUR DÉSACTIVÉ - V1
+ * 
+ * Cette page est intentionnellement désactivée pour la V1.
+ * MineralTax est un outil de PRÉPARATION de données, pas de calcul officiel.
+ * 
+ * Conformité : Art. 18 LMin - Les remboursements sont calculés par l'OFDF via Taxas.
+ * 
+ * @see https://www.bazg.admin.ch/bazg/fr/home/themes/impot-huiles-minerales.html
+ */
 export default function CalculatorPage() {
-  const { t } = useI18n();
-  const { sector } = useSector();
   const [, setLocation] = useLocation();
-  const isBtp = sector !== "agriculture";
-
-  // Redirection BTP vers dashboard
-  useEffect(() => {
-    if (isBtp) {
-      setLocation("/");
-    }
-  }, [isBtp, setLocation]);
-
-  // Affichage temporaire pendant redirection BTP
-  if (isBtp) {
-    return (
-      <div className="p-6 max-w-lg mx-auto text-center">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-6">
-            <Info className="h-8 w-8 text-blue-600 mx-auto mb-4" />
-            <p className="text-blue-800 font-medium">
-              Le calcul de remboursement n'est pas disponible pour le secteur BTP.
-            </p>
-            <p className="text-sm text-blue-600 mt-2">
-              Redirection vers le tableau de bord...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const [volume, setVolume] = useState<string>("");
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [sectorSelect, setSectorSelect] = useState<string>("agriculture_with_direct");
-
-  const volumeNum = parseFloat(volume) || 0;
-  const dateObj = date ? new Date(date) : new Date();
-  const sectorValue = sectorSelect === 'btp' ? null : sectorSelect;
-
-  const applicableRate = getApplicableRate(dateObj, sectorValue);
-  const reimbursement = calculateReimbursementBySectorAndDate(
-    volumeNum,
-    dateObj,
-    sectorValue
-  );
-
-  const isNewRate = dateObj >= AGRICULTURE_RATE_CHANGE_DATE && sectorSelect === 'agriculture_with_direct';
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("de-CH", {
-      style: "currency",
-      currency: "CHF",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("de-CH", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-3xl mx-auto">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-semibold" data-testid="text-calculator-title">
-          {t.calculator.title}
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">
-          {t.calculator.eligibilityNote}
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5 text-primary" />
-            {t.calculator.inputVolume}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            {/* Champ Date */}
-            <div className="space-y-2">
-              <Label htmlFor="date">Date de la facture</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-12"
-              />
-              <p className="text-xs text-muted-foreground">
-                La date détermine le taux de remboursement applicable
-              </p>
-            </div>
-
-            {/* Champ Secteur */}
-            <div className="space-y-2">
-              <Label htmlFor="sector">Secteur d'activité (optionnel)</Label>
-              <Select value={sectorSelect} onValueChange={setSectorSelect}>
-                <SelectTrigger id="sector" className="h-12">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="agriculture_with_direct">
-                    🌾 Agriculture avec paiements directs
-                  </SelectItem>
-                  <SelectItem value="btp">
-                    🏗️ BTP / Autres secteurs
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Le secteur influe sur le taux pour les factures 2026+
-              </p>
-            </div>
-
-            {/* Champ Volume */}
-            <div className="space-y-2">
-              <Label htmlFor="volume">{t.fuel.volume}</Label>
-              <Input
-                id="volume"
-                type="number"
-                placeholder="0"
-                value={volume}
-                onChange={(e) => setVolume(e.target.value)}
-                className="text-2xl font-mono h-14"
-                data-testid="input-calculator-volume"
-              />
-            </div>
+    <div className="p-4 md:p-6 flex items-center justify-center min-h-[60vh]">
+      <Card className="max-w-lg w-full border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
+        <CardContent className="p-8 text-center space-y-6">
+          {/* Icône d'avertissement */}
+          <div className="mx-auto w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+            <AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-4">
-            <Card className="bg-muted/50">
-              <CardContent className="p-4 text-center">
-                <p className="text-sm text-muted-foreground mb-1">{t.reports.totalVolume}</p>
-                <p className="text-xl font-bold font-mono" data-testid="text-total-volume">
-                  {formatNumber(volumeNum)} L
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-muted/50">
-              <CardContent className="p-4 text-center">
-                <p className="text-sm text-muted-foreground mb-1">{t.calculator.rate}</p>
-                <p className="text-xl font-bold font-mono text-primary">
-                  {(applicableRate * 100).toFixed(2)} CHF/100L
-                </p>
-                {isNewRate && (
-                  <Badge variant="default" className="mt-2 bg-green-600 hover:bg-green-700">
-                    ✨ Taux 2026
-                  </Badge>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-primary/10 border-primary/30">
-              <CardContent className="p-4 text-center">
-                <p className="text-sm text-muted-foreground mb-1">{t.calculator.result}</p>
-                <p className="text-2xl font-bold font-mono text-primary" data-testid="text-result">
-                  {formatCurrency(reimbursement)}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Indicateur de taux détaillé */}
-          {date && volumeNum > 0 && (
-            <RateIndicator
-              date={dateObj}
-              sector={sectorValue}
-              volumeLiters={volumeNum}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Info className="h-4 w-4 text-primary" />
-            {t.reports.formReference}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-start gap-3 text-sm">
-            <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <p className="text-muted-foreground">
-              {t.calculator.eligibilityNote}
+          {/* Titre */}
+          <div>
+            <h1 className="text-xl font-semibold text-amber-800 dark:text-amber-200">
+              Fonctionnalité désactivée
+            </h1>
+            <p className="text-amber-700 dark:text-amber-300 mt-2">
+              MineralTax ne calcule aucun remboursement.
             </p>
           </div>
 
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">OFDF / BAZG / AFD / FOCBS</span>
-              <span className="font-medium">{t.reports.formReference}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">{t.reports.rate}</span>
-              <span className="font-mono font-medium">
-                {(applicableRate * 100).toFixed(2)} CHF/100L
-              </span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-muted-foreground">{t.reports.taxasInfo}</span>
-              <span className="font-medium">Taxas</span>
+          {/* Explication */}
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-left border border-amber-200 dark:border-amber-800">
+            <div className="flex items-start gap-3">
+              <Shield className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+                <p>
+                  <strong>MineralTax est un outil de préparation</strong>, pas un calculateur fiscal.
+                </p>
+                <p>
+                  Les montants de remboursement sont calculés officiellement par l'OFDF
+                  lors de votre déclaration sur la plateforme Taxas.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Référence : Art. 18 de la Loi sur l'imposition des huiles minérales (LMin)
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Explication des taux OFDF 2026 */}
-          <div className="mt-4 p-3 bg-muted/50 rounded-md text-xs space-y-2">
-            <p className="font-semibold">📊 Taux OFDF - Règlement 09 de 2026 :</p>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li>Avant 01.01.2026 : <strong>34.06 CHF/100L</strong> (tous secteurs)</li>
-              <li>Dès 01.01.2026 Agriculture : <strong className="text-green-700">60.05 CHF/100L</strong> (+76%)</li>
-              <li>Dès 01.01.2026 BTP : <strong>34.06 CHF/100L</strong> (inchangé)</li>
-            </ul>
-          </div>
+          {/* Bouton retour */}
+          <Button
+            onClick={() => setLocation("/")}
+            className="w-full"
+            variant="outline"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour au tableau de bord
+          </Button>
         </CardContent>
       </Card>
     </div>
