@@ -6,6 +6,12 @@ import {
     AGRICULTURE_RATE_CHANGE_DATE,
 } from "@shared/schema";
 
+// FEATURE FLAG: Désactivé pour V1
+// Raison: Positionnement MineralTax = outil de préparation, pas de calcul
+// - Aucun taux ni montant CHF ne doit être affiché
+// - Les taux officiels sont appliqués par l'OFDF via Taxas
+const RATE_INDICATOR_ENABLED = false;
+
 interface RateIndicatorProps {
     date: Date | null;
     sector?: string | null;
@@ -13,6 +19,11 @@ interface RateIndicatorProps {
 }
 
 export function RateIndicator({ date, sector, volumeLiters }: RateIndicatorProps) {
+    // Composant désactivé pour V1
+    if (!RATE_INDICATOR_ENABLED) {
+        return null;
+    }
+
     if (!date) return null;
 
     const rate = getApplicableRate(date, sector);

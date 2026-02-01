@@ -98,7 +98,8 @@ function AuthenticatedRouter() {
         <Route path="/agricultural-surfaces" component={AgriculturalSurfacesPage} />
         <Route path="/construction-sites" component={ConstructionSitesPage} />
         <Route path="/fuel" component={FuelPage} />
-        <Route path="/calculator" component={CalculatorPage} />
+        {/* SUPPRIMÉ V1: Route calculateur - MineralTax = outil de préparation, pas de calcul */}
+        {/* <Route path="/calculator" component={CalculatorPage} /> */}
         <Route path="/reports" component={ReportsPage} />
         <Route path="/taxas" component={TaxasPage} />
         <Route path="/company" component={CompanyPage} />

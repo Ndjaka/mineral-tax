@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { Loader2, CheckCircle2, XCircle, Mail } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,16 +18,23 @@ export default function RegisterPage() {
   const { t } = useI18n();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const [isLoading, setIsLoading] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+
+  // Récupérer le secteur depuis l'URL (?sector=agriculture ou ?sector=btp)
+  const urlParams = new URLSearchParams(search);
+  const sectorFromUrl = urlParams.get("sector");
+  const initialSector = (sectorFromUrl === "agriculture" || sectorFromUrl === "btp") ? sectorFromUrl : "";
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     confirmPassword: "",
     firstName: "",
     lastName: "",
-    activitySector: "" as "agriculture" | "btp" | "",
+    activitySector: initialSector as "agriculture" | "btp" | "",
     companyName: "",
   });
 

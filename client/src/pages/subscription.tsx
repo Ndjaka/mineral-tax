@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
+import { useSector } from "@/lib/sector-context";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,10 +37,15 @@ interface SubscriptionData {
 export default function SubscriptionPage() {
   const { t } = useI18n();
   const { user } = useAuth();
+  const { sector } = useSector();
   const { toast } = useToast();
   const [promoCode, setPromoCode] = useState("");
   const [validatedPromo, setValidatedPromo] = useState<any>(null);
   const [promoError, setPromoError] = useState("");
+
+  // Prix selon le secteur
+  const sectorPrice = sector === "agriculture" ? 150 : 390;
+  const sectorName = sector === "agriculture" ? "Agriculture" : "BTP";
 
   const { data: subscription, isLoading } = useQuery<SubscriptionData>({
     queryKey: ["/api/subscription"],
@@ -47,7 +53,7 @@ export default function SubscriptionPage() {
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/checkout");
+      const res = await apiRequest("POST", "/api/checkout", { sector });
       return res.json();
     },
     onSuccess: (data) => {
@@ -59,7 +65,7 @@ export default function SubscriptionPage() {
 
   const onetimeMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/checkout/onetime");
+      const res = await apiRequest("POST", "/api/checkout/onetime", { sector });
       return res.json();
     },
     onSuccess: (data) => {
@@ -180,10 +186,10 @@ export default function SubscriptionPage() {
               </span>
             </div>
             <CardTitle className="text-5xl font-bold mb-2">
-              250 <span className="text-2xl font-normal text-muted-foreground">CHF</span>
+              {sectorPrice} <span className="text-2xl font-normal text-muted-foreground">CHF</span>
             </CardTitle>
             <CardDescription className="text-base">{t.landing.perYear}</CardDescription>
-            <p className="text-xs text-primary/70 mt-2">Prix de lancement annuel</p>
+            <p className="text-xs text-primary/70 mt-2">Offre {sectorName}</p>
           </CardHeader>
           <CardContent className="space-y-6">
             <ul className="space-y-3">

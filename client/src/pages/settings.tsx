@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useI18n, languageNames, type Language } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
+import { useSector } from "@/lib/sector-context";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,10 @@ import { User, Globe, CreditCard, Shield, ExternalLink, Loader2, RefreshCw, Smar
 export default function SettingsPage() {
   const { t, language, setLanguage } = useI18n();
   const { user } = useAuth();
+  const { sector } = useSector();
+
+  // Prix selon le secteur
+  const sectorPrice = sector === "agriculture" ? 150 : 390;
 
   const languages: Language[] = ["fr", "de", "it", "en"];
 
@@ -33,7 +38,7 @@ export default function SettingsPage() {
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/checkout");
+      const response = await apiRequest("POST", "/api/checkout", { sector });
       return response.json();
     },
     onSuccess: (data) => {
@@ -45,7 +50,7 @@ export default function SettingsPage() {
 
   const onetimeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/checkout/onetime");
+      const response = await apiRequest("POST", "/api/checkout/onetime", { sector });
       return response.json();
     },
     onSuccess: (data) => {
@@ -198,7 +203,7 @@ export default function SettingsPage() {
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-lg">250 CHF<span className="text-sm font-normal text-muted-foreground">/{t.landing.perYear}</span></p>
+                    <p className="font-semibold text-lg">{sectorPrice} CHF<span className="text-sm font-normal text-muted-foreground">/{t.landing.perYear}</span></p>
                     <Button
                       onClick={handleSubscribe}
                       disabled={checkoutMutation.isPending}
@@ -233,7 +238,7 @@ export default function SettingsPage() {
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-lg">250 CHF<span className="text-sm font-normal text-muted-foreground">/{t.landing.perYear}</span></p>
+                    <p className="font-semibold text-lg">{sectorPrice} CHF<span className="text-sm font-normal text-muted-foreground">/{t.landing.perYear}</span></p>
                     <Button
                       variant="outline"
                       onClick={handleOnetimePayment}
