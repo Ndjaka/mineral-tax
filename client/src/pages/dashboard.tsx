@@ -351,7 +351,48 @@ export default function DashboardPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la génération du journal");
+        // Gestion par code erreur explicite
+        const errorData = await response.json().catch(() => ({}));
+        const errorCode = errorData.code || "UNKNOWN_ERROR";
+
+        // Debug log (temporaire)
+        console.error("[Journal PDF]", errorCode, errorData.message);
+
+        // Messages utilisateur par code erreur
+        const errorMessages: Record<string, { title: string; description: string }> = {
+          NO_DATA_FOR_YEAR: {
+            title: "Aucune donnée",
+            description: "Aucune donnée pour cette année. Complétez vos informations.",
+          },
+          USER_NOT_VALIDATED: {
+            title: "Confirmation requise",
+            description: "Veuillez cocher la confirmation avant téléchargement.",
+          },
+          JOURNAL_NOT_READY: {
+            title: "Dossier incomplet",
+            description: "Terminez le parcours de préparation pour générer le journal.",
+          },
+          PDF_GENERATION_FAILED: {
+            title: "Erreur technique",
+            description: "Erreur technique temporaire. Réessayez ou contactez le support.",
+          },
+          INVALID_YEAR: {
+            title: "Année invalide",
+            description: "L'année fiscale sélectionnée n'est pas valide.",
+          },
+        };
+
+        const errorInfo = errorMessages[errorCode] || {
+          title: "Erreur",
+          description: errorData.message || "Impossible de télécharger le journal.",
+        };
+
+        toast({
+          title: errorInfo.title,
+          description: errorInfo.description,
+          variant: "destructive",
+        });
+        return;
       }
 
       const blob = await response.blob();
@@ -369,10 +410,10 @@ export default function DashboardPage() {
         description: `Journal de Préparation ${journalYear} téléchargé avec succès.`,
       });
     } catch (error) {
-      console.error("Error downloading journal:", error);
+      console.error("[Journal PDF] Network error:", error);
       toast({
-        title: "Erreur",
-        description: "Impossible de télécharger le journal.",
+        title: "Erreur réseau",
+        description: "Impossible de contacter le serveur. Vérifiez votre connexion.",
         variant: "destructive",
       });
     } finally {
@@ -1297,21 +1338,29 @@ export default function DashboardPage() {
               </label>
             </div>
 
-            {/* Bouton téléchargement */}
-            <Button
-              onClick={handleDownloadJournal}
-              disabled={!journalConfirmed || journalLoading}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              {journalLoading ? (
-                <>Génération en cours...</>
-              ) : (
-                <>
-                  <FileDown className="h-4 w-4 mr-2" />
-                  {t.dashboard.preparationJournalDownload}
-                </>
+            {/* Bouton téléchargement avec tooltip */}
+            <div className="relative group">
+              <Button
+                onClick={handleDownloadJournal}
+                disabled={!journalConfirmed || journalLoading}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                {journalLoading ? (
+                  <>Génération en cours...</>
+                ) : (
+                  <>
+                    <FileDown className="h-4 w-4 mr-2" />
+                    {t.dashboard.preparationJournalDownload}
+                  </>
+                )}
+              </Button>
+              {/* Tooltip explicatif quand bouton désactivé */}
+              {!journalConfirmed && !journalLoading && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                  Le journal est disponible une fois la confirmation cochée.
+                </div>
               )}
-            </Button>
+            </div>
 
             {/* Disclaimer */}
             <p className="text-xs text-muted-foreground text-center">

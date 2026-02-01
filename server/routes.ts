@@ -1228,7 +1228,34 @@ export async function registerRoutes(
       const fiscalYear = parseInt(req.params.year, 10);
 
       if (isNaN(fiscalYear) || fiscalYear < 2020 || fiscalYear > 2100) {
-        return res.status(400).json({ message: "Année fiscale invalide" });
+        return res.status(400).json({
+          code: "INVALID_YEAR",
+          message: "Année fiscale invalide"
+        });
+      }
+
+      // Vérifier si des données existent pour cette année
+      const stats = await storage.getDashboardStats(userId);
+      const hasData = stats && (
+        stats.totalMachines > 0 ||
+        stats.totalSurfaces > 0 ||
+        stats.totalFuelEntries > 0
+      );
+
+      if (!hasData) {
+        return res.status(400).json({
+          code: "NO_DATA_FOR_YEAR",
+          message: "Aucune donnée disponible pour l'année sélectionnée."
+        });
+      }
+
+      // Vérifier le niveau de préparation
+      const progress = await storage.getPreparationProgress(userId);
+      if (progress && progress.overallProgress < 30) {
+        return res.status(409).json({
+          code: "JOURNAL_NOT_READY",
+          message: "Le dossier n'est pas encore prêt pour la génération du journal."
+        });
       }
 
       const journal = await storage.generatePreparationJournal(userId, fiscalYear);
@@ -1379,8 +1406,11 @@ export async function registerRoutes(
       doc.end();
 
     } catch (error) {
-      console.error("Error generating preparation journal:", error);
-      res.status(500).json({ message: "Failed to generate preparation journal" });
+      console.error("[Journal PDF] Error generating preparation journal:", error);
+      res.status(500).json({
+        code: "PDF_GENERATION_FAILED",
+        message: "Erreur technique lors de la génération du document."
+      });
     }
   });
 
