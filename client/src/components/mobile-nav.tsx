@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
-import { Home, Truck, Fuel, FileText, Settings } from "lucide-react";
+import { Home, Truck, Fuel, FileText, Settings, TreePine } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSector } from "@/lib/sector-context";
 
 interface NavItem {
     icon: React.ElementType;
@@ -8,16 +9,26 @@ interface NavItem {
     href: string;
 }
 
-const navItems: NavItem[] = [
-    { icon: Home, label: "Accueil", href: "/dashboard" },
-    { icon: Truck, label: "Flotte", href: "/fleet" },
-    { icon: Fuel, label: "Carburant", href: "/fuel" },
-    { icon: FileText, label: "Rapports", href: "/reports" },
-    { icon: Settings, label: "Plus", href: "/settings" },
-];
-
 export function MobileNav() {
     const [location, setLocation] = useLocation();
+    const { sector } = useSector();
+    const isAgri = sector === "agriculture";
+
+    // Items de navigation conditionnels selon le secteur
+    const navItems: NavItem[] = isAgri
+        ? [
+            { icon: Home, label: "Accueil", href: "/dashboard" },
+            { icon: Truck, label: "Flotte", href: "/fleet" },
+            { icon: TreePine, label: "Surfaces", href: "/agricultural-surfaces" },
+            { icon: Settings, label: "Plus", href: "/settings" },
+        ]
+        : [
+            { icon: Home, label: "Accueil", href: "/dashboard" },
+            { icon: Truck, label: "Flotte", href: "/fleet" },
+            { icon: Fuel, label: "Carburant", href: "/fuel" },
+            { icon: FileText, label: "Rapports", href: "/reports" },
+            { icon: Settings, label: "Plus", href: "/settings" },
+        ];
 
     return (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t z-50 safe-area-bottom">

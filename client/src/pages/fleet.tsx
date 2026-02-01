@@ -47,11 +47,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Truck, Search, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Truck, Search, AlertTriangle, Tractor, TreePine } from "lucide-react";
 import { StatsBar } from "@/components/stats-bar";
+import { useSector } from "@/lib/sector-context";
 import type { Machine } from "@shared/schema";
 
-const machineTypesEngins = [
+// === Types BTP/Construction ===
+const machineTypesBTP_Engins = [
   { value: "excavator", emoji: "🚜" },
   { value: "spider_excavator", emoji: "🕷️" },
   { value: "loader", emoji: "🚛" },
@@ -62,7 +64,7 @@ const machineTypesEngins = [
   { value: "roller", emoji: "🚧" },
 ] as const;
 
-const machineTypesAutres = [
+const machineTypesBTP_Autres = [
   { value: "dumper", emoji: "🚚" },
   { value: "forklift", emoji: "📦" },
   { value: "crusher", emoji: "🪨" },
@@ -72,7 +74,29 @@ const machineTypesAutres = [
   { value: "other", emoji: "🔧" },
 ] as const;
 
+// === Types Agriculture ===
+const machineTypesAgri_Recolte = [
+  { value: "tractor", emoji: "🚜" },
+  { value: "combine_harvester", emoji: "🌾" },
+  { value: "forage_harvester", emoji: "🌿" },
+  { value: "baler", emoji: "🎁" },
+  { value: "mower", emoji: "✂️" },
+  { value: "tedder", emoji: "🌀" },
+] as const;
+
+const machineTypesAgri_Autres = [
+  { value: "sprayer", emoji: "💧" },
+  { value: "seeder", emoji: "🌱" },
+  { value: "trailer", emoji: "🚛" },
+  { value: "slurry_tanker", emoji: "🛢️" },
+  { value: "forestry_tractor", emoji: "🌲" },
+  { value: "vineyard_tractor", emoji: "🍇" },
+  { value: "other", emoji: "🔧" },
+] as const;
+
+// === Compatibilité - Tous les types (pour validation schema) ===
 const machineTypes = [
+  // BTP
   "excavator",
   "spider_excavator",
   "loader",
@@ -87,6 +111,20 @@ const machineTypes = [
   "generator",
   "compressor",
   "concrete_pump",
+  // Agriculture
+  "tractor",
+  "combine_harvester",
+  "forage_harvester",
+  "sprayer",
+  "seeder",
+  "baler",
+  "tedder",
+  "mower",
+  "trailer",
+  "slurry_tanker",
+  "forestry_tractor",
+  "vineyard_tractor",
+  // Générique
   "other",
 ] as const;
 
@@ -137,6 +175,8 @@ export default function FleetPage() {
   const { t } = useI18n();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { sector } = useSector();
+  const isAgri = sector === 'agriculture';
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
@@ -147,9 +187,9 @@ export default function FleetPage() {
     resolver: zodResolver(machineFormSchema),
     defaultValues: {
       name: "",
-      type: "excavator",
+      type: isAgri ? "tractor" : "excavator",
       customType: "",
-      taxasActivity: "construction",
+      taxasActivity: isAgri ? "agriculture_with_direct" : "construction",
       licensePlate: "",
       plateColor: "none",
       chassisNumber: "",
@@ -293,24 +333,17 @@ export default function FleetPage() {
     return t.fleet.plateColors?.[color as keyof typeof t.fleet.plateColors] || color;
   };
 
-  const watchPlateColor = form.watch("plateColor");
-  const watchIsEligible = form.watch("isEligible");
+  // === Variables et handlers V1 simplifiés ===
+  // Les fonctions suivantes sont conservées mais inutilisées en V1 (soft-hide)
+  // Réactivation possible en V2+
+  // const watchPlateColor = form.watch("plateColor");
+  // const watchIsEligible = form.watch("isEligible");
   const watchType = form.watch("type");
 
-  const handlePlateColorChange = (color: string) => {
-    form.setValue("plateColor", color as typeof plateColors[number]);
-    if (!hasEligibilityOverride) {
-      const colorInfo = getPlateColorInfo(color);
-      form.setValue("isEligible", colorInfo.eligible);
-    }
-  };
-
-  const handleEligibilityChange = (value: boolean) => {
-    setHasEligibilityOverride(true);
-    form.setValue("isEligible", value);
-  };
-
-  const showWhitePlateWarning = (watchPlateColor === "white" || watchPlateColor === "blue") && watchIsEligible;
+  // Handlers désactivés V1 (soft-hide)
+  // const handlePlateColorChange = ...
+  // const handleEligibilityChange = ...
+  // const showWhitePlateWarning = ...
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto">
@@ -323,11 +356,19 @@ export default function FleetPage() {
             {machines?.length || 0} {t.dashboard.activeMachines.toLowerCase()}
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()} data-testid="button-add-machine">
+        <Button onClick={() => handleOpenDialog()} data-testid="button-add-machine" className={isAgri ? "bg-green-600 hover:bg-green-700" : ""}>
           <Plus className="h-4 w-4 mr-2" />
           {t.fleet.addMachine}
         </Button>
       </div>
+
+      {/* Badge secteur Agriculture */}
+      {isAgri && (
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-800 text-sm font-medium border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700">
+          <TreePine className="h-4 w-4" />
+          <span>Agriculture – régime forfaitaire (Art. 18 LMin)</span>
+        </div>
+      )}
 
       <StatsBar />
 
@@ -371,32 +412,11 @@ export default function FleetPage() {
                       </p>
                     </div>
                   </div>
-                  <Badge variant={machine.isEligible ? "default" : "secondary"} className="flex-shrink-0">
-                    {machine.isEligible ? t.fleet.eligible : t.fleet.notEligible}
-                  </Badge>
+                  {/* Badge éligible masqué V1 (soft-hide) - réactivation V2+ */}
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  {machine.licensePlate && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">{t.fleet.licensePlate || "Plaque"}</span>
-                      <div className="flex items-center gap-2">
-                        {machine.plateColor && machine.plateColor !== "none" && (
-                          <span
-                            className={`w-4 h-4 rounded border ${getPlateColorInfo(machine.plateColor).bg} ${getPlateColorInfo(machine.plateColor).border}`}
-                            title={getPlateColorLabel(machine.plateColor)}
-                          />
-                        )}
-                        <span className="font-mono">{machine.licensePlate}</span>
-                      </div>
-                    </div>
-                  )}
-                  {machine.chassisNumber && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t.fleet.chassisNumber}</span>
-                      <span className="font-mono">{machine.chassisNumber}</span>
-                    </div>
-                  )}
+                  {/* Infos plaque masquées V1 (soft-hide) */}
                   {machine.year && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t.fleet.year}</span>
@@ -477,22 +497,45 @@ export default function FleetPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Engins de chantier</SelectLabel>
-                          {machineTypesEngins.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.emoji} {getMachineTypeLabel(type.value)}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel>Autres équipements</SelectLabel>
-                          {machineTypesAutres.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.emoji} {getMachineTypeLabel(type.value)}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
+                        {isAgri ? (
+                          <>
+                            <SelectGroup>
+                              <SelectLabel>🌾 Récolte & Fenaison</SelectLabel>
+                              {machineTypesAgri_Recolte.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.emoji} {getMachineTypeLabel(type.value)}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel>🚜 Autres équipements agricoles</SelectLabel>
+                              {machineTypesAgri_Autres.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.emoji} {getMachineTypeLabel(type.value)}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </>
+                        ) : (
+                          <>
+                            <SelectGroup>
+                              <SelectLabel>🏗️ Engins de chantier</SelectLabel>
+                              {machineTypesBTP_Engins.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.emoji} {getMachineTypeLabel(type.value)}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel>⚙️ Autres équipements</SelectLabel>
+                              {machineTypesBTP_Autres.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.emoji} {getMachineTypeLabel(type.value)}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -553,112 +596,19 @@ export default function FleetPage() {
                 )}
               />
 
-              <div className="space-y-3">
-                <FormLabel>{t.fleet.licensePlate || "Plaque d'immatriculation"}</FormLabel>
-                <div className="flex gap-3">
-                  <FormField
-                    control={form.control}
-                    name="licensePlate"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="e.g. VS 12345"
-                            data-testid="input-license-plate"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    {t.fleet.plateColorLabel || "Couleur de la plaque (détermine l'éligibilité)"}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {plateColors.map((color) => {
-                      const info = getPlateColorInfo(color);
-                      const isSelected = watchPlateColor === color;
-                      return (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handlePlateColorChange(color)}
-                          className={`px-3 py-2 rounded-md border-2 text-sm font-medium transition-all ${info.bg} ${info.text} ${isSelected ? "ring-2 ring-primary ring-offset-2" : info.border
-                            }`}
-                          data-testid={`button-plate-color-${color}`}
-                        >
-                          {getPlateColorLabel(color)}
-                          {color !== "none" && (
-                            <span className="ml-1.5 text-xs opacity-75">
-                              {info.eligible ? "✓" : "✗"}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t.fleet.plateColorHint || "Plaques vertes (agricoles) et jaunes (industrielles) = éligibles. Plaques blanches (routières) = non éligibles."}
-                  </p>
-                </div>
-              </div>
-
-              <FormField
-                control={form.control}
-                name="chassisNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.chassisNumber}</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. FE724V2026TX001" data-testid="input-chassis-number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="registrationNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.registrationNumber || "N° de matricule"}</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. 405.122.889" data-testid="input-registration-number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="rcNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.rcNumber || "N° RC Taxas"}</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. RC-BTP-2025-001" data-testid="input-rc-number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+              {/* === CHAMPS OPTIONNELS V1 === */}
               <FormField
                 control={form.control}
                 name="year"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t.fleet.year}</FormLabel>
+                    <FormLabel>{t.fleet.year} (optionnel)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         {...field}
                         value={field.value || ""}
+                        placeholder="Ex: 2020"
                         data-testid="input-year"
                       />
                     </FormControl>
@@ -667,54 +617,26 @@ export default function FleetPage() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="power"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fleet.power}</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="e.g. 150 kW"
-                        data-testid="input-power"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Message pédagogique V1 */}
+              <div className="p-3 rounded-md bg-muted/50 border">
+                <p className="text-xs text-muted-foreground text-center">
+                  Ces informations servent uniquement à structurer votre dossier avant Taxas.
+                </p>
+              </div>
 
-              <FormField
-                control={form.control}
-                name="isEligible"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">{t.fleet.eligible}</FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          {t.calculator.eligibilityNote}
-                        </p>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={handleEligibilityChange}
-                          data-testid="switch-eligible"
-                        />
-                      </FormControl>
-                    </div>
-                    {showWhitePlateWarning && (
-                      <div className="flex items-start gap-2 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
-                        <span className="text-sm">
-                          {t.fleet.whitePlateWarning || "Plaque blanche/bleue marquée comme éligible - documentez l'usage spécial (déneigement, etc.) pour Taxas."}
-                        </span>
-                      </div>
-                    )}
-                  </FormItem>
-                )}
-              />
+              {/* 
+                === CHAMPS MASQUÉS V1 (soft-hide) ===
+                Les champs suivants sont conservés dans le schéma mais masqués côté UI.
+                Réactivation possible en V2+.
+                
+                - licensePlate (plaque d'immatriculation)
+                - plateColor (couleur de plaque)
+                - chassisNumber (numéro de châssis)
+                - registrationNumber (numéro de matricule)
+                - rcNumber (numéro RC Taxas)
+                - power (puissance kW)
+                - isEligible (toggle éligibilité - interprétation légale)
+              */}
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={handleCloseDialog}>

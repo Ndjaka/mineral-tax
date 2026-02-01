@@ -1,7 +1,23 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
+
+// Load .env.local in priority over .env (for test keys in dev)
+const envLocalPath = path.resolve(process.cwd(), ".env.local");
+const envPath = path.resolve(process.cwd(), ".env");
+
+if (fs.existsSync(envLocalPath)) {
+  // Load local overrides first
+  dotenv.config({ path: envLocalPath });
+  console.log("[Environment] Loaded .env.local");
+} else {
+  // Fallback to standard env
+  dotenv.config({ path: envPath });
+  console.log("[Environment] Loaded .env");
+}
 
 const { Pool } = pg;
 

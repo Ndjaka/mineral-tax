@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useI18n } from "@/lib/i18n";
@@ -57,7 +57,7 @@ import { StatsBar } from "@/components/stats-bar";
 import { Progress } from "@/components/ui/progress";
 import { RateIndicator } from "@/components/RateIndicator";
 import { GainSimulator } from "@/components/GainSimulator";
-import type { Machine, FuelEntry } from "@shared/schema";
+import type { Machine, FuelEntry, ConstructionSite } from "@shared/schema";
 import { calculateReimbursement, calculateReimbursementBySectorAndDate } from "@shared/schema";
 import { extractTextFromImage } from "@/lib/ocr";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -77,6 +77,7 @@ const fuelEntryFormSchema = z.object({
   bd: z.string().optional(),
   stat: z.string().optional(),
   ci: z.string().optional(),
+  siteId: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -127,6 +128,7 @@ export default function FuelPage() {
       bd: "",
       stat: "",
       ci: "",
+      siteId: "",
       notes: "",
     },
   });
@@ -143,9 +145,73 @@ export default function FuelPage() {
     queryKey: ["/api/machines"],
   });
 
+  // Chantiers BTP (uniquement en secteur BTP)
+  const isBtp = sector === "btp";
+  const { data: constructionSites } = useQuery<ConstructionSite[]>({
+    queryKey: ["/api/construction-sites"],
+    enabled: isBtp,
+  });
+  const activeSites = constructionSites?.filter(s => s.status === "active") || [];
+
   const { data: entries, isLoading } = useQuery<(FuelEntry & { machine?: Machine })[]>({
     queryKey: ["/api/fuel-entries"],
   });
+
+  // État pour le message d'info sur le chantier (BTP seulement)
+  const [siteInfoMessage, setSiteInfoMessage] = useState<{ type: 'info' | 'warning' | 'success'; text: string } | null>(null);
+
+  // Watchers pour pré-remplissage intelligent
+  const watchedMachineId = form.watch("machineId");
+  const watchedInvoiceDate = form.watch("invoiceDate");
+
+  // Pré-remplissage intelligent du chantier (BTP uniquement)
+  useEffect(() => {
+    if (!isBtp || !watchedMachineId || !watchedInvoiceDate || !isDialogOpen) {
+      setSiteInfoMessage(null);
+      return;
+    }
+
+    const fetchActiveAssignments = async () => {
+      try {
+        const response = await fetch(`/api/machines/${watchedMachineId}/active-assignments?date=${watchedInvoiceDate}`, {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          console.error("Erreur récupération affectations");
+          return;
+        }
+
+        const assignments = await response.json();
+
+        if (assignments.length === 1) {
+          // Auto-sélection si 1 seul chantier actif
+          form.setValue("siteId", assignments[0].siteId);
+          setSiteInfoMessage({
+            type: 'success',
+            text: `Chantier auto-sélectionné : ${assignments[0].site?.name || 'N/A'}`
+          });
+        } else if (assignments.length === 0) {
+          // Aucune affectation active
+          form.setValue("siteId", "");
+          setSiteInfoMessage({
+            type: 'info',
+            text: "Aucun chantier actif pour cette machine à cette date"
+          });
+        } else {
+          // Plusieurs chantiers - ne pas pré-remplir
+          setSiteInfoMessage({
+            type: 'warning',
+            text: `${assignments.length} chantiers actifs - veuillez sélectionner`
+          });
+        }
+      } catch (error) {
+        console.error("Erreur pré-remplissage chantier:", error);
+      }
+    };
+
+    fetchActiveAssignments();
+  }, [isBtp, watchedMachineId, watchedInvoiceDate, isDialogOpen, form]);
 
   const createMutation = useMutation({
     mutationFn: (data: FuelEntryFormData) => apiRequest("POST", "/api/fuel-entries", {
@@ -213,6 +279,7 @@ export default function FuelPage() {
         bd: (entry as any).bd || "",
         stat: (entry as any).stat || "",
         ci: (entry as any).ci || "",
+        siteId: (entry as any).siteId || "",
         notes: entry.notes || "",
       });
     } else {
@@ -230,6 +297,7 @@ export default function FuelPage() {
         bd: "",
         stat: "",
         ci: "",
+        siteId: "",
         notes: "",
       });
     }
@@ -324,31 +392,34 @@ export default function FuelPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <GainSimulator />
-          <Button
-            disabled={isScanning}
-            className="relative bg-primary hover:bg-primary/90"
-            data-testid="button-scan-ticket"
-          >
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleScan}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+          {/* OCR uniquement pour secteur BTP - masqué pour Agriculture */}
+          {sector !== 'agriculture' && (
+            <Button
               disabled={isScanning}
-            />
-            {isScanning ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {t.fuel.ocrAnalyzing || "Analyse OFDF..."}
-              </>
-            ) : (
-              <>
-                <Camera className="h-5 w-5 mr-2" />
-                {t.fuel.scanTicket || "Scanner"}
-              </>
-            )}
-          </Button>
+              className="relative bg-primary hover:bg-primary/90"
+              data-testid="button-scan-ticket"
+            >
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleScan}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                disabled={isScanning}
+              />
+              {isScanning ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {t.fuel.ocrAnalyzing || "Analyse OFDF..."}
+                </>
+              ) : (
+                <>
+                  <Camera className="h-5 w-5 mr-2" />
+                  {t.fuel.scanTicket || "Scanner"}
+                </>
+              )}
+            </Button>
+          )}
           <Button onClick={() => handleOpenDialog()} data-testid="button-add-fuel-entry">
             <Plus className="h-4 w-4 mr-2" />
             {t.fuel.addEntry}
@@ -371,7 +442,19 @@ export default function FuelPage() {
         </Alert>
       )}
 
-      {isScanning && (
+      {/* Message informatif secteur agricole - Aucun justificatif requis */}
+      {sector === 'agriculture' && (
+        <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800">
+          <HelpCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
+            Aucun justificatif carburant n'est requis pour la préparation d'une demande agricole.
+            Le remboursement est calculé par l'OFDF sur la base des forfaits liés aux surfaces.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Barre de progression OCR - uniquement secteur BTP */}
+      {sector !== 'agriculture' && isScanning && (
         <Card>
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
@@ -525,6 +608,50 @@ export default function FuelPage() {
                   </FormItem>
                 )}
               />
+
+              {/* Champ Chantier - BTP uniquement */}
+              {isBtp && (
+                <FormField
+                  control={form.control}
+                  name="siteId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Chantier (optionnel)</FormLabel>
+                      <Select
+                        onValueChange={(val) => field.onChange(val === "none" ? "" : val)}
+                        value={field.value || "none"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un chantier" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Aucun chantier</SelectItem>
+                          {activeSites.map((site) => (
+                            <SelectItem key={site.id} value={site.id}>
+                              {site.name}
+                              {site.location && (
+                                <span className="ml-2 text-xs text-muted-foreground">({site.location})</span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      {/* Message d'info pré-remplissage chantier */}
+                      {siteInfoMessage && (
+                        <div className={`mt-2 text-xs p-2 rounded flex items-center gap-2 ${siteInfoMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+                            siteInfoMessage.type === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                              'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}>
+                          {siteInfoMessage.text}
+                        </div>
+                      )}
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField

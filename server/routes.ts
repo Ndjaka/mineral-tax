@@ -2,11 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { requireVerifiedEmail as isAuthenticated } from "./auth/routes";
-import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, insertCompanyProfileSchema, type Machine, type FuelEntry, type Invoice, type CompanyProfile, REIMBURSEMENT_RATE_CHF_PER_LITER, calculateReimbursement } from "@shared/schema";
+import { insertMachineSchema, insertFuelEntrySchema, insertReportSchema, insertCompanyProfileSchema, agriculturalSurfaceSchema, type Machine, type FuelEntry, type Invoice, type CompanyProfile, type AgriculturalSurface, REIMBURSEMENT_RATE_CHF_PER_LITER, calculateReimbursement } from "@shared/schema";
 import { z } from "zod";
 import PDFDocument from "pdfkit";
 import { getUncachableStripeClient } from "./stripeClient";
 import { streamChatResponse } from "./chatAssistant";
+import { fileStorageService, type FileCategory } from "./services/fileStorage";
 
 import { formatTaxasNumber, formatTaxasDate, sanitizeTaxasText, mapFuelTypeToProductCode, mapMachineTypeToCode, getTaxasRate, generateTaxasCSV, generateTaxasSignature } from "./taxas-export.js";
 async function getOrCreateStripePrice(stripe: any): Promise<string> {
@@ -411,6 +412,19 @@ export async function registerRoutes(
         volumeLiters: parseFloat(req.body.volumeLiters),
         engineHours: req.body.engineHours ? parseFloat(req.body.engineHours) : null,
       });
+
+      // Validation du siteId si fourni (BTP uniquement)
+      if (data.siteId) {
+        const site = await storage.getConstructionSite(data.siteId, userId);
+        if (!site) {
+          return res.status(400).json({ message: "Chantier non trouvé ou non autorisé" });
+        }
+        if (site.status !== "active") {
+          return res.status(400).json({ message: "Le chantier sélectionné n'est pas actif" });
+        }
+        console.log(`[API] POST /api/fuel-entries - Chantier validé: ${site.name}`);
+      }
+
       const entry = await storage.createFuelEntry(data);
       res.status(201).json(entry);
     } catch (error) {
@@ -1099,6 +1113,705 @@ export async function registerRoutes(
       } else {
         res.status(500).json({ error: "Erreur de chat" });
       }
+    }
+  });
+
+  // ========================================
+  // SURFACES AGRICOLES (données déclaratives uniquement)
+  // Aucun calcul de remboursement - conformité Art. 18 LMin
+  // ========================================
+
+  // GET - Liste des surfaces de l'utilisateur
+  app.get("/api/agricultural-surfaces", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const surfaces = await storage.getAgriculturalSurfaces(userId);
+      res.json(surfaces);
+    } catch (error) {
+      console.error("Error fetching agricultural surfaces:", error);
+      res.status(500).json({ message: "Failed to fetch surfaces" });
+    }
+  });
+
+  // GET - Détail d'une surface
+  app.get("/api/agricultural-surfaces/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const surface = await storage.getAgriculturalSurface(req.params.id, userId);
+      if (!surface) {
+        return res.status(404).json({ message: "Surface not found" });
+      }
+      res.json(surface);
+    } catch (error) {
+      console.error("Error fetching agricultural surface:", error);
+      res.status(500).json({ message: "Failed to fetch surface" });
+    }
+  });
+
+  // POST - Créer une surface
+  app.post("/api/agricultural-surfaces", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = agriculturalSurfaceSchema.parse(req.body);
+      const surface = await storage.createAgriculturalSurface({
+        ...data,
+        userId,
+      });
+      res.status(201).json(surface);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error creating agricultural surface:", error);
+      res.status(500).json({ message: "Failed to create surface" });
+    }
+  });
+
+  // PATCH - Modifier une surface
+  app.patch("/api/agricultural-surfaces/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = agriculturalSurfaceSchema.partial().parse(req.body);
+      const surface = await storage.updateAgriculturalSurface(req.params.id, userId, data);
+      if (!surface) {
+        return res.status(404).json({ message: "Surface not found" });
+      }
+      res.json(surface);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating agricultural surface:", error);
+      res.status(500).json({ message: "Failed to update surface" });
+    }
+  });
+
+  // DELETE - Supprimer une surface
+  app.delete("/api/agricultural-surfaces/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const deleted = await storage.deleteAgriculturalSurface(req.params.id, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Surface not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting agricultural surface:", error);
+      res.status(500).json({ message: "Failed to delete surface" });
+    }
+  });
+
+  // GET - Score de cohérence Agriculture (données déclaratives uniquement - AUCUN calcul financier)
+  // Conforme Art. 18 LMin : outil de vérification interne uniquement
+  app.get("/api/agriculture/coherence-score", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const score = await storage.calculateAgricultureCoherenceScore(userId);
+
+      console.log(`[API] GET /api/agriculture/coherence-score - Score: ${score.score}/100 (${score.level})`);
+
+      res.json(score);
+    } catch (error) {
+      console.error("Error calculating agriculture coherence score:", error);
+      res.status(500).json({ message: "Failed to calculate coherence score" });
+    }
+  });
+
+  // ==================== JOURNAL DE PRÉPARATION ====================
+  // Document attestant la structuration des données avant saisie Taxas
+  // Aucun calcul financier - preuve de bonne foi pour fiduciaires
+
+  // GET - Générer le Journal de Préparation PDF
+  app.get("/api/preparation-journal/:year/pdf", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const fiscalYear = parseInt(req.params.year, 10);
+
+      if (isNaN(fiscalYear) || fiscalYear < 2020 || fiscalYear > 2100) {
+        return res.status(400).json({
+          code: "INVALID_YEAR",
+          message: "Année fiscale invalide"
+        });
+      }
+
+      // Vérifier si des données existent pour cette année
+      const stats = await storage.getDashboardStats(userId);
+      const hasData = stats && (
+        stats.totalMachines > 0 ||
+        stats.totalSurfaces > 0 ||
+        stats.totalFuelEntries > 0
+      );
+
+      if (!hasData) {
+        return res.status(400).json({
+          code: "NO_DATA_FOR_YEAR",
+          message: "Aucune donnée disponible pour l'année sélectionnée."
+        });
+      }
+
+      // Vérifier le niveau de préparation
+      const progress = await storage.getPreparationProgress(userId);
+      if (progress && progress.overallProgress < 30) {
+        return res.status(409).json({
+          code: "JOURNAL_NOT_READY",
+          message: "Le dossier n'est pas encore prêt pour la génération du journal."
+        });
+      }
+
+      const journal = await storage.generatePreparationJournal(userId, fiscalYear);
+
+      console.log(`[API] GET /api/preparation-journal/${fiscalYear}/pdf - Journal ID: ${journal.journalId}`);
+
+      // Générer le PDF
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 50,
+        info: {
+          Title: `Journal de Préparation MineralTax - ${fiscalYear}`,
+          Author: 'MineralTax Swiss',
+          Subject: 'Préparation données fiscales',
+        }
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=journal-preparation-${fiscalYear}-${journal.journalId.slice(0, 8)}.pdf`);
+      doc.pipe(res);
+
+      // === EN-TÊTE ===
+      doc.fontSize(20).fillColor('#16a34a').text('Journal de Préparation MineralTax', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.fontSize(12).fillColor('#666').text('(Version explicable à une fiduciaire)', { align: 'center' });
+      doc.moveDown(1);
+
+      // === FINALITÉ ===
+      doc.fontSize(10).fillColor('#333')
+        .text('Ce document atteste que l\'entreprise a structuré, vérifié et organisé ses données avant la saisie manuelle sur la plateforme officielle Taxas.', { align: 'justify' });
+      doc.moveDown(0.5);
+      doc.fontSize(9).fillColor('#666')
+        .text('Il ne remplace pas : la déclaration fiscale, les calculs officiels, la responsabilité du déclarant.', { align: 'center', oblique: true });
+      doc.moveDown(1);
+
+      // === SECTION 1: INFORMATIONS GÉNÉRALES ===
+      doc.fontSize(14).fillColor('#16a34a').text('1. Informations générales');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#333');
+      doc.text(`Entreprise : ${journal.company.name}`);
+      doc.text(`Secteur : ${journal.company.sector === 'agriculture' ? 'Agriculture' : 'BTP'}`);
+      if (journal.company.ide) doc.text(`IDE : ${journal.company.ide}`);
+      doc.text(`Année fiscale : ${journal.fiscalYear}`);
+      doc.text(`Date de génération : ${journal.generatedAt.toLocaleString('fr-CH')}`);
+      doc.text(`Identifiant unique : ${journal.journalId}`);
+      doc.moveDown(0.3);
+      doc.fontSize(9).fillColor('#666').text('➡️ Valeur fiduciaire : Traçabilité du moment où le dossier a été préparé (preuve de bonne foi).', { oblique: true });
+      doc.moveDown(1);
+
+      // === SECTION 2 ou 3: DONNÉES SECTORIELLES ===
+      if (journal.agriculture) {
+        doc.fontSize(14).fillColor('#16a34a').text('2. Données structurées – Agriculture');
+        doc.moveDown(0.3);
+        doc.fontSize(10).fillColor('#333');
+        doc.text(`Surfaces agricoles déclarées : ${journal.agriculture.surfaces.count}`);
+        doc.text(`Total hectares : ${journal.agriculture.surfaces.totalHectares.toFixed(1)} ha`);
+        doc.text(`Années couvertes : ${journal.agriculture.surfaces.years.join(', ') || 'Aucune'}`);
+        doc.text(`Types de cultures : ${journal.agriculture.cultures.count} (${journal.agriculture.cultures.types.join(', ') || 'Non renseigné'})`);
+        doc.text(`Machines agricoles : ${journal.agriculture.machines.count}`);
+        doc.moveDown(0.3);
+        doc.fontSize(9).fillColor('#059669').text(`📋 ${journal.agriculture.mention}`, { oblique: true });
+        doc.moveDown(0.3);
+        doc.fontSize(9).fillColor('#666').text('➡️ Valeur fiduciaire : Les données sont cohérentes entre elles, même si les montants sont calculés ailleurs.', { oblique: true });
+        doc.moveDown(1);
+      }
+
+      if (journal.btp) {
+        doc.fontSize(14).fillColor('#2563eb').text('3. Données structurées – BTP');
+        doc.moveDown(0.3);
+        doc.fontSize(10).fillColor('#333');
+        doc.text(`Chantiers actifs : ${journal.btp.activeSites.count}`);
+        if (journal.btp.activeSites.names.length > 0) {
+          doc.text(`Liste : ${journal.btp.activeSites.names.slice(0, 5).join(', ')}${journal.btp.activeSites.names.length > 5 ? '...' : ''}`);
+        }
+        doc.text(`Affectations machines : ${journal.btp.machineAssignments.count}`);
+        doc.text(`Entrées carburant liées : ${journal.btp.fuelEntries.count} (${journal.btp.fuelEntries.totalLiters.toFixed(0)} L)`);
+        if (journal.btp.periods.earliest && journal.btp.periods.latest) {
+          doc.text(`Période couverte : ${journal.btp.periods.earliest.toLocaleDateString('fr-CH')} – ${journal.btp.periods.latest.toLocaleDateString('fr-CH')}`);
+        }
+        doc.moveDown(0.3);
+        doc.fontSize(9).fillColor('#2563eb').text(`📋 ${journal.btp.mention}`, { oblique: true });
+        doc.moveDown(0.3);
+        doc.fontSize(9).fillColor('#666').text('➡️ Valeur fiduciaire : La traçabilité est prête avant toute discussion sur l\'éligibilité.', { oblique: true });
+        doc.moveDown(1);
+      }
+
+      // === SECTION 4: SCORES ===
+      doc.fontSize(14).fillColor('#f59e0b').text('4. Scores & indicateurs (sans valeur juridique)');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#333');
+
+      if (journal.scores.agriculture) {
+        doc.text(`Score de cohérence Agriculture : ${journal.scores.agriculture.score}/100 – ${journal.scores.agriculture.level}`);
+        if (journal.scores.agriculture.incomplete.length > 0) {
+          doc.fontSize(9).fillColor('#dc2626').text(`  ⚠️ À vérifier : ${journal.scores.agriculture.incomplete.join(', ')}`);
+        }
+      }
+      if (journal.scores.btp) {
+        doc.text(`Score de conformité BTP : ${journal.scores.btp.score}/100 – ${journal.scores.btp.level}`);
+        if (journal.scores.btp.incomplete.length > 0) {
+          doc.fontSize(9).fillColor('#dc2626').text(`  ⚠️ À vérifier : ${journal.scores.btp.incomplete.join(', ')}`);
+        }
+      }
+      doc.moveDown(0.3);
+      doc.fontSize(9).fillColor('#666').text('⚠️ Les scores mesurent la qualité de préparation des données, pas l\'acceptation par l\'administration.', { oblique: true });
+      doc.moveDown(1);
+
+      // === SECTION 5: CHRONOLOGIE ===
+      doc.fontSize(14).fillColor('#8b5cf6').text('5. Analyse chronologique (preuve de sérieux)');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#333');
+      if (journal.chronology.dataEntryPeriod.start && journal.chronology.dataEntryPeriod.end) {
+        doc.text(`Période de saisie : ${journal.chronology.dataEntryPeriod.start.toLocaleDateString('fr-CH')} – ${journal.chronology.dataEntryPeriod.end.toLocaleDateString('fr-CH')}`);
+      } else {
+        doc.text('Période de saisie : Aucune donnée enregistrée');
+      }
+      doc.text(`Mention : ${journal.chronology.mention}`);
+      doc.moveDown(0.3);
+      doc.fontSize(9).fillColor('#666').text('➡️ Très fort en cas de contrôle : Prouve que les données n\'ont pas été "inventées à la dernière minute".', { oblique: true });
+      doc.moveDown(1);
+
+      // === SECTION 6: DISCLAIMER ===
+      doc.fontSize(14).fillColor('#dc2626').text('6. Déclaration légale');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#333')
+        .text(journal.disclaimer, { align: 'justify' });
+      doc.moveDown(1);
+
+      // === SECTION 7: VALIDATION ===
+      doc.fontSize(14).fillColor('#333').text('7. Validation utilisateur');
+      doc.moveDown(0.5);
+      doc.fontSize(10);
+      doc.text('Nom du déclarant : ___________________________________');
+      doc.moveDown(0.3);
+      doc.text('Date : _______________');
+      doc.moveDown(0.5);
+      doc.rect(doc.x, doc.y, 12, 12).stroke();
+      doc.text('  Je confirme que les données saisies reflètent fidèlement la situation de mon entreprise.', doc.x + 18, doc.y - 10);
+      doc.moveDown(1);
+
+      // === PIED DE PAGE ===
+      doc.moveDown(2);
+      doc.fontSize(10).fillColor('#16a34a').text('🟢 En une phrase pour une fiduciaire', { align: 'center' });
+      doc.moveDown(0.3);
+      doc.fontSize(11).fillColor('#333')
+        .text('MineralTax ne calcule rien à votre place. Il vous garantit que les données que vous recevez sont complètes, structurées et cohérentes.', { align: 'center', oblique: true });
+
+      doc.end();
+
+    } catch (error) {
+      console.error("[Journal PDF] Error generating preparation journal:", error);
+      res.status(500).json({
+        code: "PDF_GENERATION_FAILED",
+        message: "Erreur technique lors de la génération du document."
+      });
+    }
+  });
+
+  // GET - Données du Journal (pour prévisualisation frontend)
+  app.get("/api/preparation-journal/:year/data", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const fiscalYear = parseInt(req.params.year, 10);
+
+      if (isNaN(fiscalYear) || fiscalYear < 2020 || fiscalYear > 2100) {
+        return res.status(400).json({ message: "Année fiscale invalide" });
+      }
+
+      const journal = await storage.generatePreparationJournal(userId, fiscalYear);
+      res.json(journal);
+    } catch (error) {
+      console.error("Error fetching preparation journal data:", error);
+      res.status(500).json({ message: "Failed to fetch preparation journal data" });
+    }
+  });
+
+  // ==================== STOCKAGE FICHIERS ====================
+  // Gestion sécurisée des fichiers utilisateurs (S3 ou local)
+  // Aucun accès public - signed URLs ou proxy backend uniquement
+
+  // GET - Info stockage (debug)
+  app.get("/api/storage/info", isAuthenticated, async (req, res) => {
+    const info = fileStorageService.getInfo();
+    res.json(info);
+  });
+
+  // POST - Upload fichier
+  app.post("/api/files/:category", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const category = req.params.category as FileCategory;
+
+      // Vérifier la catégorie
+      if (!["receipts", "documents", "journals"].includes(category)) {
+        return res.status(400).json({ message: "Catégorie invalide" });
+      }
+
+      // Récupérer le fichier depuis le body (base64)
+      const { filename, mimeType, data } = req.body;
+
+      if (!filename || !mimeType || !data) {
+        return res.status(400).json({ message: "Données fichier manquantes (filename, mimeType, data)" });
+      }
+
+      // Décoder le base64
+      const buffer = Buffer.from(data, "base64");
+
+      // Upload
+      const result = await fileStorageService.upload(userId, category, buffer, mimeType, filename);
+
+      if (!result.success) {
+        return res.status(400).json({ message: result.error });
+      }
+
+      console.log(`[API] POST /api/files/${category} - Fichier uploadé: ${result.key}`);
+
+      res.json({
+        success: true,
+        key: result.key,
+        url: result.url,
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "Erreur lors de l'upload du fichier" });
+    }
+  });
+
+  // GET - Télécharger un fichier (signed URL)
+  app.get("/api/files/:key(*)", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const key = req.params.key;
+
+      if (!key) {
+        return res.status(400).json({ message: "Clé fichier manquante" });
+      }
+
+      // Générer signed URL
+      const result = await fileStorageService.getSignedUrl(userId, key);
+
+      if (!result.success) {
+        return res.status(result.error === "Accès non autorisé" ? 403 : 404).json({
+          message: result.error,
+        });
+      }
+
+      console.log(`[API] GET /api/files/${key} - Signed URL générée`);
+
+      res.json({
+        success: true,
+        url: result.url,
+      });
+    } catch (error) {
+      console.error("Error getting file URL:", error);
+      res.status(500).json({ message: "Erreur lors de la récupération du fichier" });
+    }
+  });
+
+  // DELETE - Supprimer un fichier
+  app.delete("/api/files/:key(*)", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const key = req.params.key;
+
+      if (!key) {
+        return res.status(400).json({ message: "Clé fichier manquante" });
+      }
+
+      const result = await fileStorageService.delete(userId, key);
+
+      if (!result.success) {
+        return res.status(result.error === "Accès non autorisé" ? 403 : 500).json({
+          message: result.error,
+        });
+      }
+
+      console.log(`[API] DELETE /api/files/${key} - Fichier supprimé`);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      res.status(500).json({ message: "Erreur lors de la suppression du fichier" });
+    }
+  });
+
+  // ==================== PARCOURS DE PRÉPARATION ====================
+  // Assistant de progression pédagogique - aucun calcul financier
+
+  // GET - Progression vers le Journal de Préparation
+  app.get("/api/preparation/progress", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const progress = await storage.getPreparationProgress(userId);
+
+      console.log(`[API] GET /api/preparation/progress - ${progress.stepsCompleted}/${progress.stepsTotal} (${progress.overallProgress}%)`);
+
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching preparation progress:", error);
+      res.status(500).json({ message: "Failed to fetch preparation progress" });
+    }
+  });
+
+  // ==================== CHANTIERS BTP ====================
+  // Traçabilité machine ↔ chantier ↔ carburant (aucun calcul fiscal)
+
+  const constructionSiteSchema = z.object({
+    name: z.string().min(1, "Nom requis"),
+    location: z.string().optional(),
+    startDate: z.string().or(z.date()),
+    endDate: z.string().or(z.date()).optional().nullable(),
+    status: z.enum(["active", "completed"]).default("active"),
+    fiscalYear: z.number().int().min(2020).max(2100),
+    notes: z.string().optional(),
+  });
+
+  // GET - Liste des chantiers
+  app.get("/api/construction-sites", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const sites = await storage.getConstructionSites(userId);
+      res.json(sites);
+    } catch (error) {
+      console.error("Error fetching construction sites:", error);
+      res.status(500).json({ message: "Failed to fetch construction sites" });
+    }
+  });
+
+  // GET - Détail d'un chantier
+  app.get("/api/construction-sites/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const site = await storage.getConstructionSite(req.params.id, userId);
+      if (!site) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+      res.json(site);
+    } catch (error) {
+      console.error("Error fetching construction site:", error);
+      res.status(500).json({ message: "Failed to fetch construction site" });
+    }
+  });
+
+  // POST - Créer un chantier
+  app.post("/api/construction-sites", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = constructionSiteSchema.parse(req.body);
+      const site = await storage.createConstructionSite({
+        ...data,
+        userId,
+        startDate: parseDate(data.startDate),
+        endDate: data.endDate ? parseDate(data.endDate) : null,
+      });
+      res.status(201).json(site);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error creating construction site:", error);
+      res.status(500).json({ message: "Failed to create construction site" });
+    }
+  });
+
+  // PATCH - Modifier un chantier
+  app.patch("/api/construction-sites/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = constructionSiteSchema.partial().parse(req.body);
+      const updateData: any = { ...data };
+      if (data.startDate) updateData.startDate = parseDate(data.startDate);
+      if (data.endDate) updateData.endDate = parseDate(data.endDate);
+
+      const site = await storage.updateConstructionSite(req.params.id, userId, updateData);
+      if (!site) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+      res.json(site);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating construction site:", error);
+      res.status(500).json({ message: "Failed to update construction site" });
+    }
+  });
+
+  // DELETE - Supprimer un chantier
+  app.delete("/api/construction-sites/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const deleted = await storage.deleteConstructionSite(req.params.id, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting construction site:", error);
+      res.status(500).json({ message: "Failed to delete construction site" });
+    }
+  });
+
+  // GET - Dashboard Chantier BTP
+  app.get("/api/construction-sites/:id/dashboard", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const dashboard = await storage.getConstructionSiteDashboard(req.params.id, userId);
+
+      if (!dashboard) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+
+      console.log(`[API] GET /api/construction-sites/${req.params.id}/dashboard - Summary: ${dashboard.summary.totalMachines} machines, ${dashboard.summary.totalLiters}L`);
+
+      res.json(dashboard);
+    } catch (error) {
+      console.error("Error fetching site dashboard:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard" });
+    }
+  });
+
+  // GET - Score de conformité BTP (traçabilité uniquement - AUCUN CHF)
+  app.get("/api/btp/compliance-score", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const score = await storage.calculateBtpComplianceScore(userId);
+
+      console.log(`[API] GET /api/btp/compliance-score - Score: ${score.score}/100 (${score.level})`);
+
+      res.json(score);
+    } catch (error) {
+      console.error("Error calculating BTP compliance score:", error);
+      res.status(500).json({ message: "Failed to calculate compliance score" });
+    }
+  });
+
+  // ==================== AFFECTATIONS MACHINE ↔ CHANTIER ====================
+
+  const assignmentSchema = z.object({
+    machineId: z.string().min(1, "Machine requise"),
+    siteId: z.string().min(1, "Chantier requis"),
+    startDate: z.string().or(z.date()),
+    endDate: z.string().or(z.date()).optional().nullable(),
+    comment: z.string().optional(),
+  });
+
+  // GET - Liste des affectations
+  app.get("/api/machine-site-assignments", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const assignments = await storage.getMachineSiteAssignments(userId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  });
+
+  // GET - Affectations actives pour une machine à une date donnée
+  // Utilisé pour le pré-remplissage intelligent du chantier lors de la saisie carburant
+  app.get("/api/machines/:id/active-assignments", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const machineId = req.params.id;
+      const dateParam = req.query.date as string;
+
+      // Vérifier que la machine appartient à l'utilisateur
+      const machine = await storage.getMachine(machineId, userId);
+      if (!machine) {
+        return res.status(404).json({ message: "Machine not found" });
+      }
+
+      // Date par défaut = aujourd'hui
+      const targetDate = dateParam ? new Date(dateParam) : new Date();
+
+      // Récupérer les affectations actives à cette date
+      const assignments = await storage.getActiveAssignmentsForMachine(machineId, targetDate);
+
+      console.log(`[API] GET /api/machines/${machineId}/active-assignments - Date: ${targetDate.toISOString()} - Found: ${assignments.length}`);
+
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching active assignments:", error);
+      res.status(500).json({ message: "Failed to fetch active assignments" });
+    }
+  });
+  app.get("/api/construction-sites/:id/assignments", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      // Vérifier que le chantier appartient à l'utilisateur
+      const site = await storage.getConstructionSite(req.params.id, userId);
+      if (!site) {
+        return res.status(404).json({ message: "Chantier not found" });
+      }
+      const assignments = await storage.getMachineSiteAssignmentsBySite(req.params.id);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching site assignments:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  });
+
+  // POST - Créer une affectation (avec validation chevauchement)
+  app.post("/api/machine-site-assignments", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const data = assignmentSchema.parse(req.body);
+
+      // Vérifier que la machine et le chantier appartiennent à l'utilisateur
+      const machine = await storage.getMachine(data.machineId, userId);
+      if (!machine) {
+        return res.status(400).json({ message: "Machine non trouvée" });
+      }
+
+      const site = await storage.getConstructionSite(data.siteId, userId);
+      if (!site) {
+        return res.status(400).json({ message: "Chantier non trouvé" });
+      }
+
+      const startDate = parseDate(data.startDate);
+      const endDate = data.endDate ? parseDate(data.endDate) : null;
+
+      // Vérifier le chevauchement de périodes
+      const hasOverlap = await storage.checkAssignmentOverlap(data.machineId, startDate, endDate);
+      if (hasOverlap) {
+        return res.status(400).json({
+          message: "Cette machine est déjà affectée à un autre chantier sur cette période"
+        });
+      }
+
+      const assignment = await storage.createMachineSiteAssignment({
+        ...data,
+        startDate,
+        endDate,
+      });
+      res.status(201).json(assignment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error creating assignment:", error);
+      res.status(500).json({ message: "Failed to create assignment" });
+    }
+  });
+
+  // DELETE - Supprimer une affectation
+  app.delete("/api/machine-site-assignments/:id", isAuthenticated, async (req, res) => {
+    try {
+      const deleted = await storage.deleteMachineSiteAssignment(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Affectation not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+      res.status(500).json({ message: "Failed to delete assignment" });
     }
   });
 
