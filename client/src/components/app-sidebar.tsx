@@ -61,14 +61,17 @@ export function AppSidebar() {
     { title: t.nav.fleet, url: "/fleet", icon: Truck },
     { title: t.agriculturalSurfaces?.title || "Surfaces agricoles", url: "/agricultural-surfaces", icon: TreePine, agriOnly: true },
     { title: "Chantiers", url: "/construction-sites", icon: Building2, btpOnly: true },
-    { title: t.nav.fuelEntry, url: "/fuel", icon: Fuel, disabledInAgri: true },
-    { title: t.calculator.title, url: "/calculator", icon: Calculator, agriOnly: true },
-    { title: t.nav.reports, url: "/reports", icon: FileText, disabledInAgri: true },
-    { title: t.nav.taxas, url: "/taxas", icon: Send, disabledInAgri: true },
+    { title: t.nav.fuelEntry, url: "/fuel", icon: Fuel, btpOnly: true },
+    // SUPPRIMÉ V1 : Calculateur (Art. 18 LMin - aucun montant ne doit être affiché)
+    // { title: t.calculator.title, url: "/calculator", icon: Calculator, agriOnly: true },
+    { title: t.nav.reports, url: "/reports", icon: FileText },
+    { title: t.nav.taxas, url: "/taxas", icon: Send },
     { title: t.company.title, url: "/company", icon: Building2 },
-    { title: t.nav.subscription, url: "/subscription", icon: CreditCard },
+    // MASQUÉ V1 : Abonnement (phase tests gratuite)
+    // { title: t.nav.subscription, url: "/subscription", icon: CreditCard },
     { title: t.nav.settings, url: "/settings", icon: Settings },
-    { title: t.nav.howItWorks, url: "/comment-ca-marche", icon: HelpCircle },
+    // SUPPRIMÉ V1 : Comment ça marche (uniquement sur landing page)
+    // { title: t.nav.howItWorks, url: "/comment-ca-marche", icon: HelpCircle },
     { title: t.nav.terms, url: "/terms", icon: ScrollText },
   ];
 
